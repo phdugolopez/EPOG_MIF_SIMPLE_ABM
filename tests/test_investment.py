@@ -95,7 +95,8 @@ class TestInvestment(unittest.TestCase):
     def test_same_sales_same_investment_across_types(self):
         """(5) In capacity units, while finance does not bind."""
         config = make_config(INITIAL_FIRMS=(("C", "shaikh"), ("C", "okishio")),
-                             DEMAND_TO_CAPACITY=1.15, INITIAL_CASH=100_000.0)
+                             DEMAND_TO_CAPACITY=1.15, INITIAL_CASH=100_000.0,
+                             ENTRY_SPEED=0.0)
         industry = Industry(config)
         industry.run(1)
         shaikh, okishio = industry.firms

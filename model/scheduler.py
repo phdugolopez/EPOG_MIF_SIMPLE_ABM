@@ -3,10 +3,15 @@ from equations.competitiveness import competitiveness
 from equations.depreciation import depreciation
 from equations.desired_capacity import desired_capacity
 from equations.market_shares import logit_shares, replicator_shares
+from equations.new_plant_rate import new_plant_rate
 from equations.offered_capacity import offered_capacity
 from equations.dividends import dividends
+from equations.entrant_price import entrant_price
+from equations.entry_probability import entry_probability
+from equations.exit_conditions import exit_reason
 from equations.firm_profit import firm_profit
 from equations.hurdle import hurdle
+from equations.inherited_rule import inherited_type
 from equations.lifetime_profit_rate import lifetime_profit_rate
 from equations.interest_payment import interest_payment
 from equations.investment import investment
@@ -22,6 +27,7 @@ from equations.retirement import periods_below_cost, retirement_reason
 from equations.technique_choice import choose_technique
 from equations.unit_cost import unit_cost
 from markets.credit_market import settle_cash_position
+from markets.entry_exit import create_entrant, remove_firm
 from markets.goods_market import allocate
 from markets.payments import pay
 from markets.plant_market import affordable_spending, buy_plant
@@ -36,6 +42,7 @@ def run_period(industry) -> None:
     produce_and_account(industry)  # 3. Production and accounts
     scrap_plants(industry)  # 4. Scrapping
     invest(industry)  # 5. Investment
+    enter_and_exit(industry)  # 6. Entry and exit
     collect(industry)
     check_stock_flow(industry)
 
@@ -47,6 +54,8 @@ def start_period(industry) -> None:
     industry.entries = []
     industry.exits = []
     industry.replacements = 0
+    industry.r_new = None
+    industry.producers = list(industry.firms)
     for firm in industry.firms:
         firm.plants.extend(firm.pending_plants)
         firm.pending_plants = []
@@ -58,6 +67,7 @@ def start_period(industry) -> None:
             setattr(firm, name, 0.0)
         firm.non_renewal = False
         firm.net_worth_start = firm.net_worth
+        firm.producing_plants = list(firm.plants)
     industry.cash_start = {
         "firms": sum(f.cash for f in industry.firms),
         "roe": industry.roe.cash,
@@ -278,3 +288,65 @@ def invest(industry) -> None:
         technique = choose_technique(industry.menu, firm.hurdle, config.DELTA, config.TAU)
         affordable = affordable_spending(firm, config.DEBT_CAP) / technique.kappa
         buy_plant(industry, firm, technique, min(units, affordable))
+
+
+# --- 6. Entry and exit --------------------------------------------------------------
+
+
+def enter_and_exit(industry) -> None:
+    exit_firms(industry)
+    enter_firm(industry)
+
+
+def exit_firms(industry) -> None:
+    """Exit on negative net worth, a share below f_min, or non-renewal, keeping at least
+    MIN_FIRMS firms (those with the highest net worth stay)."""
+    config = industry.parameters
+    leaving = []
+    for firm in industry.firms:
+        reason = exit_reason(
+            firm.net_worth, firm.share, config.MIN_SHARE, firm.non_renewal,
+            bool(firm.plants or firm.pending_plants),
+        )
+        if reason:
+            leaving.append((firm, reason))
+    spare = len(industry.firms) - config.MIN_FIRMS
+    if len(leaving) > spare:
+        leaving.sort(key=lambda fr: (fr[0].net_worth, industry.rng.random()))
+        leaving = leaving[: max(0, spare)]
+    for firm, reason in leaving:
+        remove_firm(industry, firm, reason)
+
+
+def enter_firm(industry) -> None:
+    """At most one entrant, with a probability rising with r^new - rbar. It inherits a rule,
+    picks its plant with its own h at its own price, and arrives next period."""
+    config = industry.parameters
+    recent = [
+        p for f in industry.firms for p in f.plants
+        if p.vintage > industry.time - config.ENTRY_WINDOW
+    ]
+    industry.r_new = new_plant_rate(
+        [p.profit / p.purchase_cost for p in recent], [p.capacity for p in recent]
+    )
+    probability = entry_probability(industry.r_new, config.RBAR, config.ENTRY_SPEED)
+    if probability > 0.0 and industry.rng.random() < probability:
+        admit_entrant(industry)
+
+
+def admit_entrant(industry) -> None:
+    config = industry.parameters
+    firm_type = inherited_type(
+        [f.type for f in industry.firms], [f.share for f in industry.firms],
+        config.MUTATION, industry.rng,
+    )
+    price = entrant_price(industry.leader_price, config.ENTRANT_UNDERCUT)
+    h = hurdle(config.HURDLE_RULES[firm_type], price, industry.menu, config.DELTA,
+               config.HURDLE_FLOOR_AT_ZERO)
+    technique = choose_technique(industry.menu, h, config.DELTA, config.TAU)
+    capacities = [f.capacity for f in industry.firms if f.capacity > 0.0]
+    if not capacities:
+        return
+    capacity = config.ENTRANT_SIZE * sum(capacities) / len(capacities)
+    entrant = create_entrant(industry, firm_type, price, technique, capacity)
+    entrant.hurdle = h

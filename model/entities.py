@@ -64,10 +64,16 @@ class Firm:
     non_renewal: bool = False
     net_worth_start: float = 0.0
     util_history: list[float] = field(default_factory=list)
+    producing_plants: list[Plant] = field(default_factory=list)  # plants that ran this period
+    exit_reason: str = ""
 
     @property
     def capacity(self) -> float:
         return sum(p.capacity for p in self.plants)
+
+    @property
+    def producing_capacity(self) -> float:
+        return sum(p.capacity for p in self.producing_plants)
 
     @property
     def capital(self) -> float:
