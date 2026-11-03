@@ -1,0 +1,24 @@
+# Generated outputs
+outputs/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# LaTeX build files
+docs/*.aux
+docs/*.log
+docs/*.out
+docs/*.toc
+docs/*.fls
+docs/*.fdb_latexmk
+docs/*.synctex.gz
+docs/*.bbl
+docs/*.blg
+docs/*.lol
+docs/main.pdf
+docs/sections/*.aux
+
+# macOS
+.DS_Store

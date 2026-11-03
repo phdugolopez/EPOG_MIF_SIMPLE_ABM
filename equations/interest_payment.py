@@ -1,4 +1,3 @@
-def interest_payment(debt: float, interest_rate: float, available_deposits: float) -> float:
-    """Interest paid is constrained by the firm's available deposits."""
-    return min(interest_rate * debt, available_deposits)
-
+def interest_payment(debt: float, rho: float) -> float:
+    """rho B_i,t-1: interest on last period's debt."""
+    return rho * debt
