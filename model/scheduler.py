@@ -1,6 +1,7 @@
 from equations.anchor_price import markup_price, target_return_price
 from equations.competitiveness import competitiveness
 from equations.depreciation import depreciation
+from equations.desired_capacity import desired_capacity
 from equations.market_shares import logit_shares, replicator_shares
 from equations.offered_capacity import offered_capacity
 from equations.dividends import dividends
@@ -8,6 +9,7 @@ from equations.firm_profit import firm_profit
 from equations.hurdle import hurdle
 from equations.lifetime_profit_rate import lifetime_profit_rate
 from equations.interest_payment import interest_payment
+from equations.investment import investment
 from equations.merit_order import dispatch
 from equations.operating_cost import operating_cost
 from equations.plant_profit import plant_profit
@@ -33,6 +35,7 @@ def run_period(industry) -> None:
     allocate_demand(industry)  # 2. Demand
     produce_and_account(industry)  # 3. Production and accounts
     scrap_plants(industry)  # 4. Scrapping
+    invest(industry)  # 5. Investment
     collect(industry)
     check_stock_flow(industry)
 
@@ -252,3 +255,26 @@ def fails_renewal(retired, rbar: float) -> bool:
     profit = sum(p.lifetime_profit for p in record)
     capital_periods = sum(p.purchase_cost * p.age for p in record)
     return lifetime_profit_rate(profit, capital_periods) < rbar
+
+
+# --- 5. Investment ------------------------------------------------------------------
+
+
+def invest(industry) -> None:
+    """Expected sales, desired capacity, technique chosen with h, cash then capped debt.
+    New plants arrive next period."""
+    config = industry.parameters
+    for firm in industry.firms:
+        if firm.non_renewal:
+            continue
+        expected_sales = firm.previous_sales if config.INVESTMENT_SALES_LAG else firm.sales
+        on_order = sum(p.capacity for p in firm.pending_plants)
+        units = investment(
+            desired_capacity(expected_sales, config.EXPECTED_GROWTH),
+            firm.capacity + on_order,
+        )
+        if units <= 0.0:
+            continue
+        technique = choose_technique(industry.menu, firm.hurdle, config.DELTA, config.TAU)
+        affordable = affordable_spending(firm, config.DEBT_CAP) / technique.kappa
+        buy_plant(industry, firm, technique, min(units, affordable))
