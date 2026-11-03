@@ -5,6 +5,8 @@ from equations.market_shares import logit_shares, replicator_shares
 from equations.offered_capacity import offered_capacity
 from equations.dividends import dividends
 from equations.firm_profit import firm_profit
+from equations.hurdle import hurdle
+from equations.lifetime_profit_rate import lifetime_profit_rate
 from equations.interest_payment import interest_payment
 from equations.merit_order import dispatch
 from equations.operating_cost import operating_cost
@@ -13,10 +15,14 @@ from equations.posted_price import posted_price
 from equations.price_floor import price_floor
 from equations.price_war import price_war
 from equations.profit_rate import profit_rate
+from equations.replacement import replacement_pays
+from equations.retirement import periods_below_cost, retirement_reason
+from equations.technique_choice import choose_technique
 from equations.unit_cost import unit_cost
 from markets.credit_market import settle_cash_position
 from markets.goods_market import allocate
 from markets.payments import pay
+from markets.plant_market import affordable_spending, buy_plant
 from model.collector import check_stock_flow, collect
 
 
@@ -26,6 +32,7 @@ def run_period(industry) -> None:
     set_prices(industry)  # 1. Pricing
     allocate_demand(industry)  # 2. Demand
     produce_and_account(industry)  # 3. Production and accounts
+    scrap_plants(industry)  # 4. Scrapping
     collect(industry)
     check_stock_flow(industry)
 
@@ -36,6 +43,7 @@ def start_period(industry) -> None:
     industry.retired = []
     industry.entries = []
     industry.exits = []
+    industry.replacements = 0
     for firm in industry.firms:
         firm.plants.extend(firm.pending_plants)
         firm.pending_plants = []
@@ -175,3 +183,72 @@ def account(industry, firm, config) -> None:
     pay(industry, firm, roe, firm.interest, "interest")
     pay(industry, firm, roe, firm.dividends, "dividends")
     settle_cash_position(industry, firm)
+
+
+# --- 4. Scrapping -------------------------------------------------------------------
+
+
+def scrap_plants(industry) -> None:
+    """Retire by age or obsolescence (both types alike), then replace with the hurdle."""
+    config = industry.parameters
+    for firm in industry.firms:
+        firm.hurdle = hurdle(
+            config.HURDLE_RULES[firm.type], firm.price, industry.menu, config.DELTA,
+            config.HURDLE_FLOOR_AT_ZERO,
+        )
+        retired = retire_plants(industry, firm, config)
+        if config.REPLACEMENT:
+            replace_plants(industry, firm, config)
+        if retired and not firm.plants and not firm.pending_plants:
+            firm.non_renewal = fails_renewal(retired, config.RBAR)
+
+
+def retire_plants(industry, firm, config) -> list:
+    retired = []
+    for plant in list(firm.plants):
+        plant.periods_below_cost = periods_below_cost(
+            plant.periods_below_cost, firm.price, plant.ucs
+        )
+        reason = retirement_reason(
+            plant.age, config.PLANT_LIFE, plant.periods_below_cost,
+            config.OBSOLESCENCE_PERIODS,
+        )
+        if reason:
+            remove_plant(industry, firm, plant)
+            retired.append(plant)
+    return retired
+
+
+def replace_plants(industry, firm, config) -> None:
+    """Scrap a working plant when a new technique is cheap enough to justify new capital,
+    if the firm can pay for it (cash, then debt up to the cap)."""
+    technique = choose_technique(industry.menu, firm.hurdle, config.DELTA, config.TAU)
+    for plant in list(firm.plants):
+        if not replacement_pays(
+            plant.ucs, technique.ucs, technique.kappa, config.DELTA, firm.hurdle
+        ):
+            continue
+        if technique.kappa * plant.capacity > affordable_spending(firm, config.DEBT_CAP):
+            continue
+        remove_plant(industry, firm, plant)
+        buy_plant(industry, firm, technique, plant.capacity)
+        industry.replacements += 1
+
+
+def remove_plant(industry, firm, plant) -> None:
+    """Scrap value is zero: any remaining book value is written off."""
+    firm.write_offs += plant.book_value
+    plant.book_value = 0.0
+    firm.plants.remove(plant)
+    industry.retired.append(plant)
+
+
+def fails_renewal(retired, rbar: float) -> bool:
+    """A firm whose last plant retires does not rebuild if that capital earned less than
+    rbar over its life. Plants of the initial endowment are exempt (no full record)."""
+    record = [p for p in retired if not p.initial]
+    if not record:
+        return False
+    profit = sum(p.lifetime_profit for p in record)
+    capital_periods = sum(p.purchase_cost * p.age for p in record)
+    return lifetime_profit_rate(profit, capital_periods) < rbar

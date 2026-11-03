@@ -48,6 +48,7 @@ class Industry:
 
         self.leader_price = min(f.price for f in self.firms)
         self.unserved = 0.0
+        self.replacements = 0
         self.flows: dict[str, dict[str, float]] = {}
         self.retired: list[Plant] = []
         self.entries: list[Firm] = []
