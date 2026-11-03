@@ -6,8 +6,9 @@ every other choice made to get one runnable model, so that each owner knows what
 open for the owner to change. Parameter names are those of `parameters.py`.
 
 Each choice must respect the neutrality rule: only the technique choice (investment,
-replacement, entry) may use the hurdle h. In the code, `firm.type` is read only by
-`equations/hurdle.py` (through `HURDLE_RULES`), and the label-swap tests check it.
+replacement, entry) may use the hurdle h. In the code, `firm.type` is used only to look up
+the hurdle rule (`HURDLE_RULES`, `equations/hurdle.py`) and to pass it on to entrants, and
+the label-swap tests check it.
 
 ## Shared
 

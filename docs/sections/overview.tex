@@ -16,7 +16,8 @@ conserved and the accounts are checked every period.
 \paragraph{The neutrality rule.} Shaikh firms and Okishio firms differ only in the hurdle
 $h$ they use to choose techniques, in investment, replacement and entry. Pricing, demand,
 production and accounts, physical scrapping and exit treat both types the same. In the code
-the type label is read in one place only, \code{equations/hurdle.py}; the label-swap tests
+the type label is used only to look up the hurdle rule (\code{equations/hurdle.py}) and to
+pass it on to entrants; the label-swap tests
 run the model with the labels swapped everywhere except the hurdle and require identical
 trajectories.
 

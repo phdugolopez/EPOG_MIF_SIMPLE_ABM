@@ -18,8 +18,10 @@ Shaikh and Okishio firms differ **only** in the hurdle h used to choose techniqu
 investment, replacement and entry. Pricing, demand, production and accounts, retirement and
 exit treat both types identically.
 
-- `firm.type` is read only by `equations/hurdle.py`, through `parameters.HURDLE_RULES`.
-  Never branch on `firm.type` anywhere else (the collector may group outputs by type).
+- `firm.type` is used only to look up the firm's hurdle rule (`parameters.HURDLE_RULES`,
+  passed to `equations/hurdle.py`) and to pass the type on to entrants
+  (`equations/inherited_rule.py`). Never branch on `firm.type` anywhere else (the
+  collector may group outputs by type).
 - Never break ties by firm order or id: the initial firms come in identical pairs. Share
   ties pro rata (see `equations/merit_order.py`, `markets/goods_market.py`).
 - The label-swap tests (`tests/test_model.py` and one per mechanism) run the model with the
