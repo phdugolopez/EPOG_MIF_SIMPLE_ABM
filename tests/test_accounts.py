@@ -3,7 +3,7 @@
 import unittest
 
 from equations.depreciation import depreciation
-from model.scheduler import produce_and_account, start_period
+from model.scheduler import allocate_demand, produce_and_account, start_period
 from helpers import history_without_labels, make_config, one_firm_industry, swapped_config
 from model import Industry
 
@@ -14,7 +14,9 @@ class TestAccounts(unittest.TestCase):
         for technique, expected in (("C", 0.16), ("D1", 24 / (18_500 / 130)),
                                     ("D2", 25 / (21_000 / 133))):
             industry = one_firm_industry(technique, DEMAND_TO_CAPACITY=1.0)
-            industry.step()
+            start_period(industry)  # price stays at 100: pricing is not run
+            allocate_demand(industry)
+            produce_and_account(industry)
             firm = industry.firms[0]
             self.assertAlmostEqual(firm.util, 1.0)
             self.assertAlmostEqual(firm.profit_rate, expected, places=12)
