@@ -33,7 +33,10 @@ from markets.payments import pay
 from markets.plant_market import affordable_spending, buy_plant
 from model.collector import check_stock_flow, collect
 
+# Lines "# {name}" ... "# {endname}" mark the ranges that docs/sections/*.tex include.
 
+
+# {period}
 def run_period(industry) -> None:
     """Order all events in one period. Each step sees only what earlier steps produced."""
     start_period(industry)
@@ -45,6 +48,7 @@ def run_period(industry) -> None:
     enter_and_exit(industry)  # 6. Entry and exit
     collect(industry)
     check_stock_flow(industry)
+# {endperiod}
 
 
 def start_period(industry) -> None:
@@ -75,6 +79,7 @@ def start_period(industry) -> None:
 
 
 # --- 1. Pricing ---------------------------------------------------------------------
+# {pricing}
 
 
 def set_prices(industry) -> None:
@@ -108,9 +113,11 @@ def set_prices(industry) -> None:
 
 def _average(values: list[float], weights: list[float]) -> float:
     return sum(v * w for v, w in zip(values, weights)) / sum(weights)
+# {endpricing}
 
 
 # --- 2. Demand ----------------------------------------------------------------------
+# {demand}
 
 
 def allocate_demand(industry) -> None:
@@ -142,9 +149,11 @@ def allocate_demand(industry) -> None:
         firm.unmet = lost
         firm.util = x / firm.capacity if firm.capacity > 0.0 else 0.0
         firm.util_history.append(firm.util)
+# {enddemand}
 
 
 # --- 3. Production and accounts -----------------------------------------------------
+# {accounts}
 
 
 def produce_and_account(industry) -> None:
@@ -196,9 +205,11 @@ def account(industry, firm, config) -> None:
     pay(industry, firm, roe, firm.interest, "interest")
     pay(industry, firm, roe, firm.dividends, "dividends")
     settle_cash_position(industry, firm)
+# {endaccounts}
 
 
 # --- 4. Scrapping -------------------------------------------------------------------
+# {scrapping}
 
 
 def scrap_plants(industry) -> None:
@@ -265,9 +276,11 @@ def fails_renewal(retired, rbar: float) -> bool:
     profit = sum(p.lifetime_profit for p in record)
     capital_periods = sum(p.purchase_cost * p.age for p in record)
     return lifetime_profit_rate(profit, capital_periods) < rbar
+# {endscrapping}
 
 
 # --- 5. Investment ------------------------------------------------------------------
+# {investment}
 
 
 def invest(industry) -> None:
@@ -288,9 +301,11 @@ def invest(industry) -> None:
         technique = choose_technique(industry.menu, firm.hurdle, config.DELTA, config.TAU)
         affordable = affordable_spending(firm, config.DEBT_CAP) / technique.kappa
         buy_plant(industry, firm, technique, min(units, affordable))
+# {endinvestment}
 
 
 # --- 6. Entry and exit --------------------------------------------------------------
+# {entry}
 
 
 def enter_and_exit(industry) -> None:
@@ -350,3 +365,4 @@ def admit_entrant(industry) -> None:
     capacity = config.ENTRANT_SIZE * sum(capacities) / len(capacities)
     entrant = create_entrant(industry, firm_type, price, technique, capacity)
     entrant.hurdle = h
+# {endentry}

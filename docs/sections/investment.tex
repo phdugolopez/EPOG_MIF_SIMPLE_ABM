@@ -1,0 +1,40 @@
+\section{Investment (Ugo)}\label{sec:investment}
+
+Investment carries the rule under test. It makes three decisions: how much capacity to add,
+which technique the new plants embody, and how to pay for them. Only the second may differ
+between the two types.
+
+\paragraph{The trap: quantity and finance can settle the contest before the technique rule
+does.} If firms invest all their cash, capacity grows with profits and the firms with the
+higher profit rate at the going price, the Okishio firms, grow faster. Investment also
+creates the excess capacity that starts price wars, which favour Shaikh firms. The volume
+rule sets the balance between the two selection channels, so it is identical for both types.
+
+\paragraph{Starting rule.}
+\[
+\qbar^{\,d}_{i,t} = (1+g)\, x_{i,t-1}, \qquad
+I_{i,t} = \max\{0,\ \qbar^{\,d}_{i,t} - \qbar_{i,t}\}, \qquad
+j^{*} = \arg\min_{j}\, \big[(1 + h_i\tau)\, ucs_j + (\delta + h_i)\, \kappa_j\big],
+\]
+with $g = 0$, $\tau = 0$, $\qbar_{i,t}$ the capacity left after scrapping plus plants on
+order, and the menu C, D1, D2. Shaikh firms use $h = 0$, which picks the lowest unit cost;
+Okishio firms use the best profit rate on the menu at their own current price, floored at
+zero, which picks the highest profit rate at that price. New plants arrive next period and
+are paid from cash, then debt up to twice the period's sales revenue; investment is scaled
+down when it cannot be financed.
+
+\paragraph{Tests} (\code{tests/test\_investment.py}): at $p = 100$ Shaikh firms build D2 and
+Okishio firms D1, and with only C and D2 on offer Okishio firms keep C; on random menus the
+argmin with $h$ equal to the best profit rate picks the same technique as maximising the
+profit rate directly; with constant demand and no scrapping, investment stops once capacity
+meets expected sales; borrowing for plants never takes debt above its cap; two firms of
+different types with the same sales add the same capacity.
+
+\subsection*{Code}
+\eqfile{hurdle.py}
+\eqfile{technique_choice.py}
+\eqfile{desired_capacity.py}
+\eqfile{investment.py}
+\eqfile{borrowing_capacity.py}
+\marketfile{plant_market.py}
+\schedulerpart{investment}{\code{model/scheduler.py}: step 5}

@@ -1,0 +1,37 @@
+\section{Scrapping (Vincent)}\label{sec:scrapping}
+
+Scrapping decides how long old plants survive: it sets the spread of vintages behind
+unequal margins, the speed at which a new technique spreads, and which plant sets the floor
+of a price war. Three decisions are kept apart in the code: \emph{run or idle} (production,
+in merit order), \emph{retire} (age or obsolescence, identical for both types) and
+\emph{replace} (a second choice of technique, where the types differ through $h$).
+
+\paragraph{The trap: replacement is a second choice of technique.} With the hurdle $h$,
+replacing plant $v$ by technique $n$ pays when
+\[
+ucs_v > ucs_n + (\delta + h)\,\kappa_n .
+\]
+Shaikh firms ($h = 0$) replace earlier, which gives them younger capital and faster
+diffusion; Okishio firms keep old plants longer. Retirement is therefore identical for both
+types, and only replacement uses $h$, the same $h$ as investment.
+
+\paragraph{Starting rule.} A plant retires at age $T = 1/\delta = 10$, or once its owner's
+price has stayed below its $ucs$ for $N = 4$ periods (its quasi-rent is negative, Salter
+1966). Replacement is on in version 1: the firm compares each working plant with the
+technique its own hurdle picks, and replaces it if the inequality holds and the firm can pay
+(cash, then debt up to the cap). Scrap value is zero; remaining book value is written off.
+Depreciation is accounting only. When a firm's last plant retires, its lifetime profit rate
+decides non-renewal (section~\ref{sec:entry}).
+
+\paragraph{Tests} (\code{tests/test\_scrapping.py}): a plant reaching age $T$ leaves; a plant
+whose $ucs$ stays above the price for $N$ periods leaves; an old plant with $ucs = 80$
+facing a technique with $ucs = 60$, $\kappa = 150$: a Shaikh firm replaces it
+($75 < 80$), an Okishio firm at $h = 16\,\%$ keeps it ($99 > 80$); on the test industry no
+working plant is replaced; capacity after scrapping equals capacity before minus retired
+plants.
+
+\subsection*{Code}
+\eqfile{retirement.py}
+\eqfile{replacement.py}
+\eqfile{lifetime_profit_rate.py}
+\schedulerpart{scrapping}{\code{model/scheduler.py}: step 4}

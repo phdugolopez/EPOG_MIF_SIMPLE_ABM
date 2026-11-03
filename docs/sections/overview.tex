@@ -1,0 +1,76 @@
+\section{Overview}
+
+\paragraph{Question.} In an industry where cheaper techniques often need more capital per
+unit of output, does market selection favour firms that equip new plants at the lowest unit
+cost (Shaikh) or at the highest profit rate at the current price (Okishio)? How does the
+answer depend on how often price wars occur and on how investment is financed?
+
+\paragraph{The model.} One industry inside a given economy. The money wage is the
+numéraire ($w = 1$), industry demand is exogenous, and the general rate of profit $\rbar$
+is set outside the industry. Firms own plants of different vintages and techniques, post
+prices, sell to a demand that moves towards cheaper firms, produce to order, scrap old or
+obsolete plants, invest, enter and leave. Everything that is not the industry (buyers,
+workers, suppliers, the lender and the owners) is one rest-of-economy account, so money is
+conserved and the accounts are checked every period.
+
+\paragraph{The neutrality rule.} Shaikh firms and Okishio firms differ only in the hurdle
+$h$ they use to choose techniques, in investment, replacement and entry. Pricing, demand,
+production and accounts, physical scrapping and exit treat both types the same. In the code
+the type label is read in one place only, \code{equations/hurdle.py}; the label-swap tests
+run the model with the labels swapped everywhere except the hurdle and require identical
+trajectories.
+
+\paragraph{Version 1.} Each mechanism uses the starting rule of its brief, copied in
+\code{docs/design/}; every further choice is listed in
+section~\ref{sec:choices} and in \code{docs/design/choices.md}. The test industry is
+Shaikh's three plants (2016, Tables 7.10--7.11):
+
+\begin{center}
+\begin{tabular}{lrrrrrr}
+\toprule
+Plant & Normal output & Capital & $\kappa$ & $uc$ & $ucs$ & $r$ at $p = 100$ \\
+\midrule
+C  & 120 & 16{,}500 & 137.50 & 78 & 64.25 & 16.00\,\% \\
+D1 & 130 & 18{,}500 & 142.31 & 76 & 61.77 & 16.86\,\% \\
+D2 & 133 & 21{,}000 & 157.89 & 75 & 59.21 & 15.83\,\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Each plant is given to one Shaikh and one Okishio firm (six firms, identical within each
+pair), demand is $680 = (340/383)\times 766$, $\delta = 0.10$, $\rbar = 0.16$ and
+$u_{\max} = 1.2$.
+
+\paragraph{Baseline run.} Figures~\ref{fig:prices}--\ref{fig:firms} show the baseline
+(seed 42, 200 periods). Excess capacity starts a price war at $t = 2$; it ends when the
+initial plants retire at $t = 9$ and capacity is rebuilt to demand. At the war price
+(about 85) D2 is the most profitable technique even at the current price, so almost every
+firm rebuilds with D2 and C disappears. Afterwards Okishio firms build D1 and Shaikh firms
+D2; with target-return pricing D1 firms post the lowest price (98.77 against 100.26) and
+Shaikh firms lose market share steadily. This is the anchor trap of the pricing brief, not
+yet a result on the two rules: the comparison with markup pricing, weaker selection and
+other finance rules is what the group's experiments are for.
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.85\textwidth]{prices.png}
+\caption{Posted prices: sales-weighted mean and range.}\label{fig:prices}
+\vspace{1em}
+\includegraphics[width=0.85\textwidth]{shares_by_type.png}
+\caption{Market shares by type.}\label{fig:shares}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{capacity.png}
+\caption{Normal capacity of the plants that produced, by technique and by type.}\label{fig:capacity}
+\vspace{1em}
+\includegraphics[width=0.85\textwidth]{profit_rates.png}
+\caption{Profit rates by type and the entry trigger $r^{new}$.}\label{fig:rates}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{n_firms.png}
+\caption{Number of firms by type.}\label{fig:firms}
+\end{figure}

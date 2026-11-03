@@ -1,0 +1,46 @@
+\section{Pricing (Jake)}\label{sec:pricing}
+
+Pricing is where real competition happens: the low-cost firm cuts its price, followers
+match, and cuts stop at operating cost (Shaikh 2016, Table 7.3). The rule decides whether a
+cheaper but more capital-intensive firm can ever use its cost advantage.
+
+\paragraph{The trap: the anchor decides the winner.} Firms need a normal price to return to
+between price wars. With a markup on unit cost, $(1+\mu)uc$ with $\mu = 28.2\,\%$, C posts
+100 and D2 96.15: the unit-cost rule wins by construction. With a target return on capital,
+$uc + \rbar\kappa$, C posts 100 and D2 100.26: C is cheaper in normal times and D2 can win
+only through price wars. Version 1 uses the target return; the markup is the switch
+\code{PRICING\_ANCHOR = "markup"}, and comparing the two is itself a result.
+
+\paragraph{Leader, band, war, floor, recovery.} The leader is last period's lowest posted
+price, so that leadership emerges rather than being assigned to the lowest-cost firm (row 3
+of Table 7.3 is an outcome to check, not a rule). A firm stays within a band $b$ of the
+leader, which produces correlated rather than identical prices. After \code{WAR\_PERIODS}
+periods with utilisation below $u^{war}$ it cuts by $c$ a period, never below the operating
+cost $ucs$ of the most expensive plant it needs to run (depreciation is sunk in the short
+run, Shaikh 2016, p.~316). Once utilisation recovers, prices climb back towards the anchor at
+speed $\lambda$: without a way up, prices would ratchet down and profit rates fall by
+construction.
+
+\paragraph{Starting rule.}
+\begin{gather*}
+p^N_i = uc_i + \rbar\,\kappa_i \quad\text{(capacity-weighted over the firm's plants)}, \qquad
+p_{i,t} = \max\{\, ucs_i,\ \tilde p_{i,t} \,\}, \\
+\tilde p_{i,t} =
+\begin{cases}
+(1-c)\, p_{i,t-1} & \text{if } u_{i,t-k} < u^{war},\ k = 1,\dots,T_{war}, \\
+\min\{\, p_{i,t-1} + \lambda\,(p^{N}_i - p_{i,t-1}),\ (1+b)\, p^{lead}_{t-1} \,\} & \text{otherwise,}
+\end{cases}
+\end{gather*}
+with $ucs_i$ the floor defined above, $c = 0.02$, $T_{war} = 2$, $u^{war} = 0.95$,
+$b = 0.025$, $\lambda = 0.25$.
+
+\paragraph{Tests} (\code{tests/test\_pricing.py}): no price below the floor; identical firms
+at normal capacity keep their anchor; on the test industry at demand 340 a war starts,
+deepens, ends and prices recover; swapping the type labels changes nothing.
+
+\subsection*{Code}
+\eqfile{anchor_price.py}
+\eqfile{price_floor.py}
+\eqfile{price_war.py}
+\eqfile{posted_price.py}
+\schedulerpart{pricing}{\code{model/scheduler.py}: step 1}
