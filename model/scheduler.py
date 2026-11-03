@@ -1,4 +1,7 @@
+from equations.competitiveness import competitiveness
 from equations.depreciation import depreciation
+from equations.market_shares import logit_shares, replicator_shares
+from equations.offered_capacity import offered_capacity
 from equations.dividends import dividends
 from equations.firm_profit import firm_profit
 from equations.interest_payment import interest_payment
@@ -7,6 +10,7 @@ from equations.operating_cost import operating_cost
 from equations.plant_profit import plant_profit
 from equations.profit_rate import profit_rate
 from markets.credit_market import settle_cash_position
+from markets.goods_market import allocate
 from markets.payments import pay
 from model.collector import check_stock_flow, collect
 
@@ -47,10 +51,33 @@ def start_period(industry) -> None:
 
 
 def allocate_demand(industry) -> None:
-    demand = industry.demand()
-    for firm in industry.firms:
-        firm.sales = firm.share * demand
-        firm.util = firm.sales / firm.capacity if firm.capacity > 0.0 else 0.0
+    """Shares from prices, demand allocated within capacity, sales and utilisation."""
+    config = industry.parameters
+    firms = industry.firms
+    prices = [f.price for f in firms]
+    previous = [f.share for f in firms]
+    if config.DEMAND_FORM == "logit":
+        shares = logit_shares(previous, prices, config.ETA)
+    else:
+        shares = replicator_shares(
+            previous, [competitiveness(p) for p in prices], config.CHI
+        )
+    offered = [
+        offered_capacity(
+            [p.ucs for p in f.plants],
+            [p.capacity for p in f.plants],
+            f.price,
+            config.U_MAX,
+            config.OVERTIME_PREMIUM,
+        )
+        for f in firms
+    ]
+    sales, unmet, industry.unserved = allocate(industry.demand(), shares, prices, offered)
+    for firm, share, x, lost in zip(firms, shares, sales, unmet):
+        firm.share = share
+        firm.sales = x
+        firm.unmet = lost
+        firm.util = x / firm.capacity if firm.capacity > 0.0 else 0.0
         firm.util_history.append(firm.util)
 
 
