@@ -1,4 +1,34 @@
+"""Outputs of the model and the checks of every period.
+
+The collector observes and never decides: it never draws from industry.rng and never
+writes to state a mechanism reads. after_step copies into industry.record what later
+steps overwrite; collect builds the rows of the period at step 7 from that record and
+from the state; check_stock_flow stores the residuals of every check in the macro row.
+
+Firm aggregates over plants (vintages), each with its weight:
+  ucs     output-weighted over the plants that ran (output > 0) this period;
+  kappa   capacity-weighted over the plants in operation this period;
+  uc      capacity-weighted ucs + delta kappa over the plants in operation;
+  k_cost  sum of kappa_v * capacity_v over the plants in operation (= Firm.capital at
+          step 3, so that r_avg = profit / k_cost);
+  k_book  sum of book values of plants in operation and on order, after step 6;
+  r_newest  capacity-weighted (price - uc_v) / kappa_v over the plants in operation
+          with the highest vintage, at normal output.
+"""
+
+import json
+import math
 from dataclasses import asdict
+
+from equations.desired_capacity import desired_capacity
+from equations.entry_probability import entry_probability
+from equations.hurdle import best_profit_rate, hurdle
+from equations.retirement import retirement_reason
+from equations.technique_choice import choose_technique
+from equations.unit_cost import unit_cost
+
+# The pair of rules a firm can apply; tech_other is the choice of the other one.
+OTHER_RULE = {"unit_cost": "profit_rate", "profit_rate": "unit_cost"}
 
 
 class StockFlowError(AssertionError):
@@ -8,14 +38,42 @@ class StockFlowError(AssertionError):
 def after_step(industry, step: int) -> None:
     """Copy into the period record what a later step overwrites. Called by run_period
     after each step; it reads the state and never writes to anything a mechanism reads.
+
+    1: debt and the trailing count of periods below U_WAR (before step 2 appends);
+    2: the replicator shares, before step 6 rescales them;
+    3: debt after the overdraft, book value of each plant before write-offs;
+    4: capacity on order after scrapping (replacement orders);
+    5: debt after investment.
     """
-    if step == 1:
-        industry.record = {"t": industry.time, "firms": {}}
     record = industry.record
-    if step == 2:
+    if step == 1:
+        u_war = industry.parameters.U_WAR
+        record.clear()
+        record.update({"t": industry.time, "firms": {}, "book": {}})
+        for firm in industry.firms:
+            low = 0
+            for u in reversed(firm.util_history):
+                if u >= u_war:
+                    break
+                low += 1
+            record["firms"][firm.firm_id] = {"debt_start": firm.debt, "low_util": low}
+    elif step == 2:
         shares = [f.share for f in industry.firms]
         record["share_sum_demand"] = sum(shares)
         record["share_min_demand"] = min(shares, default=0.0)
+        for firm in industry.firms:
+            record["firms"][firm.firm_id]["share_demand"] = firm.share
+    elif step == 3:
+        for firm in industry.firms:
+            record["firms"][firm.firm_id]["debt_3"] = firm.debt
+            for plant in firm.plants:
+                record["book"][plant.plant_id] = plant.book_value
+    elif step == 4:
+        for firm in industry.firms:
+            record["firms"][firm.firm_id]["cap_replace"] = _capacity(firm.pending_plants)
+    elif step == 5:
+        for firm in industry.firms:
+            record["firms"][firm.firm_id]["debt_5"] = firm.debt
 
 
 def _tolerance(scale: float) -> float:
@@ -189,7 +247,7 @@ def check_stock_flow(industry) -> None:
     no price below its floor.
     """
     out, fails = residuals(industry)
-    if industry.history and industry.history[-1]["time"] == industry.time:
+    if industry.history and industry.history[-1]["t"] == industry.time:
         industry.history[-1].update(out)
     if not fails:
         return
@@ -202,15 +260,21 @@ def collect(industry) -> None:
     """Record macro, per-firm, per-plant and flow-matrix rows for the period.
 
     Rows cover every firm that produced this period, including those that left at its
-    end, and the entrants of the period (whose first plant arrives next period).
+    end, and the entrants of the period (whose first plant arrives next period). The
+    plants table has a row for every plant in operation at the start of the period,
+    those retired at step 4 included.
     """
     industry.history.append(collect_macro_data(industry))
+    exited = {id(f) for f, _ in industry.exits}
+    retired = {id(p) for p in industry.retired}
     for firm in industry.producers + industry.entries:
-        industry.firm_history.append(firm_row(industry, firm))
+        industry.firm_history.append(firm_row(industry, firm, retired))
         for plant in firm.producing_plants:
-            industry.plant_history.append(plant_row(industry, firm, plant))
+            industry.plant_history.append(
+                plant_row(industry, firm, plant, id(plant) in retired, id(firm) in exited)
+            )
     for item, row in industry.flows.items():
-        industry.flow_history.append({"time": industry.time, "item": item, **row})
+        industry.flow_history.append({"t": industry.time, "item": item, **row})
     industry.previous_profit = sum(f.profit for f in industry.producers)
     industry.previous_investment = sum(f.investment for f in industry.producers)
 
@@ -221,47 +285,145 @@ def firm_uc(firm, delta: float) -> float:
     return _weighted([p.ucs + delta * p.kappa for p in plants], [p.capacity for p in plants])
 
 
-def firm_row(industry, firm) -> dict:
+def _weighted_or_none(values, weights):
+    total = sum(weights)
+    return sum(v * w for v, w in zip(values, weights)) / total if total > 0.0 else None
+
+
+def r_newest(firm, delta: float):
+    """Rate at normal output, (price - uc_v) / kappa_v, on the plants in operation with
+    the highest vintage, capacity-weighted. None for a firm with no plant in operation."""
+    plants = firm.producing_plants
+    if not plants:
+        return None
+    newest = max(p.vintage for p in plants)
+    top = [p for p in plants if p.vintage == newest]
+    return _weighted_or_none(
+        [(firm.price - unit_cost(p.ucs, p.kappa, delta)) / p.kappa for p in top],
+        [p.capacity for p in top],
+    )
+
+
+def tech_other(industry, firm) -> str:
+    """Technique the other rule of the pair would pick at the firm's price, now."""
+    config = industry.parameters
+    other = OTHER_RULE[config.HURDLE_RULES[firm.type]]
+    h = hurdle(other, firm.price, industry.menu, config.DELTA, config.HURDLE_FLOOR_AT_ZERO)
+    return choose_technique(industry.menu, h, config.DELTA, config.TAU).name
+
+
+def firm_row(industry, firm, retired) -> dict:
+    config = industry.parameters
+    delta = config.DELTA
     plants = firm.plants + firm.pending_plants
     newest = max(plants, key=lambda p: p.vintage, default=None)
+    producing = firm.producing_plants
+    running = [p for p in producing if p.output > 0.0]
+    record = industry.record["firms"].get(firm.firm_id)  # None for an entrant
+    uc = firm_uc(firm, delta)
+    ucs_running = [p.ucs for p in running]
+    expected = None
+    if record is not None:
+        expected = firm.previous_sales if config.INVESTMENT_SALES_LAG else firm.sales
+    on_order = _capacity(firm.pending_plants)
+    exited = firm.exit_reason != ""
     return {
-        "time": industry.time,
+        "t": industry.time,
         "firm_id": firm.firm_id,
         "type": firm.type,
+        "group": firm.type,
+        "rule": config.HURDLE_RULES[firm.type],
         "hurdle": firm.hurdle,
+        "born": firm.born,
         "price": firm.price,
+        "p_normal": firm.p_normal if record is not None else None,
+        "p_floor": firm.p_floor if record is not None else None,
+        "cutting": firm.at_war,
+        "low_util": record["low_util"] if record is not None else None,
         "share": firm.share,
+        "share_demand": record["share_demand"] if record is not None else None,
+        "share_end": 0.0 if exited else firm.share,
         "sales": firm.sales,
         "util": firm.util,
         "unmet": firm.unmet,
         "capacity": firm.producing_capacity,
         "capacity_next": sum(p.capacity for p in plants),
-        "uc": firm_uc(firm, industry.parameters.DELTA),
-        "n_plants": len(firm.producing_plants),
+        "output": sum(p.output for p in producing),
+        "ucs": _weighted_or_none(ucs_running, [p.output for p in running]),
+        "kappa": _weighted_or_none(
+            [p.kappa for p in producing], [p.capacity for p in producing]
+        ),
+        "uc": uc,
+        "margin": firm.price - uc,
+        "revenue": firm.revenue,
+        "op_cost": firm.operating_cost,
+        "gos": firm.revenue - firm.operating_cost,
+        "depreciation": firm.depreciation,
+        "interest": firm.interest,
+        "profit": firm.profit,
+        "dividends": firm.dividends,
+        "r_avg": firm.profit_rate,
+        "r_newest": r_newest(firm, delta),
+        "r_best": best_profit_rate(firm.price, industry.menu, delta),
+        "n_plants": len(producing),
+        "oldest_vintage": min((p.vintage for p in producing), default=None),
+        "newest_vintage": max((p.vintage for p in producing), default=None),
+        "ucs_spread": max(ucs_running) / min(ucs_running) if ucs_running else None,
         "newest_technique": newest.technique if newest else "",
+        "cap_retired": sum(p.capacity for p in producing if id(p) in retired),
+        "write_off": firm.write_offs,
+        "exp_sales": expected,
+        "cap_desired": (
+            None if expected is None
+            else desired_capacity(expected, config.EXPECTED_GROWTH)
+        ),
+        "cap_ordered": on_order if record is not None else 0.0,
+        "cap_replace": record["cap_replace"] if record is not None else 0.0,
+        "tech_new": "+".join(sorted({p.technique for p in firm.pending_plants})),
+        "tech_other": tech_other(industry, firm),
+        "invest_spend": firm.investment,
+        "borrow": firm.debt - (record["debt_start"] if record is not None else 0.0),
+        "borrow_plants": (
+            record["debt_5"] - record["debt_3"] if record is not None else firm.debt
+        ),
         "cash": firm.cash,
         "debt": firm.debt,
-        "book_value": firm.book_value,
+        "k_book": firm.book_value,
+        "k_cost": sum(p.purchase_cost for p in producing),
         "net_worth": firm.net_worth,
-        "profit": firm.profit,
-        "profit_rate": firm.profit_rate,
-        "margin": firm.price - firm_uc(firm, industry.parameters.DELTA),
-        "dividends": firm.dividends,
-        "write_offs": firm.write_offs,
-        "investment": firm.investment,
-        "at_war": firm.at_war,
-        "born": firm.born,
-        "exit_reason": firm.exit_reason,
+        "exited": exited,
+        "exit_cause": firm.exit_reason,
     }
 
 
-def plant_row(industry, firm, plant) -> dict:
+def plant_row(industry, firm, plant, retired: bool, exited: bool) -> dict:
+    config = industry.parameters
     row = asdict(plant)
-    row["time"] = industry.time
-    row["firm_id"] = firm.firm_id
-    row["firm_type"] = firm.type
-    row["profit_rate"] = plant.profit / plant.purchase_cost
-    row["retired"] = plant in industry.retired
+    row["tech"] = row.pop("technique")
+    row["k_book"] = row.pop("book_value")
+    row["below_cost"] = row.pop("periods_below_cost")
+    uc = unit_cost(plant.ucs, plant.kappa, config.DELTA)
+    if retired:
+        cause = retirement_reason(
+            plant.age, config.PLANT_LIFE, plant.periods_below_cost,
+            config.OBSOLESCENCE_PERIODS,
+        ) or "replacement"
+    else:
+        cause = "exit" if exited else ""
+    row.update({
+        "t": industry.time,
+        "firm_id": firm.firm_id,
+        "firm_type": firm.type,
+        "group": firm.type,
+        "uc": uc,
+        "running": plant.output > 0.0,
+        "r_plant": (firm.price - uc) / plant.kappa,
+        "profit_rate": plant.profit / plant.purchase_cost,
+        "retired": retired,
+        "retire_cause": cause,
+        "exited_with_firm": exited,
+        "write_off": industry.record["book"].get(plant.plant_id, 0.0) - plant.book_value,
+    })
     return row
 
 
@@ -278,37 +440,76 @@ def _cv(values) -> float:
     return var ** 0.5 / mean if mean else 0.0
 
 
+def _cv_weighted(values, weights):
+    """Weighted coefficient of variation; None when the weights sum to zero."""
+    total = sum(weights)
+    if total <= 0.0:
+        return None
+    mean = sum(v * w for v, w in zip(values, weights)) / total
+    var = sum(w * (v - mean) ** 2 for v, w in zip(values, weights)) / total
+    return var ** 0.5 / mean if mean else None
+
+
+def tied_ids(firms, key) -> list[int]:
+    """Ids of every firm whose key equals the minimum (math.isclose): ties are kept,
+    never broken by firm order."""
+    if not firms:
+        return []
+    best = min(key(f) for f in firms)
+    return sorted(f.firm_id for f in firms if math.isclose(key(f), best))
+
+
 def collect_macro_data(industry) -> dict:
     firms = industry.producers
-    delta = industry.parameters.DELTA
+    config = industry.parameters
+    delta = config.DELTA
     plants = [p for f in firms for p in f.producing_plants]
     techniques = list(industry.techniques)
     capital = [sum(p.purchase_cost for p in f.producing_plants) for f in firms]
     priced = [f for f in firms if f.producing_plants]
-    leader = min(priced, key=lambda f: f.price) if priced else None
-    lowest_cost = min(priced, key=lambda f: firm_uc(f, delta)) if priced else None
+    leaders = tied_ids(priced, lambda f: f.price)
+    lowest = tied_ids(priced, lambda f: firm_uc(f, delta))
     newest = max((p.vintage for p in plants), default=0)
     newest_plants = [p for p in plants if p.vintage == newest]
     profit = sum(f.profit for f in firms)
+    gos = sum(f.revenue - f.operating_cost for f in firms)
+    sales = sum(f.sales for f in firms)
+    invest_total = sum(f.investment for f in firms + industry.entries)
+    previous = industry.history[-1] if industry.history else None
+    n_cutting = sum(f.at_war for f in firms)
     row = {
-        "time": industry.time,
+        "t": industry.time,
         "demand": industry.demand(),
-        "sales": sum(f.sales for f in firms),
-        "unserved": industry.unserved,
+        "sales_total": sales,
+        "unmet_total": industry.unserved,
         "unmet": sum(f.unmet for f in firms),
         "hhi": sum(f.share ** 2 for f in industry.firms),
+        "hhi_sales": sum((f.sales / sales) ** 2 for f in firms) if sales > 0.0 else None,
         "n_firms": len(industry.firms),
-        "mean_price": _weighted([f.price for f in firms], [f.sales for f in firms]),
+        "n_active": len(firms),
+        "price_avg": _weighted([f.price for f in firms], [f.sales for f in firms]),
         "min_price": min(f.price for f in firms),
         "max_price": max(f.price for f in firms),
-        "leader_price": industry.leader_price,
+        "price_lead": industry.leader_price,
+        "leader_ids": json.dumps(leaders),
+        "n_leaders": len(leaders),
+        "leader_id": leaders[0] if len(leaders) == 1 else -1,
+        "lowest_uc_ids": json.dumps(lowest),
+        "n_lowest_uc": len(lowest),
+        "lowest_uc_id": lowest[0] if len(lowest) == 1 else -1,
         "price_cv": _cv([f.price for f in priced]),
         "uc_cv": _cv([firm_uc(f, delta) for f in priced]),
-        "leader_is_lowest_cost": leader is lowest_cost,
-        "n_at_war": sum(f.at_war for f in firms),
-        "capacity": sum(p.capacity for p in plants),
+        "price_cv_w": _cv_weighted([f.price for f in firms], [f.sales for f in firms]),
+        "uc_cv_w": _cv_weighted(
+            [firm_uc(f, delta) for f in priced], [f.producing_capacity for f in priced]
+        ),
+        "leader_is_lowest_cost": bool(set(leaders) & set(lowest)),
+        "war_on": n_cutting > 0,
+        "n_cutting": n_cutting,
+        "capacity_total": sum(p.capacity for p in plants),
         "util": _weighted([f.util for f in firms], [f.producing_capacity for f in firms]),
         "profit": profit,
+        "gos_total": gos,
         "profit_rate": _weighted([f.profit_rate for f in firms], capital),
         "profit_rate_newest": _weighted(
             [p.profit / p.purchase_cost for p in newest_plants],
@@ -318,13 +519,18 @@ def collect_macro_data(industry) -> dict:
             (profit - industry.previous_profit) / industry.previous_investment
             if industry.previous_investment > 0.0 else None
         ),
+        "incremental_rate_gross": (
+            (gos - previous["gos_total"]) / previous["invest_total"]
+            if previous is not None and previous["invest_total"] > 0.0 else None
+        ),
         "r_new": industry.r_new,
+        "p_entry": entry_probability(industry.r_new, config.RBAR, config.ENTRY_SPEED),
         "cash": sum(f.cash for f in industry.firms),
         "debt": sum(f.debt for f in industry.firms),
         "net_worth": sum(f.net_worth for f in industry.firms),
         "dividends": sum(f.dividends for f in firms),
         "write_offs": sum(f.write_offs for f in firms),
-        "investment": sum(f.investment for f in firms + industry.entries),
+        "invest_total": invest_total,
         "capacity_retired": sum(p.capacity for p in industry.retired),
         "replacements": industry.replacements,
         "entries": len(industry.entries),
@@ -334,7 +540,7 @@ def collect_macro_data(industry) -> dict:
         "exits_bankruptcy": sum(r == "bankruptcy" for _, r in industry.exits),
         "exits_share": sum(r == "share" for _, r in industry.exits),
         "exits_non_renewal": sum(r == "non-renewal" for _, r in industry.exits),
-        "roe_cash": industry.roe.cash,
+        "roe_balance": industry.roe.cash,
         "roe_loans": industry.roe.loans,
         "loan_losses": industry.roe.loan_losses,
     }

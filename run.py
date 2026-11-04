@@ -20,7 +20,7 @@ pd.DataFrame(industry.firm_history).to_csv(OUTPUTS / "firms.csv", index=False)
 pd.DataFrame(industry.plant_history).to_csv(OUTPUTS / "plants.csv", index=False)
 pd.DataFrame(industry.flow_history).to_csv(OUTPUTS / "flows.csv", index=False)
 
-columns = ["time", "n_firms", "mean_price", "share_shaikh", "share_okishio",
-           "capacity", "profit_rate", "entries", "exits"]
+columns = ["t", "n_firms", "price_avg", "share_shaikh", "share_okishio",
+           "capacity_total", "profit_rate", "entries", "exits"]
 print(macro[columns].tail().to_string(index=False))
 print(f"\nOutputs saved in: {OUTPUTS}")

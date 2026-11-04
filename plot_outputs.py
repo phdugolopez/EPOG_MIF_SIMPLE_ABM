@@ -13,7 +13,7 @@ import parameters  # noqa: E402
 ROOT = Path(__file__).resolve().parent
 OUTPUTS = ROOT / "outputs"
 macro = pd.read_csv(OUTPUTS / "macro.csv")
-t = macro["time"]
+t = macro["t"]
 
 # Categorical slots (validated): types blue / orange, techniques aqua / violet / red.
 TYPE_STYLE = {
@@ -46,7 +46,7 @@ def label_end(ax, x, y, text, color=INK):
 fig, ax = plt.subplots(figsize=(7, 3.6))
 ax.fill_between(t, macro["min_price"], macro["max_price"], color="#2a78d6", alpha=0.15,
                 linewidth=0, label="Range of posted prices")
-ax.plot(t, macro["mean_price"], color="#2a78d6", label="Mean price (sales-weighted)")
+ax.plot(t, macro["price_avg"], color="#2a78d6", label="Mean price (sales-weighted)")
 ax.axhline(100, color=MUTED, linewidth=1, linestyle=":")
 ax.annotate("p = 100", (t.iloc[-1], 100), xytext=(4, 0), textcoords="offset points",
             va="center", fontsize=8, color=MUTED)

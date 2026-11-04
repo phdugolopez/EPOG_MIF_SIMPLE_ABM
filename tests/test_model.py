@@ -30,7 +30,7 @@ class TestModel(unittest.TestCase):
         roe_flows = sum(row["roe"] for row in industry.flow_history)
         self.assertAlmostEqual(roe_flows, industry.roe.cash, places=4)
         for row in industry.history:
-            self.assertAlmostEqual(row["sales"] + row["unserved"], row["demand"], places=6)
+            self.assertAlmostEqual(row["sales_total"] + row["unmet_total"], row["demand"], places=6)
 
     def test_the_check_catches_a_leak(self):
         industry = Industry()
@@ -46,7 +46,7 @@ class TestModel(unittest.TestCase):
         self.assertEqual(history_without_labels(self.baseline), history_without_labels(swapped))
         for a, b in zip(self.baseline.history, swapped.history):
             self.assertEqual(a["share_shaikh"], b["share_okishio"])
-            self.assertEqual(a["mean_price"], b["mean_price"])
+            self.assertEqual(a["price_avg"], b["price_avg"])
 
     def test_both_types_are_present_and_compete(self):
         last = self.baseline.history[-1]

@@ -26,8 +26,13 @@ def one_firm_industry(technique: str = "C", **overrides) -> Industry:
     return Industry(config)
 
 
+LABEL_COLUMNS = ("type", "firm_type", "group")
+
+
+def without_labels(rows) -> list[dict]:
+    """Rows with the label columns dropped (rule stays: it is the same under a swap)."""
+    return [{k: v for k, v in row.items() if k not in LABEL_COLUMNS} for row in rows]
+
+
 def history_without_labels(industry) -> list[dict]:
-    return [
-        {k: v for k, v in row.items() if k not in ("type", "firm_type")}
-        for row in industry.firm_history
-    ]
+    return without_labels(industry.firm_history)

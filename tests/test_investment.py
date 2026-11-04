@@ -63,7 +63,7 @@ class TestInvestment(unittest.TestCase):
                              PLANT_LIFE=1000, REPLACEMENT=False, INITIAL_CASH=50_000.0)
         industry = Industry(config)
         industry.run(12)
-        spending = [row["investment"] for row in industry.history]
+        spending = [row["invest_total"] for row in industry.history]
         self.assertGreater(spending[0], 0.0)
         self.assertTrue(all(s == 0.0 for s in spending[2:]))
         self.assertAlmostEqual(industry.firms[0].capacity, 1.1 * 120.0)
