@@ -83,3 +83,6 @@ ENTRANT_SIZE: float = 0.5  # phi: entrant capacity / average incumbent capacity
 ENTRANT_UNDERCUT: float = 0.01  # entrant price = (1 - undercut) * leader
 MIN_SHARE: float = 0.01  # f_min: exit below this market share
 MIN_FIRMS: int = 2  # floor on the number of firms
+
+# --- Collector ---------------------------------------------------------------------
+CHECKS_RAISE: bool = True  # stop at the first failing check; False: count in n_check_fail

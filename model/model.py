@@ -61,6 +61,8 @@ class Industry:
         self.firm_history: list[dict] = []
         self.plant_history: list[dict] = []
         self.flow_history: list[dict] = []
+        self.record: dict = {}  # the collector's copy of values later steps overwrite
+        self.n_check_fail = 0  # periods with a failing check (CHECKS_RAISE = False)
 
     def demand(self, time: int | None = None) -> float:
         """D_t = D_0 (1 + g)^t, insensitive to the industry price."""

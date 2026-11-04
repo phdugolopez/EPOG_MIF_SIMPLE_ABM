@@ -31,7 +31,7 @@ from markets.entry_exit import create_entrant, remove_firm
 from markets.goods_market import allocate
 from markets.payments import pay
 from markets.plant_market import affordable_spending, buy_plant
-from model.collector import check_stock_flow, collect
+from model.collector import after_step, check_stock_flow, collect
 
 # Lines "# {name}" ... "# {endname}" mark the ranges that docs/sections/*.tex include.
 
@@ -41,11 +41,17 @@ def run_period(industry) -> None:
     """Order all events in one period. Each step sees only what earlier steps produced."""
     start_period(industry)
     set_prices(industry)  # 1. Pricing
+    after_step(industry, 1)
     allocate_demand(industry)  # 2. Demand
+    after_step(industry, 2)
     produce_and_account(industry)  # 3. Production and accounts
+    after_step(industry, 3)
     scrap_plants(industry)  # 4. Scrapping
+    after_step(industry, 4)
     invest(industry)  # 5. Investment
+    after_step(industry, 5)
     enter_and_exit(industry)  # 6. Entry and exit
+    after_step(industry, 6)
     collect(industry)
     check_stock_flow(industry)
 # {endperiod}
@@ -102,6 +108,7 @@ def set_prices(industry) -> None:
             config.U_MAX,
             config.OVERTIME_PREMIUM,
         )
+        firm.p_normal, firm.p_floor = anchor, floor  # recorded by the collector
         firm.at_war = price_war(firm.util_history, config.WAR_PERIODS, config.U_WAR)
         firm.price = posted_price(
             firm.price, anchor, industry.leader_price, floor, firm.at_war,
