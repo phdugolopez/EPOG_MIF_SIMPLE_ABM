@@ -203,7 +203,7 @@ One row per period and label, empty groups included. Members: the firms that pro
 | `cash` | cash at the end of the period | w.u. | 6 | Production and accounts | v1 |
 | `debt` | debt at the end of the period | w.u. | 6 | Production and accounts | v1 |
 | `net_worth` | net worth at the end of the period | w.u. | 6 | Production and accounts | v1 |
-| `hurdle_mean` | mean h weighted by producing capacity; None without capacity | per period | 4 | Investment | later |
+| `hurdle_mean` | mean h weighted by producing capacity; None without capacity (constant per rule until h evolves) | per period | 4 | Investment | v1 |
 | `capacity_{tech}` | producing capacity of this technique | units/period | 3 | collector | v1 |
 
 ## `firms`

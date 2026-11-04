@@ -18,10 +18,10 @@ Firm aggregates over plants (vintages), each with its weight:
 
 import json
 import math
-from dataclasses import asdict
 
 from equations.desired_capacity import desired_capacity
 from equations.entry_probability import entry_probability
+from equations.exit_conditions import EXIT_CAUSES
 from equations.hurdle import best_profit_rate, hurdle
 from equations.technique_choice import choose_technique
 from equations.unit_cost import unit_cost
@@ -308,11 +308,17 @@ def residuals(industry) -> tuple[dict, list[str]]:
     out["cap_resid"] = _identity_resid(flows)
     if abs(out["cap_resid"]) > tol_q:
         fails.append(f"cap_resid = {out['cap_resid']}")
-    #    The same identity group by group; stored: the largest residual in absolute value.
+    #    The same identity group by group; stored: the largest residual in absolute
+    #    value, read from the group flows collect computed (recomputed when residuals is
+    #    called on its own, before collect).
+    group_flows = industry.record.get("group_flows")
+    if group_flows is None:
+        group_flows = {
+            label: capacity_flows(industry, firms) for label, firms
+            in _by_label(industry, industry.producers + industry.entries).items()
+        }
     out["cap_resid_group"] = max(
-        (abs(_identity_resid(capacity_flows(industry, firms)))
-         for firms in _by_label(industry, industry.producers + industry.entries).values()),
-        default=0.0,
+        (abs(_identity_resid(flows)) for flows in group_flows.values()), default=0.0
     )
     if out["cap_resid_group"] > tol_q:
         fails.append(f"cap_resid_group = {out['cap_resid_group']}")
@@ -563,7 +569,6 @@ def _borrow(firm, record) -> float:
     return record["debt_5"] - record["debt_start"] if record is not None else firm.debt
 
 
-EXIT_CAUSES = ("bankruptcy", "share", "non-renewal")
 
 
 def group_rows(industry) -> list[dict]:
@@ -582,10 +587,12 @@ def group_rows(industry) -> list[dict]:
     producers = _by_label(industry, industry.producers)
     entrants = _by_label(industry, industry.entries)
     remaining = _by_label(industry, industry.firms)
+    industry.record["group_flows"] = {}  # read by residuals (cap_resid_group)
     rows = []
     for label, firms in producers.items():
         new = entrants[label]
         flows = {k: float(v) for k, v in capacity_flows(industry, firms + new).items()}
+        industry.record["group_flows"][label] = flows
         left = [exits[id(f)] for f in firms if id(f) in exits]
         row = {
             "t": industry.time,
@@ -633,11 +640,24 @@ def plant_row(industry, firm, plant, retired: bool, exited: bool, cause: str) ->
     """cause: the retire event's cause this period (age, obsolescence, replacement,
     exit), "" for a plant still in operation."""
     config = industry.parameters
-    row = asdict(plant)
-    row["tech"] = row.pop("technique")
-    row["k_book"] = row.pop("book_value")
-    row["below_cost"] = row.pop("periods_below_cost")
     uc = unit_cost(plant.ucs, plant.kappa, config.DELTA)
+    # Field by field rather than dataclasses.asdict, which deep-copies every value.
+    row = {
+        "plant_id": plant.plant_id,
+        "ucs": plant.ucs,
+        "kappa": plant.kappa,
+        "capacity": plant.capacity,
+        "vintage": plant.vintage,
+        "initial": plant.initial,
+        "age": plant.age,
+        "output": plant.output,
+        "overtime_output": plant.overtime_output,
+        "profit": plant.profit,
+        "lifetime_profit": plant.lifetime_profit,
+        "tech": plant.technique,
+        "k_book": plant.book_value,
+        "below_cost": plant.periods_below_cost,
+    }
     row.update({
         "t": industry.time,
         "firm_id": firm.firm_id,

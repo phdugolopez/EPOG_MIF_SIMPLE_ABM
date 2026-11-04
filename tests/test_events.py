@@ -5,13 +5,13 @@ import random
 import unittest
 from collections import Counter
 
+from equations.exit_conditions import EXIT_CAUSES
 from equations.inherited_rule import FLIP, inherit, inherited_type
 from helpers import make_config, swapped_config, three_plant_industry, without_labels
 from model import Industry
 from model.collector import EVENT_COLUMNS, events_table
 
-EXIT_COLUMNS = {"bankruptcy": "exits_bankruptcy", "share": "exits_share",
-                "non-renewal": "exits_non_renewal"}
+EXIT_COLUMNS = {cause: "exits_" + cause.replace("-", "_") for cause in EXIT_CAUSES}
 
 
 def run(config=None, periods=None):

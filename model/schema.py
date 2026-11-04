@@ -219,7 +219,7 @@ SCHEMA: dict[str, list[Column]] = {
         Column("debt", "debt at the end of the period", M, 6, PR),
         Column("net_worth", "net worth at the end of the period", M, 6, PR),
         Column("hurdle_mean", "mean h weighted by producing capacity; None without "
-               "capacity", R, 4, IN, "later"),
+               "capacity (constant per rule until h evolves)", R, 4, IN),
         Column("capacity_{tech}", "producing capacity of this technique", Q, 3, CO),
     ],
     "firms": [

@@ -2,15 +2,14 @@
 
 from types import SimpleNamespace
 
-import parameters
+import run
 from model import Industry
 from model.entities import Technique
 
 
 def make_config(**overrides) -> SimpleNamespace:
-    values = {k: v for k, v in vars(parameters).items() if k.isupper()}
-    values.update(overrides)
-    return SimpleNamespace(**values)
+    """parameters.py with overrides, as run.py builds it."""
+    return run.configure(**overrides)
 
 
 def swapped_config(**overrides) -> SimpleNamespace:

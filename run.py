@@ -26,11 +26,13 @@ from model.schema import RUN_ALIASES, parameter_columns
 ROOT = Path(__file__).resolve().parent
 
 
-def configure(seed: int | None = None) -> SimpleNamespace:
-    """The parameters of parameters.py, with SEED replaced when seed is given."""
+def configure(seed: int | None = None, **overrides) -> SimpleNamespace:
+    """The parameters of parameters.py, with SEED replaced when seed is given and any
+    other upper-case parameter replaced by `overrides` (the tests' make_config)."""
     values = {k: v for k, v in vars(parameters).items() if k.isupper()}
     if seed is not None:
         values["SEED"] = seed
+    values.update(overrides)
     return SimpleNamespace(**values)
 
 
@@ -105,12 +107,17 @@ def tables(industry, run: dict) -> dict[str, pd.DataFrame]:
 
 
 def write(frames: dict[str, pd.DataFrame], out: Path, fmt: str) -> None:
+    """Write every table in `fmt`; a stale copy of the same table in the other format
+    (from an earlier run into the same folder) is removed, so that readers of the folder
+    never find two versions of one table."""
     out.mkdir(parents=True, exist_ok=True)
+    other = "csv" if fmt == "parquet" else "parquet"
     for name, frame in frames.items():
         if fmt == "parquet":
             frame.to_parquet(out / f"{name}.parquet", index=False)
         else:
             frame.to_csv(out / f"{name}.csv", index=False)
+        (out / f"{name}.{other}").unlink(missing_ok=True)
 
 
 def main(argv=None) -> dict[str, pd.DataFrame]:

@@ -17,8 +17,9 @@ macOS or Linux:
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python -m unittest discover -s tests
-.venv/bin/python run.py
-.venv/bin/python plot_outputs.py
+.venv/bin/python run.py                  # options: --out DIR --format csv|parquet --seed N
+                                         #          --experiment E --population P --cell C
+.venv/bin/python plot_outputs.py         # reads outputs/macro.csv
 cd docs && latexmk -pdf main.tex
 ```
 
@@ -28,7 +29,8 @@ Windows: replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
 
 ```text
 parameters.py            all parameters and switches
-run.py                   runs the baseline, writes outputs/{macro,firms,plants,events,flows}.csv
+run.py                   runs the model, writes outputs/{runs,macro,groups,firms,plants,events,flows}.csv
+analysis/                indicators computed from the tables; schema_doc generates docs/design/collector.md
 plot_outputs.py          draws outputs/*.png
 
 model/

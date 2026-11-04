@@ -11,40 +11,45 @@ CAPACITY_FLOWS = {"ordered": 1.0, "retired": -1.0, "entry": 1.0, "exit": -1.0,
                   "cancelled": -1.0}
 
 
+def _keys(groups: pd.DataFrame) -> list[str]:
+    """Columns that identify a run: run_id when the table holds several runs."""
+    return ["run_id"] if "run_id" in groups else []
+
+
 def _sorted(groups: pd.DataFrame) -> pd.DataFrame:
-    return groups.sort_values(["t", "group"]).reset_index(drop=True)
+    return groups.sort_values(_keys(groups) + ["t", "group"]).reset_index(drop=True)
 
 
-def _neighbour(g: pd.DataFrame, column: str, lag: int) -> pd.Series:
-    """column of the same group lag rows away (lag = -1: next period, 1: previous),
-    NaN where that row is not period t - lag."""
-    by_group = g.groupby("group", sort=False)
-    t = by_group["t"].shift(lag)
-    return by_group[column].shift(lag).where(t == g["t"] - lag)
+def _previous(g: pd.DataFrame, column: str) -> pd.Series:
+    """column of the same run and group in the previous row, NaN where that row is not
+    period t - 1."""
+    by_group = g.groupby(_keys(g) + ["group"], sort=False)
+    t = by_group["t"].shift(1)
+    return by_group[column].shift(1).where(t == g["t"] - 1)
 
 
 def capacity_share_terms(groups: pd.DataFrame) -> pd.DataFrame:
     """Section 4.2: the change in each group's capacity share, split by flow.
 
-    S_{g,t} = K_{g,t} / K_t with K producing capacity at the start of t (`capacity`);
-    K_{g,t+1} is next period's row, or `capacity_next` in the last period. For each flow
-    c in ordered, -retired, entry, -exit, -cancelled:
+    S_{g,t} = K_{g,t} / K_t with K producing capacity at the start of t (`capacity`) and
+    K_{g,t+1} = `capacity_next` (the collector checks it is next period's capacity). For
+    each flow c in ordered, -retired, entry, -exit, -cancelled:
 
         term_c = (D^c K_{g,t} - S_{g,t} D^c K_t) / K_{t+1},
 
     and the terms sum to S_{g,t+1} - S_{g,t} exactly when the capacity identity holds.
-    `resid` is d_share_k minus the sum of the terms.
+    `resid` is d_share_k minus the sum of the terms. A table holding several runs
+    (run_id column) is decomposed run by run.
     """
     g = _sorted(groups)
-    by_t = g.groupby("t")
-    k_next_g = _neighbour(g, "capacity", -1).fillna(g["capacity_next"])
+    by_t = g.groupby(_keys(g) + ["t"], sort=False)
     k = by_t["capacity"].transform("sum")
-    k_next = k_next_g.groupby(g["t"]).transform("sum")
-    out = g[["t", "group"]].copy()
+    k_next = by_t["capacity_next"].transform("sum")
+    out = g[_keys(g) + ["t", "group"]].copy()
     if "rule" in g:
         out["rule"] = g["rule"]
     out["share_k"] = (g["capacity"] / k).where(k > 0.0)
-    out["share_k_next"] = (k_next_g / k_next).where(k_next > 0.0)
+    out["share_k_next"] = (g["capacity_next"] / k_next).where(k_next > 0.0)
     out["d_share_k"] = out["share_k_next"] - out["share_k"]
     total = 0.0
     for flow, sign in CAPACITY_FLOWS.items():
@@ -66,15 +71,16 @@ def sales_share_terms(groups: pd.DataFrame) -> pd.DataFrame:
                               + (f_end_{t-1} - f_{t-1})                   entry and exit
                               + ((sigma_t - f_t) - (sigma_{t-1} - f_{t-1}))   rationing
 
-    NaN in the first period of each group. `resid` is d_sales_share minus the terms.
+    NaN in the first period of each group. `resid` is d_sales_share minus the terms. A
+    table holding several runs (run_id column) is decomposed run by run.
     """
     g = _sorted(groups)
-    sales = g.groupby("t")["sales"].transform("sum")
+    sales = g.groupby(_keys(g) + ["t"], sort=False)["sales"].transform("sum")
     g = g.assign(sales_share=(g["sales"] / sales).where(sales > 0.0))
-    sigma_prev = _neighbour(g, "sales_share", 1)
-    f_prev = _neighbour(g, "share_demand", 1)
-    f_end_prev = _neighbour(g, "share_end", 1)
-    out = g[["t", "group"]].copy()
+    sigma_prev = _previous(g, "sales_share")
+    f_prev = _previous(g, "share_demand")
+    f_end_prev = _previous(g, "share_end")
+    out = g[_keys(g) + ["t", "group"]].copy()
     if "rule" in g:
         out["rule"] = g["rule"]
     out["sales_share"] = g["sales_share"]
@@ -89,8 +95,9 @@ def sales_share_terms(groups: pd.DataFrame) -> pd.DataFrame:
 
 
 def cumulate(terms: pd.DataFrame, start: int = 0) -> pd.DataFrame:
-    """Sum of each term column per group from period `start` on (one bar per run);
-    NaN terms (first period, empty industry) count as zero."""
+    """Sum of each term column per group (and per run, with a run_id column) from
+    period `start` on: one bar per run. NaN terms (first period, empty industry) count
+    as zero."""
     columns = [c for c in terms.columns if c.startswith("term_")]
     kept = terms[terms["t"] >= start]
-    return kept.groupby("group")[columns].sum()
+    return kept.groupby(_keys(terms) + ["group"])[columns].sum()

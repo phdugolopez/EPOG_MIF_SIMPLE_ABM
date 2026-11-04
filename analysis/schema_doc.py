@@ -2,8 +2,10 @@
 
     python -m analysis.schema_doc
 
-tests/test_schema.py fails when the file is out of date: rerun this after any change to
-the schema or to the comments of parameters.py.
+tests/test_schema.py fails when the schema part of the file is out of date: rerun this
+after any change to model/schema.py. The parameter table at the end of the `runs`
+section is rebuilt from the comments of parameters.py and is not covered by the test, so
+a comment edit there never breaks the suite; rerun this now and then to refresh it.
 """
 
 import re
@@ -70,7 +72,12 @@ def parameter_comments(source: str) -> dict[str, str]:
     return comments
 
 
-def render() -> str:
+PARAMETERS_MARKER = "Parameters stored in `runs`"
+
+
+def render(with_parameters: bool = True) -> str:
+    """The document; without the parameter table when with_parameters is False (what
+    tests/test_schema.py compares)."""
     lines = [HEADER]
     for table in TABLES:
         lines += [f"## `{table}`", "", INTRO[table], "",
@@ -81,9 +88,9 @@ def render() -> str:
             lines.append(f"| `{c.name}` | {_cell(c.meaning)} | {_cell(c.unit)} | {step} | "
                          f"{c.mechanism} | {c.phase} |")
         lines.append("")
-        if table == "runs":
+        if table == "runs" and with_parameters:
             comments = parameter_comments(Path(parameters.__file__).read_text())
-            lines += ["Parameters stored in `runs` (`{parameter}` and the aliases above):",
+            lines += [PARAMETERS_MARKER + " (`{parameter}` and the aliases above):",
                       "", "| Column | Parameter | Meaning (comment in parameters.py) |",
                       "| --- | --- | --- |"]
             for name, column in parameter_columns(parameters).items():

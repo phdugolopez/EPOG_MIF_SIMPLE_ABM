@@ -62,8 +62,16 @@ class TestSchema(unittest.TestCase):
                 self.assertIn(c.step, (None, 0, 1, 2, 3, 4, 5, 6, 7))
 
     def test_generated_documentation_is_up_to_date(self):
-        self.assertEqual(schema_doc.TARGET.read_text(), schema_doc.render(),
-                         "run: python -m analysis.schema_doc")
+        """The schema part only: the parameter table at the end follows the comments
+        of parameters.py and is left to its owners (rerun the script now and then)."""
+        written = schema_doc.TARGET.read_text()
+        marker = written.find(schema_doc.PARAMETERS_MARKER)
+        self.assertGreater(marker, 0)
+        expected = schema_doc.render(with_parameters=False)
+        # Everything up to the parameter table, then everything after it.
+        head = written[:marker]
+        tail = written[written.find("## `", marker):]
+        self.assertEqual(head + tail, expected, "run: python -m analysis.schema_doc")
 
 
 class TestRuns(unittest.TestCase):
@@ -120,13 +128,16 @@ class TestMain(unittest.TestCase):
         pd.testing.assert_frame_equal(macro, pd.DataFrame(baseline.history))
 
     @unittest.skipUnless(HAS_PYARROW, "pyarrow not installed")
-    def test_parquet(self):
+    def test_parquet_and_no_stale_copy_in_the_other_format(self):
         with tempfile.TemporaryDirectory() as out:
+            self.call("--out", out)
+            self.assertTrue((Path(out) / "macro.csv").exists())
             frames = self.call("--out", out, "--format", "parquet")
             for table in TABLES:
                 read = pd.read_parquet(Path(out) / f"{table}.parquet")
                 self.assertEqual(list(read.columns), list(frames[table].columns), table)
                 self.assertEqual(len(read), len(frames[table]), table)
+                self.assertFalse((Path(out) / f"{table}.csv").exists(), table)
 
 
 if __name__ == "__main__":

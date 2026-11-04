@@ -152,6 +152,28 @@ class TestThreePlants(GroupsAndDecompositions, unittest.TestCase):
         self.assertEqual(first.at["okishio", "capacity_next"], 0.0)
 
 
+class TestSeveralRuns(unittest.TestCase):
+    def test_concatenated_runs_are_decomposed_run_by_run(self):
+        """Two seeds in one table (run_id first, as run.py writes it): the same terms as
+        each run on its own, and each run's terms still sum to its change."""
+        parts = {}
+        for seed in (42, 43):
+            rows = pd.DataFrame(run(make_config(SEED=seed, PERIODS=60)).group_history)
+            rows.insert(0, "run_id", f"s{seed}")
+            parts[f"s{seed}"] = rows
+        both = pd.concat(parts.values(), ignore_index=True)
+        for terms in (capacity_share_terms, sales_share_terms):
+            pooled = terms(both)
+            self.assertLessEqual(pooled["resid"].abs().max(), TOL)
+            for run_id, rows in parts.items():
+                alone = terms(rows).reset_index(drop=True)
+                mine = pooled[pooled["run_id"] == run_id].reset_index(drop=True)
+                pd.testing.assert_frame_equal(mine, alone, check_exact=True)
+        totals = cumulate(capacity_share_terms(both))
+        self.assertEqual(list(totals.index.names), ["run_id", "group"])
+        self.assertEqual(len(totals), 4)
+
+
 class TestLabelSwap(unittest.TestCase):
     def test_groups_and_terms_are_mirrored(self):
         config = dict(PRICE_CUT=0.06, MIN_SHARE=0.05, INITIAL_DEBT=5_000.0)
