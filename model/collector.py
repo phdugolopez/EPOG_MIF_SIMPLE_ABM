@@ -121,20 +121,19 @@ def log_order(industry, firm, plant, cost: float, cause: str) -> None:
 
 def log_exit(industry, firm, reason: str) -> None:
     """Called by remove_firm before anything is paid or written off: the exit with the
-    firm's net worth and capacity left, then one retire (cause "exit") per plant in
-    operation and one cancel per plant on order, valued at the book value written off."""
+    firm's net worth and capacity left; the default, if any, with the debt the firm
+    cannot repay (credit_market.default repays min(cash, debt) and writes off the rest);
+    then one retire (cause "exit") per plant in operation and one cancel per plant on
+    order, valued at the book value written off."""
     log_event(industry, "exit", 6, firm, value=firm.net_worth, cause=reason,
               capacity=firm.capacity)
+    loss = firm.debt - max(0.0, min(firm.cash, firm.debt))
+    if loss > 0.0:
+        log_event(industry, "default", 6, firm, value=loss)
     for plant in firm.plants:
         log_event(industry, "retire", 6, firm, plant, value=plant.book_value, cause="exit")
     for plant in firm.pending_plants:
         log_event(industry, "cancel", 6, firm, plant, value=plant.book_value, cause="exit")
-
-
-def log_default(industry, firm, loss: float) -> None:
-    """Unpaid debt lost by the rest of the economy when a firm leaves (none if zero)."""
-    if loss > 0.0:
-        log_event(industry, "default", 6, firm, value=loss)
 
 
 def _episodes(flags):
@@ -213,7 +212,7 @@ def residuals(industry) -> tuple[dict, list[str]]:
     """Every check of the period as a residual, and a message for each one that fails.
 
     Money checks use the tolerance 1e-9 * max(1, scale), scale = 1 + the sum of absolute
-    flows + money; quantity checks use 1e-9 * max(1, demand); share checks 1e-9.
+    flows + money; quantity checks use 1e-9 * max(1, demand); share checks 1e-12.
     """
     config = industry.parameters
     scale = 1.0 + sum(
@@ -221,7 +220,7 @@ def residuals(industry) -> tuple[dict, list[str]]:
     ) + abs(industry.money)
     tol = _tolerance(scale)
     tol_q = _tolerance(industry.demand())
-    tol_share = 1e-9
+    tol_share = 1e-12  # brief, section 3.7
     fails = []
     out = {"check_tol": tol}
 
@@ -340,12 +339,11 @@ def capacity_flows(industry, firms=None) -> dict:
     cancelled: the part of `ordered` placed by firms that leave, written off at exit;
     entry: entrants' plants; k_next: capacity in operation at the start of next period.
     """
-    producers = industry.producers if firms is None else [
-        f for f in industry.producers if f in firms
-    ]
-    entries = industry.entries if firms is None else [
-        f for f in industry.entries if f in firms
-    ]
+    producers, entries = industry.producers, industry.entries
+    if firms is not None:
+        wanted = {id(f) for f in firms}
+        producers = [f for f in producers if id(f) in wanted]
+        entries = [f for f in entries if id(f) in wanted]
     exited = {id(f) for f, _ in industry.exits}
     retired = {id(p) for p in industry.retired}
     leavers = [f for f in producers if id(f) in exited]
@@ -393,7 +391,9 @@ def collect(industry) -> None:
     plants table has a row for every plant in operation at the start of the period,
     those retired at step 4 included.
     """
-    industry.history.append(collect_macro_data(industry))
+    delta = industry.parameters.DELTA
+    uc = {id(f): firm_uc(f, delta) for f in industry.producers + industry.entries}
+    industry.history.append(collect_macro_data(industry, uc))
     exited = {id(f) for f, _ in industry.exits}
     retired = {id(p) for p in industry.retired}
     causes = {
@@ -402,7 +402,7 @@ def collect(industry) -> None:
         if e["event"] == "retire"
     }
     for firm in industry.producers + industry.entries:
-        industry.firm_history.append(firm_row(industry, firm, retired))
+        industry.firm_history.append(firm_row(industry, firm, retired, uc[id(firm)]))
         for plant in firm.producing_plants:
             industry.plant_history.append(plant_row(
                 industry, firm, plant, id(plant) in retired, id(firm) in exited,
@@ -447,7 +447,10 @@ def tech_other(industry, firm) -> str:
     return choose_technique(industry.menu, h, config.DELTA, config.TAU).name
 
 
-def firm_row(industry, firm, retired) -> dict:
+def firm_row(industry, firm, retired, uc: float | None = None) -> dict:
+    """uc: the firm's capacity-weighted unit cost, computed once per period by collect.
+    exp_sales and cap_desired are None for an entrant and for a firm that invest()
+    skips on non-renewal, since neither reaches the investment rule this period."""
     config = industry.parameters
     delta = config.DELTA
     plants = firm.plants + firm.pending_plants
@@ -455,10 +458,11 @@ def firm_row(industry, firm, retired) -> dict:
     producing = firm.producing_plants
     running = [p for p in producing if p.output > 0.0]
     record = industry.record["firms"].get(firm.firm_id)  # None for an entrant
-    uc = firm_uc(firm, delta)
+    if uc is None:
+        uc = firm_uc(firm, delta)
     ucs_running = [p.ucs for p in running]
     expected = None
-    if record is not None:
+    if record is not None and not firm.non_renewal:
         expected = firm.previous_sales if config.INVESTMENT_SALES_LAG else firm.sales
     on_order = _capacity(firm.pending_plants)
     exited = firm.exit_reason != ""
@@ -517,7 +521,12 @@ def firm_row(industry, firm, retired) -> dict:
         "tech_new": "+".join(sorted({p.technique for p in firm.pending_plants})),
         "tech_other": tech_other(industry, firm),
         "invest_spend": firm.investment,
-        "borrow": firm.debt - (record["debt_start"] if record is not None else 0.0),
+        # New debt of the period's financing decisions, before any exit settlement:
+        # borrow = debt after step 5 - debt at the start (overdraft, repayment and
+        # plant finance); borrow_plants = the part taken at steps 4 and 5 for plants.
+        "borrow": (
+            record["debt_5"] - record["debt_start"] if record is not None else firm.debt
+        ),
         "borrow_plants": (
             record["debt_5"] - record["debt_3"] if record is not None else firm.debt
         ),
@@ -589,16 +598,19 @@ def tied_ids(firms, key) -> list[int]:
     return sorted(f.firm_id for f in firms if math.isclose(key(f), best))
 
 
-def collect_macro_data(industry) -> dict:
+def collect_macro_data(industry, uc: dict | None = None) -> dict:
+    """uc: id(firm) -> capacity-weighted unit cost, computed once per period by collect."""
     firms = industry.producers
     config = industry.parameters
     delta = config.DELTA
+    if uc is None:
+        uc = {id(f): firm_uc(f, delta) for f in firms}
     plants = [p for f in firms for p in f.producing_plants]
     techniques = list(industry.techniques)
     capital = [sum(p.purchase_cost for p in f.producing_plants) for f in firms]
     priced = [f for f in firms if f.producing_plants]
     leaders = tied_ids(priced, lambda f: f.price)
-    lowest = tied_ids(priced, lambda f: firm_uc(f, delta))
+    lowest = tied_ids(priced, lambda f: uc[id(f)])
     newest = max((p.vintage for p in plants), default=0)
     newest_plants = [p for p in plants if p.vintage == newest]
     profit = sum(f.profit for f in firms)
@@ -628,10 +640,10 @@ def collect_macro_data(industry) -> dict:
         "n_lowest_uc": len(lowest),
         "lowest_uc_id": lowest[0] if len(lowest) == 1 else -1,
         "price_cv": _cv([f.price for f in priced]),
-        "uc_cv": _cv([firm_uc(f, delta) for f in priced]),
+        "uc_cv": _cv([uc[id(f)] for f in priced]),
         "price_cv_w": _cv_weighted([f.price for f in firms], [f.sales for f in firms]),
         "uc_cv_w": _cv_weighted(
-            [firm_uc(f, delta) for f in priced], [f.producing_capacity for f in priced]
+            [uc[id(f)] for f in priced], [f.producing_capacity for f in priced]
         ),
         "leader_is_lowest_cost": bool(set(leaders) & set(lowest)),
         "war_on": n_cutting > 0,

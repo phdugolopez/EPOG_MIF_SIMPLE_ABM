@@ -92,6 +92,25 @@ the label-swap tests check it.
 | **Non-renewal at firm level**: a firm exits when its last plant retires, its lifetime profit rate (before interest) was below rbar, and it has no plant on order; such a firm does not invest that period. A firm left with no plant at all also exits. Plants of the initial endowment are exempt, since their record starts at t = 0 | Fixed by Ugo (firm level, last plant); default (exemption) | Plant level (Harrod): a retiring plant below rbar is not rebuilt |
 | A leaving firm repays what its cash allows, the rest of its debt is a loss of the rest of the economy, its remaining cash returns to its owners, its plants are written off; its share is shared out in proportion to the other shares | Default | |
 
+## Collector (unassigned; signed off by Ugo)
+
+The collector observes and never decides (`model/collector.py`, `docs/design/collector-brief.md`,
+plan in `collector-plan.md`). Choices made while implementing phases 1–3:
+
+| Choice | Status | Alternatives |
+|---|---|---|
+| Column names follow the brief (`t`, `price_avg`, `sales_total`, `cutting`, `r_avg`, `k_book`, ...); `n_firms` keeps its end-of-period meaning with `n_active` (firms at step 1) beside it; `share` stays the share after step 6, with `share_demand` (step 2) and `share_end` beside it | Fixed by Ugo | Keep the template's names, alias the brief's in the schema |
+| Ties among leaders and lowest-cost firms are kept as sets (`leader_ids`, `lowest_uc_ids`, with counts); equality by `math.isclose`; `leader_id` / `lowest_uc_id` = −1 when tied; `leader_is_lowest_cost` = the two sets intersect | Default | Break ties at random (brief) |
+| Firm aggregates over plants: `ucs` output-weighted over running plants; `kappa`, `uc` capacity-weighted over plants in operation; `k_cost` = Σ κ_v q̄_v over the plants that produced (step 3, so that `r_avg = profit / k_cost`); `k_book` includes plants on order | Default | `k_cost` after scrapping (brief, step 4) |
+| `r_newest` on the plants in operation with the highest vintage, capacity-weighted, at normal output; None for a firm with no plant in operation | Default | Newest plant held, orders included |
+| `gos` = revenue − operating cost (overtime premium included), so that `gos − depreciation − interest = profit` | Fixed by Ugo | (price − ucs)·output (brief, premium ignored) |
+| Capacity identity, plant level: K_{t+1} = K_t − retired − exit + ordered + entry − cancelled, with `ordered` = every incumbent's orders at steps 4 and 5 and `cancelled` = the leavers' part of it | Fixed by Ugo | `ordered` restricted to survivors (double-counts `cancelled`) |
+| An industry price war is a maximal run of periods with at least one firm cutting (`war_on`); `war_start` at its first period, `war_end` at its last (value = lowest `price_avg`), censored at the horizon; cutting episodes per firm likewise from `cutting` | Default | Sales-weighted share of cutting firms above a threshold |
+| Check tolerances: money 1e-9·max(1, scale), quantities 1e-9·max(1, demand), shares 1e-12 (brief §3.7); floor 1e-9·max(1, floor). `CHECKS_RAISE = True` stops at the first failure; False counts failing periods in `n_check_fail` | Fixed by Ugo | |
+| `borrow` = debt after step 5 − debt at the start of the period (overdraft, repayment and plant finance), before any exit settlement; `borrow_plants` = the part taken at steps 4–5 | Default | Net change over the whole period (−debt for a defaulting leaver) |
+| An entrant has a firm row at its entry period (`born = t`, `share_demand` None); `exp_sales` and `cap_desired` are None for entrants and for firms that `invest` skips on non-renewal | Default | First row at t + 1 (brief) |
+| Events are logged at source through `Industry.log_event` / `log_order` / `log_exit`, so that no market module imports the collector; the default is logged by `log_exit` from the same arithmetic as `credit_market.default` | Default | Derive orders from pending-plant diffs in `after_step` |
+
 ## What the baseline shows (seed 42), for the record
 
 - A price war starts at t = 2 (utilisation 0.89), prices fall 2 % a period to about 83, and

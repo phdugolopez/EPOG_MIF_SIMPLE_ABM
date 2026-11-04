@@ -10,7 +10,7 @@ from equations.merit_order import dispatch
 from equations.price_floor import price_floor
 from helpers import make_config, swapped_config, three_plant_industry, without_labels
 from model import Industry
-from model.collector import StockFlowError, capacity_flows, residuals, tied_ids
+from model.collector import StockFlowError, capacity_flows, firm_row, residuals, tied_ids
 
 RESIDUALS = (
     "money_resid", "debt_resid", "nw_resid", "tfm_row_resid", "tfm_col_resid",
@@ -61,6 +61,19 @@ class TestChecks(unittest.TestCase):
         out, fails = residuals(industry)
         self.assertAlmostEqual(out["cap_resid"], -50.0)
         self.assertTrue(any("cap_resid" in f for f in fails))
+
+    def test_non_renewal_firms_report_no_desired_capacity(self):
+        """A firm that invest() skips on non-renewal has exp_sales and cap_desired None,
+        so its row does not look like investment that could not be financed."""
+        industry = Industry(make_config())
+        industry.step()
+        for row in industry.firm_history:
+            self.assertIsNotNone(row["cap_desired"])
+        firm = industry.firms[0]
+        firm.non_renewal = True  # as scrap_plants sets it when the last plant retires
+        row = firm_row(industry, firm, set())
+        self.assertIsNone(row["exp_sales"])
+        self.assertIsNone(row["cap_desired"])
 
     def test_floor_and_share_checks(self):
         industry = Industry(make_config())
@@ -141,6 +154,9 @@ class TestThreePlants(unittest.TestCase):
         self.assertEqual(row_b["exit_cause"], "share")
         self.assertEqual(row_b["share_end"], 0.0)
         self.assertGreater(row_b["cap_ordered"], 0.0)
+        # borrow is the period's financing, not the exit settlement: never negative here.
+        self.assertGreaterEqual(row_b["borrow"], 0.0)
+        self.assertEqual(row_b["borrow"], row_b["borrow_plants"])
         flows = capacity_flows(self.industry)
         self.assertEqual(flows["exit"], 130.0)
         self.assertEqual(flows["cancelled"], row_b["cap_ordered"])

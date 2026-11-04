@@ -9,8 +9,7 @@ def remove_firm(industry, firm, reason: str) -> None:
     """A leaving firm repays what it can, the rest of its debt is a loss of the lender,
     remaining cash goes back to its owners, and its plants are written off (scrap value 0).
     Its customers are shared out in proportion to the other firms' shares."""
-    from model.collector import log_exit  # here: model imports markets at load time
-    log_exit(industry, firm, reason)
+    industry.log_exit(firm, reason)
     default(industry, firm)
     pay(industry, firm, industry.roe, firm.cash, "equity")
     for plant in firm.plants + firm.pending_plants:

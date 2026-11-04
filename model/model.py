@@ -3,6 +3,7 @@ import random
 import parameters
 from model.entities import Firm, Plant, RestOfEconomy, Technique
 from model.scheduler import run_period
+from model import collector
 
 
 def build_menu(config) -> dict[str, Technique]:
@@ -93,6 +94,17 @@ class Industry:
         )
         self.next_plant_id += 1
         return plant
+
+    # The event log is written by model.collector; the markets reach it through these
+    # methods, so that no market module imports the model package.
+    def log_event(self, event: str, step: int, firm=None, plant=None, **fields) -> None:
+        collector.log_event(self, event, step, firm, plant, **fields)
+
+    def log_order(self, firm, plant, cost: float, cause: str) -> None:
+        collector.log_order(self, firm, plant, cost, cause)
+
+    def log_exit(self, firm, reason: str) -> None:
+        collector.log_exit(self, firm, reason)
 
     def step(self) -> None:
         run_period(self)

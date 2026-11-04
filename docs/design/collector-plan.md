@@ -22,20 +22,21 @@ reading `CLAUDE.md`, `mechanism-briefs.md`, `choices.md`, `model/`, `markets/`,
 
 ## 1. Design decisions proposed
 
-**D1. Keep every existing column name; add the brief's names only where no column exists.**
-The brief marks its differing names with † ("proposals for the group to confirm"), so
-keeping `time`, `mean_price`, `sales`, `unserved`, `capacity`, `profit_rate`, `write_offs`,
-`at_war`, `investment`, `book_value`, `exit_reason`, `technique`, `periods_below_cost` is
-within the brief. The schema (`model/schema.py`) carries a `brief_name` field for each
-alias, and `docs/design/collector.md` prints both. What a rename would break, for the
-record: `plot_outputs.py` reads `time`, `demand`, `mean_price`, `min_price`, `max_price`,
-`share_{type}`, `capacity_{type}`, `capacity_{tech}`, `profit_rate_{type}`, `r_new`,
-`n_firms`, `n_{type}`; the tests read `n_firms`, `share_shaikh`, `share_okishio`,
-`mean_price`, `n_shaikh`, `n_okishio`, `entries`, `r_new`, `investment`, `replacements`,
-`sales`, `unserved`, `demand` (macro) and `type`, `firm_type` (firms, plants); the
-LaTeX sections reference no column, only the PNG names; the reference comparison of the
-ground rules is column-by-name. One exception proposed: none. If you prefer the brief's
-names, the switch is a rename map applied in one place (`collect`) plus the files above.
+**D1. Names: the brief's names are used (decided at open question 6, implemented in
+phase 2).** The plan first proposed keeping every existing column name and recording the
+brief's † names as aliases; Ugo chose the brief's names instead. Every row marked
+"alias" in the mapping tables of §2 is therefore a **rename**: `time` → `t`,
+`sales` → `sales_total`, `unserved` → `unmet_total`, `capacity` → `capacity_total`,
+`mean_price` → `price_avg`, `leader_price` → `price_lead`, `n_at_war` → `n_cutting`,
+`investment` → `invest_total`, `roe_cash` → `roe_balance` (macro); `time` → `t`,
+`at_war` → `cutting`, `profit_rate` → `r_avg`, `write_offs` → `write_off`,
+`investment` → `invest_spend`, `book_value` → `k_book`, `exit_reason` → `exit_cause`
+(firms); `time` → `t`, `technique` → `tech`, `book_value` → `k_book`,
+`periods_below_cost` → `below_cost` (plants); `time` → `t` (flows). `plot_outputs.py`,
+`run.py` and the tests were updated with them; the LaTeX sections reference no column.
+The reference comparison matches renamed columns by this map, value for value. `n_firms`
+(end of period) and `share` (after step 6) keep their meaning, with `n_active` and
+`share_demand` / `share_end` beside them.
 
 **D2. Record at source through one hook.** `run_period` calls
 `collector.after_step(industry, step)` after each of the six steps. The hook copies into

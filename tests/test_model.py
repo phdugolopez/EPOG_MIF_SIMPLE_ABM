@@ -56,7 +56,7 @@ class TestModel(unittest.TestCase):
     def test_switches_run(self):
         for overrides in ({"PRICING_ANCHOR": "markup"}, {"DEMAND_FORM": "logit"},
                           {"HURDLE_FLOOR_AT_ZERO": False}, {"REPLACEMENT": False},
-                          {"INVESTMENT_SALES_LAG": 0}):
+                          {"INVESTMENT_SALES_LAG": 0}, {"CHECKS_RAISE": False}):
             Industry(make_config(PERIODS=60, **overrides)).run()
 
 

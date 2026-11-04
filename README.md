@@ -28,7 +28,7 @@ Windows: replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
 
 ```text
 parameters.py            all parameters and switches
-run.py                   runs the baseline, writes outputs/{macro,firms,plants,flows}.csv
+run.py                   runs the baseline, writes outputs/{macro,firms,plants,events,flows}.csv
 plot_outputs.py          draws outputs/*.png
 
 model/
