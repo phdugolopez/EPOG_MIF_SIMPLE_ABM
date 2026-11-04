@@ -23,7 +23,6 @@ from dataclasses import asdict
 from equations.desired_capacity import desired_capacity
 from equations.entry_probability import entry_probability
 from equations.hurdle import best_profit_rate, hurdle
-from equations.retirement import retirement_reason
 from equations.technique_choice import choose_technique
 from equations.unit_cost import unit_cost
 
@@ -49,7 +48,8 @@ def after_step(industry, step: int) -> None:
     if step == 1:
         u_war = industry.parameters.U_WAR
         record.clear()
-        record.update({"t": industry.time, "firms": {}, "book": {}})
+        record.update({"t": industry.time, "firms": {}, "book": {},
+                       "events_start": len(industry.events)})
         for firm in industry.firms:
             low = 0
             for u in reversed(firm.util_history):
@@ -74,6 +74,135 @@ def after_step(industry, step: int) -> None:
     elif step == 5:
         for firm in industry.firms:
             record["firms"][firm.firm_id]["debt_5"] = firm.debt
+
+
+# --- Event log -----------------------------------------------------------------------
+
+EVENT_COLUMNS = (
+    "t", "step", "event", "firm_id", "plant_id", "group", "rule", "hurdle", "tech",
+    "other_tech", "capacity", "value", "cause", "other_id",
+)
+ORDER_STEP = {"replacement": 4, "expansion": 5, "entry": 6}
+
+
+def log_event(industry, event: str, step: int, firm=None, plant=None, **fields) -> None:
+    """Append one row to industry.events. firm and plant fill the id, label, rule,
+    hurdle, technique and capacity columns; fields fill or override the others.
+    Missing ids are -1."""
+    rules = industry.parameters.HURDLE_RULES
+    row = {
+        "t": industry.time, "step": step, "event": event,
+        "firm_id": firm.firm_id if firm is not None else -1,
+        "plant_id": plant.plant_id if plant is not None else -1,
+        "group": firm.type if firm is not None else "",
+        "rule": rules[firm.type] if firm is not None else "",
+        "hurdle": firm.hurdle if firm is not None else None,
+        "tech": plant.technique if plant is not None else "",
+        "other_tech": "",
+        "capacity": plant.capacity if plant is not None else None,
+        "value": None, "cause": "", "other_id": -1,
+    }
+    row.update(fields)
+    industry.events.append(row)
+
+
+def log_order(industry, firm, plant, cost: float, cause: str) -> None:
+    """An order: technique chosen, the other rule's choice at the same price, cost.
+    An entrant's hurdle is set after its order, so it is recomputed here from its rule
+    at its entry price, as admit_entrant computes it."""
+    config = industry.parameters
+    h = firm.hurdle
+    if cause == "entry":
+        h = hurdle(config.HURDLE_RULES[firm.type], firm.price, industry.menu,
+                   config.DELTA, config.HURDLE_FLOOR_AT_ZERO)
+    log_event(industry, "order", ORDER_STEP[cause], firm, plant, hurdle=h,
+              other_tech=tech_other(industry, firm), value=cost, cause=cause)
+
+
+def log_exit(industry, firm, reason: str) -> None:
+    """Called by remove_firm before anything is paid or written off: the exit with the
+    firm's net worth and capacity left, then one retire (cause "exit") per plant in
+    operation and one cancel per plant on order, valued at the book value written off."""
+    log_event(industry, "exit", 6, firm, value=firm.net_worth, cause=reason,
+              capacity=firm.capacity)
+    for plant in firm.plants:
+        log_event(industry, "retire", 6, firm, plant, value=plant.book_value, cause="exit")
+    for plant in firm.pending_plants:
+        log_event(industry, "cancel", 6, firm, plant, value=plant.book_value, cause="exit")
+
+
+def log_default(industry, firm, loss: float) -> None:
+    """Unpaid debt lost by the rest of the economy when a firm leaves (none if zero)."""
+    if loss > 0.0:
+        log_event(industry, "default", 6, firm, value=loss)
+
+
+def _episodes(flags):
+    """Maximal runs of True in a list of (t, flag): [(first t, last t), ...]."""
+    runs, start, last = [], None, None
+    for t, flag in flags:
+        if flag and start is None:
+            start = t
+        if not flag and start is not None:
+            runs.append((start, last))
+            start = None
+        last = t
+    if start is not None:
+        runs.append((start, last))
+    return runs
+
+
+def episode_events(industry) -> list[dict]:
+    """War and cutting episodes, derived after the run from the macro and firm rows.
+
+    An industry war is a maximal run of periods with war_on (at least one firm
+    cutting): war_start at its first period s, value = price_avg at s - 1 (None at
+    s = 0); war_end at its last period e, value = the lowest price_avg over s..e,
+    cause "censored" if the war is still on in the last period. other_id numbers the
+    episodes from 1. A firm's cutting episode is the same from its cutting flag:
+    cut_start / cut_end with value = its price, cut_end cause "exit" when the firm
+    leaves while cutting and "censored" when it still cuts in the last period.
+    """
+    rows = []
+    if not industry.history:
+        return rows
+    last = industry.history[-1]["t"]
+    price = {r["t"]: r["price_avg"] for r in industry.history}
+    blank = {"firm_id": -1, "plant_id": -1, "group": "", "rule": "", "hurdle": None,
+             "tech": "", "other_tech": "", "capacity": None}
+    flags = [(r["t"], r["war_on"]) for r in industry.history]
+    for n, (s, e) in enumerate(_episodes(flags), start=1):
+        rows.append({"t": s, "step": 1, "event": "war_start", **blank,
+                     "value": price.get(s - 1), "cause": "", "other_id": n})
+        rows.append({"t": e, "step": 1, "event": "war_end", **blank,
+                     "value": min(price[t] for t in range(s, e + 1)),
+                     "cause": "censored" if e == last else "", "other_id": n})
+    by_firm = {}
+    for r in industry.firm_history:
+        by_firm.setdefault(r["firm_id"], []).append(r)
+    for firm_id, firm_rows in by_firm.items():
+        at = {r["t"]: r for r in firm_rows}
+        for s, e in _episodes([(r["t"], r["cutting"]) for r in firm_rows]):
+            for t, event in ((s, "cut_start"), (e, "cut_end")):
+                r = at[t]
+                cause = ""
+                if event == "cut_end":
+                    cause = "exit" if r["exited"] else "censored" if e == last else ""
+                rows.append({
+                    "t": t, "step": 1, "event": event, "firm_id": firm_id,
+                    "plant_id": -1, "group": r["group"], "rule": r["rule"],
+                    "hurdle": r["hurdle"], "tech": "", "other_tech": "", "capacity": None,
+                    "value": r["price"], "cause": cause, "other_id": -1,
+                })
+    return rows
+
+
+def events_table(industry) -> list[dict]:
+    """The event log of the run: logged events plus war and cutting episodes, sorted by
+    (t, step, event, firm_id, plant_id)."""
+    rows = industry.events + episode_events(industry)
+    return sorted(rows, key=lambda r: (r["t"], r["step"], r["event"], r["firm_id"],
+                                       r["plant_id"]))
 
 
 def _tolerance(scale: float) -> float:
@@ -267,12 +396,18 @@ def collect(industry) -> None:
     industry.history.append(collect_macro_data(industry))
     exited = {id(f) for f, _ in industry.exits}
     retired = {id(p) for p in industry.retired}
+    causes = {
+        e["plant_id"]: e["cause"]
+        for e in industry.events[industry.record.get("events_start", 0):]
+        if e["event"] == "retire"
+    }
     for firm in industry.producers + industry.entries:
         industry.firm_history.append(firm_row(industry, firm, retired))
         for plant in firm.producing_plants:
-            industry.plant_history.append(
-                plant_row(industry, firm, plant, id(plant) in retired, id(firm) in exited)
-            )
+            industry.plant_history.append(plant_row(
+                industry, firm, plant, id(plant) in retired, id(firm) in exited,
+                causes.get(plant.plant_id, ""),
+            ))
     for item, row in industry.flows.items():
         industry.flow_history.append({"t": industry.time, "item": item, **row})
     industry.previous_profit = sum(f.profit for f in industry.producers)
@@ -396,20 +531,15 @@ def firm_row(industry, firm, retired) -> dict:
     }
 
 
-def plant_row(industry, firm, plant, retired: bool, exited: bool) -> dict:
+def plant_row(industry, firm, plant, retired: bool, exited: bool, cause: str) -> dict:
+    """cause: the retire event's cause this period (age, obsolescence, replacement,
+    exit), "" for a plant still in operation."""
     config = industry.parameters
     row = asdict(plant)
     row["tech"] = row.pop("technique")
     row["k_book"] = row.pop("book_value")
     row["below_cost"] = row.pop("periods_below_cost")
     uc = unit_cost(plant.ucs, plant.kappa, config.DELTA)
-    if retired:
-        cause = retirement_reason(
-            plant.age, config.PLANT_LIFE, plant.periods_below_cost,
-            config.OBSOLESCENCE_PERIODS,
-        ) or "replacement"
-    else:
-        cause = "exit" if exited else ""
     row.update({
         "t": industry.time,
         "firm_id": firm.firm_id,

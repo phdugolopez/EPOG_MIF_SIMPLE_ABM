@@ -11,7 +11,7 @@ from equations.entry_probability import entry_probability
 from equations.exit_conditions import exit_reason
 from equations.firm_profit import firm_profit
 from equations.hurdle import hurdle
-from equations.inherited_rule import inherited_type
+from equations.inherited_rule import inherit
 from equations.lifetime_profit_rate import lifetime_profit_rate
 from equations.interest_payment import interest_payment
 from equations.investment import investment
@@ -31,7 +31,7 @@ from markets.entry_exit import create_entrant, remove_firm
 from markets.goods_market import allocate
 from markets.payments import pay
 from markets.plant_market import affordable_spending, buy_plant
-from model.collector import after_step, check_stock_flow, collect
+from model.collector import after_step, check_stock_flow, collect, log_event
 
 # Lines "# {name}" ... "# {endname}" mark the ranges that docs/sections/*.tex include.
 
@@ -245,7 +245,7 @@ def retire_plants(industry, firm, config) -> list:
             config.OBSOLESCENCE_PERIODS,
         )
         if reason:
-            remove_plant(industry, firm, plant)
+            remove_plant(industry, firm, plant, cause=reason)
             retired.append(plant)
     return retired
 
@@ -261,13 +261,15 @@ def replace_plants(industry, firm, config) -> None:
             continue
         if technique.kappa * plant.capacity > affordable_spending(firm, config.DEBT_CAP):
             continue
-        remove_plant(industry, firm, plant)
-        buy_plant(industry, firm, technique, plant.capacity)
+        remove_plant(industry, firm, plant, cause="replacement")
+        buy_plant(industry, firm, technique, plant.capacity, cause="replacement")
         industry.replacements += 1
 
 
-def remove_plant(industry, firm, plant) -> None:
-    """Scrap value is zero: any remaining book value is written off."""
+def remove_plant(industry, firm, plant, cause: str = "") -> None:
+    """Scrap value is zero: any remaining book value is written off. cause ("age",
+    "obsolescence", "replacement") is recorded in the event log only."""
+    log_event(industry, "retire", 4, firm, plant, value=plant.book_value, cause=cause)
     firm.write_offs += plant.book_value
     plant.book_value = 0.0
     firm.plants.remove(plant)
@@ -358,7 +360,7 @@ def enter_firm(industry) -> None:
 
 def admit_entrant(industry) -> None:
     config = industry.parameters
-    firm_type = inherited_type(
+    firm_type, parent, mutated = inherit(
         [f.type for f in industry.firms], [f.share for f in industry.firms],
         config.MUTATION, industry.rng,
     )
@@ -372,4 +374,6 @@ def admit_entrant(industry) -> None:
     capacity = config.ENTRANT_SIZE * sum(capacities) / len(capacities)
     entrant = create_entrant(industry, firm_type, price, technique, capacity)
     entrant.hurdle = h
+    log_event(industry, "entry", 6, entrant, entrant.pending_plants[0], value=price,
+              cause="mutated" if mutated else "inherited", other_id=industry.firms[parent].firm_id)
 # {endentry}

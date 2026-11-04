@@ -39,7 +39,9 @@ def settle_cash_position(industry, firm) -> None:
 def default(industry, firm) -> None:
     """A leaving firm pays what it can; the rest of its debt is a loss of the lender."""
     repay(industry, firm, min(firm.cash, firm.debt))
+    from model.collector import log_default  # here: model imports markets at load time
     loss = firm.debt
+    log_default(industry, firm, loss)
     firm.debt = 0.0
     industry.roe.loans -= loss
     industry.roe.loan_losses += loss

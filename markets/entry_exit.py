@@ -9,6 +9,8 @@ def remove_firm(industry, firm, reason: str) -> None:
     """A leaving firm repays what it can, the rest of its debt is a loss of the lender,
     remaining cash goes back to its owners, and its plants are written off (scrap value 0).
     Its customers are shared out in proportion to the other firms' shares."""
+    from model.collector import log_exit  # here: model imports markets at load time
+    log_exit(industry, firm, reason)
     default(industry, firm)
     pay(industry, firm, industry.roe, firm.cash, "equity")
     for plant in firm.plants + firm.pending_plants:
@@ -28,7 +30,7 @@ def create_entrant(industry, firm_type: str, price: float, technique, capacity: 
     cost = technique.kappa * capacity
     pay(industry, industry.roe, firm, cost, "equity")
     firm.equity_in = cost
-    buy_plant(industry, firm, technique, capacity)
+    buy_plant(industry, firm, technique, capacity, cause="entry")
     next_capacity = sum(
         f.capacity + sum(p.capacity for p in f.pending_plants) for f in incumbents
     )

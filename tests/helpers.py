@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import parameters
 from model import Industry
+from model.entities import Technique
 
 
 def make_config(**overrides) -> SimpleNamespace:
@@ -36,3 +37,26 @@ def without_labels(rows) -> list[dict]:
 
 def history_without_labels(industry) -> list[dict]:
     return without_labels(industry.firm_history)
+
+
+def three_plant_industry():
+    """Firm 0 (Shaikh) runs three plants of different vintages and techniques: C (new),
+    D1 (age 9, retires by age this period) and X (ucs 90, replaced by D2). Firm 1
+    (Okishio) has a tiny share, orders a large plant and exits on its share at step 6."""
+    config = make_config(
+        INITIAL_FIRMS=(("C", "shaikh"), ("D1", "okishio")), MIN_FIRMS=1,
+        DEMAND_TO_CAPACITY=1.6, ENTRY_SPEED=0.0,
+    )
+    industry = Industry(config)
+    a, b = industry.firms
+    d1 = industry.techniques["D1"]
+    old = industry.new_plant(d1, 120.0, vintage=-9, initial=True)
+    old.age, old.book_value = 9, 0.1 * d1.kappa * 120.0
+    x = industry.new_plant(Technique("X", 90.0, 100.0), 100.0, vintage=-4, initial=True)
+    x.age, x.book_value = 4, 0.6 * 100.0 * 100.0
+    a.plants += [old, x]
+    a.share, b.share = 0.999, 0.001
+    a.sales, b.sales = 300.0, 500.0  # become previous_sales at the start of period 0
+    b.cash = 1e6
+    industry.money = industry.roe.cash + sum(f.cash for f in industry.firms)
+    return industry, a, b, old, x
