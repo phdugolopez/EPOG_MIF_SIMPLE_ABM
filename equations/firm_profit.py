@@ -1,4 +1,5 @@
-def firm_profit(revenue: float, wage_bill: float, interest_paid: float) -> float:
-    """Pi_i,t = revenue_i,t - wage_bill_i,t - interest_i,t."""
-    return revenue - wage_bill - interest_paid
-
+def firm_profit(
+    revenue: float, operating_cost: float, depreciation: float, interest: float
+) -> float:
+    """Pi_i,t = p x - ucs x (+ overtime premium) - delta kappa qbar - rho B_i,t-1."""
+    return revenue - operating_cost - depreciation - interest

@@ -1,4 +1,3 @@
-from .model import Economy
+from .model import Industry
 
-__all__ = ["Economy"]
-
+__all__ = ["Industry"]

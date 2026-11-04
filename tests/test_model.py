@@ -1,17 +1,64 @@
+"""The complete model: baseline run, stock-flow consistency, label swap."""
+
 import unittest
 
-from model import Economy
+from helpers import history_without_labels, make_config, swapped_config
+from model import Industry
+from model.collector import StockFlowError, check_stock_flow
 
 
 class TestModel(unittest.TestCase):
-    def test_model_runs_and_collects_each_period(self):
-        economy = Economy()
-        economy.run()
-        self.assertEqual(len(economy.history), economy.parameters.PERIODS)
-        self.assertGreaterEqual(min(b.loans for b in economy.banks), -1e-9)
-        self.assertGreaterEqual(min(h.deposits for h in economy.households), -1e-9)
+    @classmethod
+    def setUpClass(cls):
+        cls.baseline = Industry()
+        cls.baseline.run()
+
+    def test_baseline_runs_200_periods(self):
+        self.assertEqual(self.baseline.parameters.PERIODS, 200)
+        self.assertEqual(len(self.baseline.history), 200)
+        self.assertGreaterEqual(min(r["n_firms"] for r in self.baseline.history), 2)
+
+    def test_stock_flow_consistency_over_the_full_run(self):
+        industry = self.baseline
+        money = industry.roe.cash + sum(f.cash for f in industry.firms)
+        self.assertAlmostEqual(money, industry.money, places=4)
+        self.assertAlmostEqual(industry.roe.loans, sum(f.debt for f in industry.firms),
+                               places=4)
+        # Initial cash is zero in both sectors, so cumulated flows equal final cash.
+        firm_flows = sum(row["firms"] for row in industry.flow_history)
+        self.assertAlmostEqual(firm_flows, sum(f.cash for f in industry.firms), places=4)
+        roe_flows = sum(row["roe"] for row in industry.flow_history)
+        self.assertAlmostEqual(roe_flows, industry.roe.cash, places=4)
+        for row in industry.history:
+            self.assertAlmostEqual(row["sales_total"] + row["unmet_total"], row["demand"], places=6)
+
+    def test_the_check_catches_a_leak(self):
+        industry = Industry()
+        industry.step()
+        industry.firms[0].cash += 1.0
+        with self.assertRaises(StockFlowError):
+            check_stock_flow(industry)
+
+    def test_label_swap_over_the_full_run(self):
+        """Swapping the types everywhere except h changes nothing."""
+        swapped = Industry(swapped_config())
+        swapped.run()
+        self.assertEqual(history_without_labels(self.baseline), history_without_labels(swapped))
+        for a, b in zip(self.baseline.history, swapped.history):
+            self.assertEqual(a["share_shaikh"], b["share_okishio"])
+            self.assertEqual(a["price_avg"], b["price_avg"])
+
+    def test_both_types_are_present_and_compete(self):
+        last = self.baseline.history[-1]
+        self.assertGreater(last["n_shaikh"] + last["n_okishio"], 0)
+        self.assertGreater(sum(r["entries"] for r in self.baseline.history), 0)
+
+    def test_switches_run(self):
+        for overrides in ({"PRICING_ANCHOR": "markup"}, {"DEMAND_FORM": "logit"},
+                          {"HURDLE_FLOOR_AT_ZERO": False}, {"REPLACEMENT": False},
+                          {"INVESTMENT_SALES_LAG": 0}, {"CHECKS_RAISE": False}):
+            Industry(make_config(PERIODS=60, **overrides)).run()
 
 
 if __name__ == "__main__":
     unittest.main()
-
