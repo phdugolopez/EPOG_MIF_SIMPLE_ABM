@@ -95,7 +95,7 @@ the label-swap tests check it.
 ## Collector (unassigned; signed off by Ugo)
 
 The collector observes and never decides (`model/collector.py`, `docs/design/collector-brief.md`,
-plan in `collector-plan.md`). Choices made while implementing phases 1–3:
+plan in `collector-plan.md`). Choices made while implementing phases 1–5:
 
 | Choice | Status | Alternatives |
 |---|---|---|
@@ -110,6 +110,10 @@ plan in `collector-plan.md`). Choices made while implementing phases 1–3:
 | `borrow` = debt after step 5 − debt at the start of the period (overdraft, repayment and plant finance), before any exit settlement; `borrow_plants` = the part taken at steps 4–5 | Default | Net change over the whole period (−debt for a defaulting leaver) |
 | An entrant has a firm row at its entry period (`born = t`, `share_demand` None); `exp_sales` and `cap_desired` are None for entrants and for firms that `invest` skips on non-renewal | Default | First row at t + 1 (brief) |
 | Events are logged at source through `Industry.log_event` / `log_order` / `log_exit`, so that no market module imports the collector; the default is logged by `log_exit` from the same arithmetic as `credit_market.default` | Default | Derive orders from pending-plant diffs in `after_step` |
+| `groups`: one row per period and label (keys of `HURDLE_RULES`, sorted), empty groups included; members are the firms that produced this period plus its entrants; `share_end`, `cash`, `debt`, `net_worth` are after step 6 over the firms still in the industry; `hurdle_mean` weighted by producing capacity; `capacity_next` = K_{g,t+1} | Default | Rebuild from `firms` after the run |
+| The capacity identity is also checked group by group (`cap_resid_group` = largest absolute group residual, in the macro row) | Default | Industry level only |
+| Section 4.2 decomposition: five terms (ordered, −retired, entry, −exit, −cancelled), K_{t+1} from next period's row or `capacity_next` in the last period; section 4.3: NaN in the first period | Default | Four terms with cancelled netted from ordered |
+| `flows` keeps two sectors (`firms`, `roe`); the split by group (one line in `markets/payments.pay`) waits for an answer to open question 4 of the plan | Open | `firms_<label>` columns |
 
 ## What the baseline shows (seed 42), for the record
 

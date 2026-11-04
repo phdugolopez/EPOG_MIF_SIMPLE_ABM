@@ -62,6 +62,7 @@ class Industry:
         self.firm_history: list[dict] = []
         self.plant_history: list[dict] = []
         self.flow_history: list[dict] = []
+        self.group_history: list[dict] = []  # one row per period and label
         self.events: list[dict] = []  # the event log, written by model.collector.log_event
         self.record: dict = {}  # the collector's copy of values later steps overwrite
         self.n_check_fail = 0  # periods with a failing check (CHECKS_RAISE = False)

@@ -305,12 +305,17 @@ def residuals(industry) -> tuple[dict, list[str]]:
     # 7. Capacity identity, plant by plant (K = producing capacity at the start):
     #    K_t - retired - exit + ordered + entry - cancelled = K_{t+1}.
     flows = capacity_flows(industry)
-    out["cap_resid"] = (
-        flows["k_start"] - flows["retired"] - flows["exit"] + flows["ordered"]
-        + flows["entry"] - flows["cancelled"] - flows["k_next"]
-    )
+    out["cap_resid"] = _identity_resid(flows)
     if abs(out["cap_resid"]) > tol_q:
         fails.append(f"cap_resid = {out['cap_resid']}")
+    #    The same identity group by group; stored: the largest residual in absolute value.
+    out["cap_resid_group"] = max(
+        (abs(_identity_resid(capacity_flows(industry, firms)))
+         for firms in _by_label(industry, industry.producers + industry.entries).values()),
+        default=0.0,
+    )
+    if out["cap_resid_group"] > tol_q:
+        fails.append(f"cap_resid_group = {out['cap_resid_group']}")
 
     # 8. No posted price below the firm's floor.
     below = [
@@ -327,6 +332,20 @@ def residuals(industry) -> tuple[dict, list[str]]:
 
 def _capacity(plants) -> float:
     return sum(p.capacity for p in plants)
+
+
+def _identity_resid(flows: dict) -> float:
+    return (flows["k_start"] - flows["retired"] - flows["exit"] + flows["ordered"]
+            + flows["entry"] - flows["cancelled"] - flows["k_next"])
+
+
+def _by_label(industry, firms) -> dict:
+    """firms split by label, one entry per key of HURDLE_RULES in sorted order (empty
+    groups included). Grouping outputs by label is the only use of firm.type here."""
+    groups = {label: [] for label in sorted(industry.parameters.HURDLE_RULES)}
+    for firm in firms:
+        groups[firm.type].append(firm)
+    return groups
 
 
 def capacity_flows(industry, firms=None) -> dict:
@@ -384,7 +403,7 @@ def check_stock_flow(industry) -> None:
 
 
 def collect(industry) -> None:
-    """Record macro, per-firm, per-plant and flow-matrix rows for the period.
+    """Record macro, per-group, per-firm, per-plant and flow-matrix rows for the period.
 
     Rows cover every firm that produced this period, including those that left at its
     end, and the entrants of the period (whose first plant arrives next period). The
@@ -410,6 +429,7 @@ def collect(industry) -> None:
             ))
     for item, row in industry.flows.items():
         industry.flow_history.append({"t": industry.time, "item": item, **row})
+    industry.group_history.extend(group_rows(industry))
     industry.previous_profit = sum(f.profit for f in industry.producers)
     industry.previous_investment = sum(f.investment for f in industry.producers)
 
@@ -524,9 +544,7 @@ def firm_row(industry, firm, retired, uc: float | None = None) -> dict:
         # New debt of the period's financing decisions, before any exit settlement:
         # borrow = debt after step 5 - debt at the start (overdraft, repayment and
         # plant finance); borrow_plants = the part taken at steps 4 and 5 for plants.
-        "borrow": (
-            record["debt_5"] - record["debt_start"] if record is not None else firm.debt
-        ),
+        "borrow": _borrow(firm, record),
         "borrow_plants": (
             record["debt_5"] - record["debt_3"] if record is not None else firm.debt
         ),
@@ -538,6 +556,77 @@ def firm_row(industry, firm, retired, uc: float | None = None) -> dict:
         "exited": exited,
         "exit_cause": firm.exit_reason,
     }
+
+
+def _borrow(firm, record) -> float:
+    """Debt after step 5 - debt at the start of the period; an entrant's debt."""
+    return record["debt_5"] - record["debt_start"] if record is not None else firm.debt
+
+
+EXIT_CAUSES = ("bankruptcy", "share", "non-renewal")
+
+
+def group_rows(industry) -> list[dict]:
+    """One row per label (key of HURDLE_RULES, sorted), empty groups included.
+
+    Members: the firms that produced this period (step 1) plus the period's entrants.
+    Capacity terms are those of the capacity identity (capacity_flows) over the group;
+    share_demand sums the step 2 shares of its producers, share_end the shares after
+    step 6 of its firms still in the industry (entrants included); cash, debt and
+    net_worth are after step 6 (0 for leavers); hurdle_mean is weighted by producing
+    capacity (None when the group produced nothing).
+    """
+    config = industry.parameters
+    record = industry.record["firms"]
+    exits = {id(f): reason for f, reason in industry.exits}
+    producers = _by_label(industry, industry.producers)
+    entrants = _by_label(industry, industry.entries)
+    remaining = _by_label(industry, industry.firms)
+    rows = []
+    for label, firms in producers.items():
+        new = entrants[label]
+        flows = {k: float(v) for k, v in capacity_flows(industry, firms + new).items()}
+        left = [exits[id(f)] for f in firms if id(f) in exits]
+        row = {
+            "t": industry.time,
+            "group": label,
+            "rule": config.HURDLE_RULES[label],
+            "n_firms": len(firms),
+            "capacity": flows["k_start"],
+            "capacity_next": flows["k_next"],
+            "sales": sum(f.sales for f in firms),
+            "share_demand": sum(record[f.firm_id]["share_demand"] for f in firms),
+            "share_end": sum(f.share for f in remaining[label]),
+            "cap_retired": flows["retired"],
+            "cap_replace": float(sum(record[f.firm_id]["cap_replace"] for f in firms)),
+            "cap_ordered": flows["ordered"],
+            "cap_entry": flows["entry"],
+            "cap_exit": flows["exit"],
+            "cap_cancelled": flows["cancelled"],
+            "cap_resid": _identity_resid(flows),
+            "n_entry": len(new),
+            "n_exit": len(left),
+        }
+        for cause in EXIT_CAUSES:
+            row[f"n_exit_{cause.replace('-', '_')}"] = left.count(cause)
+        row.update({
+            "profit": sum(f.profit for f in firms),
+            "gos": sum(f.revenue - f.operating_cost for f in firms),
+            "invest_spend": sum(f.investment for f in firms + new),
+            "borrow": sum(_borrow(f, record.get(f.firm_id)) for f in firms + new),
+            "cash": sum(f.cash for f in remaining[label]),
+            "debt": sum(f.debt for f in remaining[label]),
+            "net_worth": sum(f.net_worth for f in remaining[label]),
+            "hurdle_mean": _weighted_or_none(
+                [f.hurdle for f in firms], [f.producing_capacity for f in firms]
+            ),
+        })
+        for name in industry.techniques:
+            row[f"capacity_{name}"] = sum(
+                p.capacity for f in firms for p in f.producing_plants if p.technique == name
+            )
+        rows.append(row)
+    return rows
 
 
 def plant_row(industry, firm, plant, retired: bool, exited: bool, cause: str) -> dict:
