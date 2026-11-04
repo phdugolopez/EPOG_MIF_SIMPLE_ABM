@@ -6,6 +6,8 @@ price (Okishio). Group project, M2 EPOG, MIP1 (Funalot & Bassi), built on the co
 template [pierrefunalot/EPOG_MIF_SIMPLE_ABM](https://github.com/pierrefunalot/EPOG_MIF_SIMPLE_ABM).
 
 - Specification: `docs/design/mechanism-briefs.md`; open choices: `docs/design/choices.md`.
+- Output tables, column by column: `docs/design/collector.md`; debugging plots:
+  `debug/README.md`.
 - Report: `docs/main.tex` (built by CI as an artifact).
 - Conventions, ownership and how to extend the model: `CLAUDE.md`.
 
@@ -20,6 +22,7 @@ python3 -m venv .venv
 .venv/bin/python run.py                  # options: --out DIR --format csv|parquet --seed N
                                          #          --experiment E --population P --cell C
 .venv/bin/python plot_outputs.py         # reads outputs/macro.csv
+.venv/bin/python -m debug.report outputs # debugging plots -> outputs/debug/report.pdf
 cd docs && latexmk -pdf main.tex
 ```
 
@@ -32,12 +35,14 @@ parameters.py            all parameters and switches
 run.py                   runs the model, writes outputs/{runs,macro,groups,firms,plants,events,flows}.csv
 analysis/                indicators computed from the tables; schema_doc generates docs/design/collector.md
 plot_outputs.py          draws outputs/*.png
+debug/                   debugging plots, one script per question, from a run folder's tables
 
 model/
     entities.py          Technique, Plant, Firm, RestOfEconomy
     model.py             Industry: initial population and menu
     scheduler.py         the six steps of a period and the stock-flow check
     collector.py         outputs and check_stock_flow
+    schema.py            every output column: meaning, unit, step, mechanism
 
 equations/               one equation or behavioural rule per file
 markets/                 goods market, credit, plants, payments, entry and exit

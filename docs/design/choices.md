@@ -95,7 +95,7 @@ the label-swap tests check it.
 ## Collector (unassigned; signed off by Ugo)
 
 The collector observes and never decides (`model/collector.py`, `docs/design/collector-brief.md`,
-plan in `collector-plan.md`). Choices made while implementing phases 1–5:
+plan in `collector-plan.md`). Choices made while implementing phases 1–6:
 
 | Choice | Status | Alternatives |
 |---|---|---|
@@ -118,6 +118,11 @@ plan in `collector-plan.md`). Choices made while implementing phases 1–5:
 | One schema for every table (`model/schema.py`); `docs/design/collector.md` is generated from it (`python -m analysis.schema_doc`). Tests fail when the schema and the tables `run.py` writes differ, or when the schema part of the document is stale; the parameter table at its end (built from the comments of `parameters.py`) is not tested, so a comment edit by a mechanism's owner never breaks the suite | Fixed by Ugo | Hand-written schema; regenerate in CI |
 | `run.py --format parquet` needs `pyarrow`, added to `requirements.txt`; writing a folder removes a stale copy of each table in the other format, so `plot_outputs.py` and `docs/main.tex` (CSV readers) never read an older run by mistake | Fixed by Ugo | CSV only |
 | One random stream, `random.Random(SEED)`, shared by every mechanism (today: exit tie-breaks, entry draws, inherited rule). Separate streams per mechanism spawned from the master seed (brief §5) would keep one mechanism's draws fixed when another changes, but change every trajectory: proposed for later, with a new reference run | Default (proposal for later) | `numpy.random.SeedSequence(SEED).spawn(k)`, one stream per mechanism |
+| Debugging plots (`debug/`, one script per question) read only the tables of a run folder, never the model, and write to `RUN_DIR/debug/`; colours and rcParams are defined once in `debug/_common.py` and imported by `plot_outputs.py` | Default | Plots drawn from model objects in the tests |
+| Price-war periods shaded on the debugging plots are the collector's industry episodes (maximal runs of `war_on`), recomputed from `macro` | Default | Read `war_start` / `war_end` from `events` |
+| In the plots, ties are never resolved by firm order: firm lanes are sorted by entry period then id, merit-order segments of equal cost by plant id (drawing only), and `capacity_bridge` decomposes the group whose rule is `unit_cost`, whatever its label | Default | |
+| `debug.report` draws the merit order at three periods: the first period of the first price war, the first rebuild (first period with retirements at step 4 and orders) and the last period | Default | First period after the first war |
+| `debug.compare_runs` matches rows on keys ((t); (t, group); (t, firm_id); (t, plant_id); (t, step, event, firm_id, plant_id, rank); (t, item)), compares text as well as numbers (NaN = NaN; text, NaN against a number and missing rows count as infinite), tolerance 1e-12 absolute; `--swap-labels` swaps the two labels in values and column names but not `rule`; tables with the names used before phase 2 are renamed first | Default | Numeric columns only; relative tolerance |
 
 ## What the baseline shows (seed 42), for the record
 

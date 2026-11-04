@@ -31,6 +31,10 @@ exit, 7 collector; "—" for identifiers. In a name, `{label}` stands for each k
 `HURDLE_RULES` (sorted), `{tech}` for each technique of `SHAIKH_PLANTS` and
 `{parameter}` for each parameter listed under `runs`. Units: w.u. = wage units (the
 money wage is the numéraire); units/period = units of output per period.
+
+The debugging plots in `debug/` read these tables and nothing else: `python -m
+debug.report outputs` draws every page into `outputs/debug/report.pdf`, and
+`debug/README.md` lists the scripts and the question each one answers.
 """
 
 INTRO = {

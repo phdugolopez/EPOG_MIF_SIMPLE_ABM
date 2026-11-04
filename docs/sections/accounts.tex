@@ -32,6 +32,21 @@ the loans of the rest of the economy, that each firm's net worth moved by
 $\Pi - \mathit{Div} - \text{write-offs}$ (plus equity at entry), and that every row and
 column of the flow matrix adds up.
 
+\paragraph{Outputs and checks.} The collector (\code{model/collector.py}) observes and
+never decides: it draws no random number and writes nothing a mechanism reads. Each run
+writes seven tables (\code{runs}, \code{macro}, \code{groups}, \code{firms},
+\code{plants}, \code{events}, \code{flows}); every column's meaning, unit, step and
+mechanism is in one schema, \code{model/schema.py}, from which
+\code{docs/design/collector.md} is generated. Beyond the accounting identities above, each
+period also checks that shares sum to one after demand and after entry and exit, that
+sales plus unserved demand equal demand, that no firm produces above $u_{\max}$ capacity
+or prices below its floor, and the plant-level capacity identity
+$K_{t+1} = K_t - \text{retired} - \text{exit} + \text{ordered} + \text{entry} -
+\text{cancelled}$, industry-wide and group by group. Every residual is stored in the
+\code{macro} table; the run stops at the first failure (\code{CHECKS\_RAISE}).
+\code{python -m debug.checks outputs} plots them, and \code{python -m debug.report
+outputs} gathers every debugging plot of a run in one PDF (\code{debug/README.md}).
+
 \paragraph{Tests} (\code{tests/test\_accounts.py}, \code{tests/test\_production.py}): at
 normal output with no debt $r_i = (p - uc)/\kappa$, i.e.\ 16.00\,\%, 16.86\,\% and 15.83\,\%
 at $p = 100$; the net-worth identity; the flow matrix sums to zero; depreciation charges add
