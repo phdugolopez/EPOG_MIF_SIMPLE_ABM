@@ -114,6 +114,10 @@ plan in `collector-plan.md`). Choices made while implementing phases 1–5:
 | The capacity identity is also checked group by group (`cap_resid_group` = largest absolute group residual, in the macro row) | Default | Industry level only |
 | Section 4.2 decomposition: five terms (ordered, −retired, entry, −exit, −cancelled), K_{t+1} from next period's row or `capacity_next` in the last period; section 4.3: NaN in the first period | Default | Four terms with cancelled netted from ordered |
 | `flows` keeps two sectors (`firms`, `roe`); the split by group (one line in `markets/payments.pay`) waits for an answer to open question 4 of the plan | Open | `firms_<label>` columns |
+| `runs`: `run_id` = `{experiment}_{cell}_{population}_s{seed}` (defaults "baseline"); every parameter in its own column under its lower-case name, tuples and dicts as JSON, except `SEED`, `PRICING_ANCHOR`, `MENU` stored as the brief's `seed`, `anchor`, `menu`; `param_hash` = sha256 of the sorted parameters as JSON; `code_version` = HEAD with `-dirty` if tracked files changed; `okishio_price` = "own" (no parameter: h is evaluated at the firm's own price); `burn_in` = 0; `horizon` = periods actually run | Default | |
+| One schema for every table (`model/schema.py`); `docs/design/collector.md` is generated from it (`python -m analysis.schema_doc`) and a test fails when either drifts from the tables `run.py` writes | Fixed by Ugo | Hand-written schema |
+| `run.py --format parquet` needs `pyarrow`, added to `requirements.txt` | Fixed by Ugo | CSV only |
+| One random stream, `random.Random(SEED)`, shared by every mechanism (today: exit tie-breaks, entry draws, inherited rule). Separate streams per mechanism spawned from the master seed (brief §5) would keep one mechanism's draws fixed when another changes, but change every trajectory: proposed for later, with a new reference run | Default (proposal for later) | `numpy.random.SeedSequence(SEED).spawn(k)`, one stream per mechanism |
 
 ## What the baseline shows (seed 42), for the record
 
