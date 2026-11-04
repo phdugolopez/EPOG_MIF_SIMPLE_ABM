@@ -96,7 +96,7 @@ only way to split `pay()`'s `firms` column by label without reading the label in
 module is to record the flow per firm (one line in `markets/payments.pay`, a file of the
 unassigned production-and-accounts role) and let the collector group it at step 7. The
 existing columns `firms` and `roe` stay; `firms_<label>` columns are added. Open
-question 4 (it is optional).
+question 4 (it is optional). **Decided: keep two sectors; nothing added.**
 
 **D9. War episodes and cutting episodes.** `war_on` = at least one firm in cut mode
 (`n_at_war > 0`, the brief's assumption). An episode is a maximal run of periods with
@@ -268,7 +268,7 @@ the collector. Events are sorted by (t, step, event, firm_id, plant_id) on outpu
 
 ### 2.7 `flows` = `flows.csv`
 
-`time, item, firms, roe` kept; `firms_<label>` added under D8 (open question 4).
+`time, item, firms, roe` kept; no `firms_<label>` columns (open question 4: keep two sectors).
 
 ## 3. Instrumentation in files owned by others or shared
 
@@ -284,7 +284,7 @@ Each is one line or one attribute, no change in logic, listed for the owner's re
 | `markets/plant_market.buy_plant` (Ugo) | keyword `cause: str = "expansion"` and one `log_event`; `replace_plants` passes `"replacement"`, `create_entrant` passes `"entry"` | 3 |
 | `markets/entry_exit.remove_firm` (unassigned) | `log_event` for exit, default and each cancelled pending plant | 3 |
 | `equations/inherited_rule.py` (unassigned) | new `inherit(...) -> (type, parent, mutated)` with the two RNG calls in the same order; `inherited_type` becomes `inherit(...)[0]`; `admit_entrant` calls `inherit` and logs `entry` | 3 |
-| `markets/payments.pay` (unassigned) | one line recording the flow per firm id for the group split | 4 (if Q4 is yes) |
+| `markets/payments.pay` (unassigned) | one line recording the flow per firm id for the group split | not done (Q4: keep two sectors) |
 | `model/model.Industry.__init__` (shared) | `self.events = []`, `self.record = {}`, `self.group_history = []`, `self.n_check_fail = 0` | 1–4 |
 
 Not instrumented, because exactly recomputable (D3): `p_entry`, `exp_sales`,
@@ -345,7 +345,7 @@ After every phase: full test suite, `run.py`, column-by-column exact comparison 
 3. **Capacity identity** (D6): accept `ordered` = all incumbents' orders and `cancelled` =
    the exiters' subset? [Ugo's answer] ok
 4. **Flows by group**: add the one-line per-firm record in `markets/payments.pay` so the
-   flow matrix has a column per label, or keep two sectors (`firms`, `roe`)? [Ugo's answer]
+   flow matrix has a column per label, or keep two sectors (`firms`, `roe`)? [Ugo's answer] keep two sectors
 5. **`gos`**: revenue − operating cost (premium included, consistent with `profit`), or the
    brief's (price − ucs)·output literally? [Ugo's answer] measure consistent with profit
 6. **Names**: confirm D1 (keep every existing name, alias the brief's † names in the
