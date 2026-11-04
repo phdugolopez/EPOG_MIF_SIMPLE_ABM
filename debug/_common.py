@@ -1,8 +1,8 @@
 """Shared loading and style for the debugging plots in debug/.
 
 Every script reads the tables run.py wrote to a run folder (CSV or Parquet), never the
-model, and writes its figures to RUN_DIR/debug/. Colours and rcParams are the ones
-plot_outputs.py uses (it imports them from here): labels shaikh blue and okishio orange,
+model, and writes its figures to RUN_DIR/debug/. Colours and rcParams come from style.py
+at the repository root, as in plot_outputs.py: labels shaikh blue and okishio orange,
 techniques C / D1 / D2 aqua, violet and red. Another label or technique gets a colour
 from a fixed list, in sorted order of names, never in firm order.
 """
@@ -17,22 +17,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
 
-TYPE_STYLE = {
-    "shaikh": {"color": "#2a78d6", "linestyle": "-", "label": "Shaikh (h = 0)"},
-    "okishio": {"color": "#eb6834", "linestyle": "--", "label": "Okishio (h = best rate)"},
-}
-TECHNIQUE_COLOR = {"C": "#1baf7a", "D1": "#6250d6", "D2": "#e34948"}
-INK, MUTED, GRID = "#0b0b0b", "#52514e", "#e4e3df"
+from style import GRID, INK, MUTED, RC_PARAMS, TECHNIQUE_COLOR, TYPE_STYLE  # noqa: E402,F401
+
 FAIL = "#d0021b"
 WAR_SHADE = {"color": "#f2c14e", "alpha": 0.18, "linewidth": 0}
 EXTRA_COLORS = ("#8a6d3b", "#c2549d", "#4c9a2a", "#7f7f7f", "#17becf", "#bcbd22")
 
-RC_PARAMS = {
-    "axes.edgecolor": MUTED, "axes.labelcolor": INK, "xtick.color": MUTED,
-    "ytick.color": MUTED, "axes.grid": True, "grid.color": GRID, "grid.linewidth": 0.6,
-    "axes.spines.top": False, "axes.spines.right": False, "lines.linewidth": 2,
-    "font.size": 9, "legend.frameon": False,
-}
 # The debugging pages are dense: legends get a light background over the lines.
 DEBUG_RC = {"legend.frameon": True, "legend.framealpha": 0.85, "legend.edgecolor": "none",
             "legend.facecolor": "white"}
@@ -57,7 +47,8 @@ def _read(path: Path) -> pd.DataFrame | None:
 
 @dataclass
 class Run:
-    """The tables of one run folder, as DataFrames (None when a table is missing)."""
+    """The tables of one run folder, as DataFrames. A table the folder lacks stops the
+    script with a message naming it (run.has(...) tests for it first)."""
 
     path: Path
     tables: dict = field(default_factory=dict)
@@ -66,7 +57,16 @@ class Run:
         tables = self.__dict__.get("tables", {})
         if name in tables:
             return tables[name]
+        if name in TABLES:
+            raise SystemExit(
+                f"no {name} table in {self.__dict__.get('path')}: written by run.py since "
+                f"the collector's phases 3-5; rerun `python run.py --out DIR`"
+            )
         raise AttributeError(name)
+
+    def has(self, *names: str) -> bool:
+        """True when every named table was found in the folder."""
+        return all(name in self.tables for name in names)
 
     @property
     def name(self) -> str:

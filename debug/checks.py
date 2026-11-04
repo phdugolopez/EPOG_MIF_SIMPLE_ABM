@@ -78,7 +78,9 @@ def culprit(run, t: int, check: str) -> str:
                                            - 1e-9 * now["p_floor"].clip(lower=1.0))]
     elif check == "util_max_viol":
         u_max = run.param("u_max")
-        bad = now[now["output"] > u_max * now["capacity"] * (1 + 1e-9) + 1e-9]
+        demand = float(run.macro.set_index("t").at[t, "demand"])
+        tol = 1e-9 * max(1.0, demand)  # as model.collector.residuals
+        bad = now[now["output"] > u_max * now["capacity"] + tol]
     elif check == "nw_resid":
         before = firms[firms["t"] == t - 1].set_index("firm_id")["net_worth"]
         rows = now[(now["born"] < t) & ~now["exited"].astype(bool)

@@ -9,15 +9,14 @@ import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
 
 import parameters  # noqa: E402
-from debug._common import INK, MUTED, RC_PARAMS, TECHNIQUE_COLOR, TYPE_STYLE  # noqa: E402
+from style import INK, MUTED, RC_PARAMS, TECHNIQUE_COLOR, TYPE_STYLE  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent
 OUTPUTS = ROOT / "outputs"
 macro = pd.read_csv(OUTPUTS / "macro.csv")
 t = macro["t"]
 
-# Categorical slots (validated), shared with debug/: types blue / orange, techniques
-# aqua / violet / red. The debugging pages' legend backgrounds are reset here.
+# Colours and rcParams from style.py, shared with the debugging plots in debug/.
 plt.rcParams.update(RC_PARAMS)
 
 

@@ -43,9 +43,10 @@ def figures(run, t=None):
     table = np.column_stack([matrix.to_numpy(), row_sum.to_numpy()])
     scale = np.abs(table).max() or 1.0
     ax.imshow(table, cmap="RdBu", vmin=-scale, vmax=scale, aspect="auto")
+    broken = (row_sum.abs() > 1e-9 * max(1.0, scale)).to_numpy()
     for i in range(table.shape[0]):
         for j in range(table.shape[1]):
-            bad = j == 2 and abs(table[i, j]) > 1e-9 * max(1.0, scale)
+            bad = j == 2 and broken[i]
             dark = abs(table[i, j]) > 0.55 * scale
             ax.text(j, i, f"{table[i, j]:,.1f}", ha="center", va="center", fontsize=7,
                     color="#d0021b" if bad else "white" if dark else INK,
@@ -82,9 +83,8 @@ def figures(run, t=None):
         resid = totals[sector] - delta[sector].reindex(totals.index)
         ax.plot(totals.index, resid.abs() + 1e-18, color=INK, linestyle=style,
                 linewidth=1, label=f"|column sum - Δ cash|, {sector}")
-    rows = flows.assign(total=flows[list(SECTORS)].sum(axis=1)).groupby("t")["total"]
-    ax.plot(rows.apply(lambda v: v.abs().max()).index,
-            rows.apply(lambda v: v.abs().max()) + 1e-18, color=MUTED, linewidth=1,
+    worst_row = flows[list(SECTORS)].sum(axis=1).abs().groupby(flows["t"]).max()
+    ax.plot(worst_row.index, worst_row + 1e-18, color=MUTED, linewidth=1,
             label="max |row sum|")
     if "check_tol" in macro:
         ax.plot(macro["t"], macro["check_tol"], color=MUTED, linestyle=":", linewidth=1,

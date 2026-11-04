@@ -6,8 +6,9 @@
    band [leader, (1 + PRICE_BAND) leader];
 2. share_demand (step 2), share_end (step 6) and its share of sales;
 3. utilisation, with U_WAR and U_MAX;
-4. capacity in operation stacked by plant (one band per plant id, coloured by technique),
-   with the capacity ordered this period (arriving next period) hatched on top;
+4. capacity in operation stacked by plant (plants sorted by technique, vintage and id;
+   one band per plant, coloured by technique and bounded by a white line), with the
+   capacity ordered this period (arriving next period) hatched on top;
 5. cash, debt and net worth, with write-offs as bars;
 6. hurdle and r_best (best profit rate on offer at its price, before the zero floor);
    on periods with an order, a circle in the colour of the technique ordered (tech_new),
@@ -21,6 +22,7 @@ Without --firm or --all: the first firm of each label, in firm-id order within a
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.collections import LineCollection
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
@@ -33,25 +35,45 @@ def default_firms(firms: pd.DataFrame) -> list[int]:
 
 
 def _plant_stack(ax, run, firm_id, t_index):
+    """Capacity in operation stacked by plant: plants ordered by technique, vintage and
+    id, each technique a filled band and each plant's upper edge a thin white line, so
+    that the picture has one band per plant in a handful of artists whatever the number
+    of plants."""
     plants = run.plants[run.plants["firm_id"] == firm_id]
     techs = sorted(run.plants["tech"].unique())
-    base = int(t_index[0])
-    bottom = np.zeros(len(t_index))
-    # One bar segment per plant and period, plants stacked by vintage (then id); the
-    # opacity alternates along the stack so that neighbouring plants stay apart.
-    for n, (_, rows) in enumerate(plants.groupby(["vintage", "plant_id"])):
-        at = rows["t"].to_numpy() - base
-        ax.bar(rows["t"], rows["capacity"], bottom=bottom[at], width=1.0,
-               color=tech_color(rows["tech"].iloc[0], techs),
-               alpha=0.95 if n % 2 == 0 else 0.6, linewidth=0)
-        bottom[at] += rows["capacity"].to_numpy()
+    order = (plants.drop_duplicates("plant_id").sort_values(["tech", "vintage", "plant_id"])
+             ["plant_id"].tolist())
+    wide = (plants.pivot_table(index="t", columns="plant_id", values="capacity",
+                               aggfunc="sum").reindex(index=t_index, columns=order)
+            .fillna(0.0))
+    top = wide.cumsum(axis=1)
+    x = t_index.to_numpy()
+    tech_of = plants.drop_duplicates("plant_id").set_index("plant_id")["tech"]
+    lower = np.zeros(len(t_index))
+    for tech in techs:
+        ids = [i for i in order if tech_of[i] == tech]
+        if not ids:
+            continue
+        upper = top[ids[-1]].to_numpy()
+        ax.fill_between(x, lower, upper, step="mid", color=tech_color(tech, techs),
+                        linewidth=0)
+        lower = upper
+    # Plant boundaries: the upper edge of every plant, one segment per period.
+    segments = []
+    for i in order[:-1]:
+        edge = top[i].to_numpy()
+        held = wide[i].to_numpy() > 0.0
+        segments += [((t - 0.5, e), (t + 0.5, e)) for t, e, h in zip(x, edge, held) if h]
+    if segments:
+        ax.add_collection(LineCollection(segments, colors="white", linewidths=0.4))
+    bottom = top[order[-1]].to_numpy() if order else lower
     events = run.tables.get("events")
     if events is not None:
         orders = events[(events["event"] == "order") & (events["firm_id"] == firm_id)]
         on_order = orders.groupby("t")["capacity"].sum().reindex(t_index).fillna(0.0)
         if on_order.any():
-            ax.bar(t_index, on_order.to_numpy(), bottom=bottom, width=1.0,
-                   facecolor="none", edgecolor=MUTED, hatch="////", linewidth=0.3)
+            ax.bar(x, on_order.to_numpy(), bottom=bottom, width=1.0, facecolor="none",
+                   edgecolor=MUTED, hatch="////", linewidth=0.3)
     present = sorted(plants["tech"].unique()) if not plants.empty else []
     handles = [Patch(color=tech_color(n, techs), label=n) for n in present]
     handles.append(Patch(facecolor="none", edgecolor=MUTED, hatch="////",

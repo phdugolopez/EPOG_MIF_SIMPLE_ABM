@@ -7,7 +7,8 @@ events_timeline, capacity_bridge and flow_matrix, in that order, and writes thei
 with matplotlib's PdfPages (no PNGs). The periods of the merit order: the first period of
 the first price war, the first rebuild (the first period in which plants are retired at
 step 4 and plants are ordered) and the last period; a period that does not exist in the
-run is skipped and duplicates are dropped.
+run is skipped and duplicates are dropped. A page whose tables the folder lacks (a run
+written before the collector's event log or groups table) is skipped with a note.
 """
 
 import argparse
@@ -37,15 +38,38 @@ def representative_periods(run) -> list[int]:
     return sorted(set(periods))
 
 
+# Each page's script and the tables it needs; a page whose tables the folder lacks (a
+# run written before the collector's phase 3 or 4) is skipped with a note.
+NEEDS = {
+    "checks": ("macro",), "firm_panel": ("firms", "plants"),
+    "plant_gantt": ("firms", "plants"), "merit_order": ("firms", "plants"),
+    "events_timeline": ("firms", "events"), "capacity_bridge": ("groups",),
+    "flow_matrix": ("flows",),
+}
+
+
 def pages(run):
-    yield from checks.figures(run)
-    yield from firm_panel.figures(run, all=True)
-    yield from plant_gantt.figures(run)
-    for t in representative_periods(run):
-        yield from merit_order.figures(run, t=[t])
-    yield from events_timeline.figures(run)
-    yield from capacity_bridge.figures(run)
-    yield from flow_matrix.figures(run)
+    def wanted(name):
+        if run.has(*NEEDS[name]):
+            return True
+        print(f"skipping {name}: no {', '.join(NEEDS[name])} table in {run.path}")
+        return False
+
+    if wanted("checks"):
+        yield from checks.figures(run)
+    if wanted("firm_panel"):
+        yield from firm_panel.figures(run, all=True)
+    if wanted("plant_gantt"):
+        yield from plant_gantt.figures(run)
+    if wanted("merit_order"):
+        for t in representative_periods(run):
+            yield from merit_order.figures(run, t=[t])
+    if wanted("events_timeline"):
+        yield from events_timeline.figures(run)
+    if wanted("capacity_bridge"):
+        yield from capacity_bridge.figures(run)
+    if wanted("flow_matrix"):
+        yield from flow_matrix.figures(run)
 
 
 def main(argv=None) -> Path:

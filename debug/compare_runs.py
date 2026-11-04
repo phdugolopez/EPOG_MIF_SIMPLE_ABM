@@ -18,8 +18,9 @@ Tables written before the brief's names (the reference run of commit 49f7974: ti
 mean_price, book_value, ...) are renamed to the current names first.
 
 Output: a heatmap of the columns x periods where the difference exceeds --tol, written
-to --out (default RUN_A/debug), and the first divergence printed (period, table, column,
-firm). Exit status 1 when the runs differ.
+to --out (default RUN_B/debug: RUN_B is the run under test, RUN_A the reference, which is
+left untouched), and the first divergence printed (period, table, column, firm). Exit
+status 1 when the runs differ.
 """
 
 import argparse
@@ -240,12 +241,13 @@ def main(argv=None) -> Comparison:
     p.add_argument("run_b", type=Path)
     p.add_argument("--swap-labels", action="store_true")
     p.add_argument("--tol", type=float, default=1e-12)
-    p.add_argument("--out", type=Path, help="folder of the PNG (default RUN_A/debug)")
+    p.add_argument("--out", type=Path,
+                   help="folder of the PNG (default RUN_B/debug; RUN_A is not written to)")
     args = p.parse_args(argv)
     run_a, run_b = load(args.run_a), load(args.run_b)
     result = compare(run_a, run_b, args.swap_labels, args.tol)
     print(describe(result, run_a.name, run_b.name))
-    out = args.out or run_a.out_dir()
+    out = args.out or run_b.out_dir()
     out.mkdir(parents=True, exist_ok=True)
     fig = figure(result, run_a.name, run_b.name, args.swap_labels)
     suffix = "_swapped" if args.swap_labels else ""

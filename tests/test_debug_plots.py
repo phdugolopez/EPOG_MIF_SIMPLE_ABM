@@ -56,13 +56,11 @@ class DebugPlotsTest(unittest.TestCase):
             self.assertGreater(path.stat().st_size, 1000, path)
             self.assertEqual(path.parent.name, "debug")
 
-    def run_each(self, folder, merit_periods):
+    def run_each(self, folder, merit_periods, firm_panel_options):
         d = str(folder)
         for script, extra in (
             (checks, []),
-            (firm_panel, []),
-            (firm_panel, ["--all"]),
-            (firm_panel, ["--firm", "0"]),
+            *((firm_panel, options) for options in firm_panel_options),
             (plant_gantt, []),
             (merit_order, []),
             (merit_order, sum((["--t", str(t)] for t in merit_periods), [])),
@@ -76,29 +74,52 @@ class DebugPlotsTest(unittest.TestCase):
                 self.assert_written(paths)
 
     def test_every_script_on_the_baseline(self):
-        self.run_each(self.base, [2, 20])
+        """firm_panel --all here (every firm, entrants included); the default choice of
+        firms and --firm on the smaller run below."""
+        self.run_each(self.base, [2, 20], [["--all"]])
 
     def test_every_script_with_three_plants_and_an_exit_with_an_order(self):
         events = pd.read_csv(self.three / "events.csv")
         first = events[events["t"] == 0]
         self.assertIn("cancel", set(first["event"]))  # the case the brief asks for
         self.assertIn(3, set(pd.read_csv(self.three / "firms.csv").query("t == 0")["n_plants"]))
-        self.run_each(self.three, [0, 5])
+        self.run_each(self.three, [0, 5], [[], ["--firm", "0"]])
 
     def test_the_gantt_has_a_lane_for_the_cancelled_order(self):
-        lanes = plant_gantt.lanes(load(self.three))
-        self.assertIn("cancelled", set(lanes["cause"]))
-        self.assertTrue({"age", "replacement"} <= set(lanes["cause"]))
+        run = load(self.three)
+        spans = plant_gantt.plant_spans(run)
+        self.assertIn("cancelled", set(spans["cause"]))
+        self.assertTrue({"age", "replacement"} <= set(spans["cause"]))
+        lanes = plant_gantt.lanes(run)
+        self.assertEqual(lanes["n_plants"].sum(), len(spans))  # every plant in one lane
+        self.assertIn(["cancelled"], lanes["causes"].tolist())
 
     def test_checks_report_no_failure(self):
         _, out = quiet(checks.main, [str(self.base)])
         self.assertIn("All checks pass", out)
 
     def test_report_writes_one_pdf(self):
-        for folder in (self.base, self.three):
-            path, _ = quiet(report.main, [str(folder)])
-            self.assertEqual(path, folder / "debug" / "report.pdf")
-            self.assertGreater(path.stat().st_size, 10000)
+        """On the three-plant run, whose scripts the test above already exercised one by
+        one on the baseline: the report is rendered once per suite."""
+        path, out = quiet(report.main, [str(self.three)])
+        self.assertEqual(path, self.three / "debug" / "report.pdf")
+        self.assertGreater(path.stat().st_size, 10000)
+        self.assertNotIn("skipping", out)
+
+    def test_report_skips_pages_whose_tables_are_missing(self):
+        """A folder written before the event log and the groups table (the reference
+        run): the pages that need them are skipped with a note, the others drawn."""
+        partial = Path(self.tmp.name) / "partial"
+        partial.mkdir()
+        for table in ("macro", "firms", "plants", "flows"):
+            (partial / f"{table}.csv").write_bytes((self.three / f"{table}.csv").read_bytes())
+        path, out = quiet(report.main, [str(partial)])
+        self.assertTrue(path.exists())
+        self.assertIn("skipping events_timeline", out)
+        self.assertIn("skipping capacity_bridge", out)
+        with self.assertRaises(SystemExit) as stop:
+            quiet(events_timeline.main, [str(partial)])
+        self.assertIn("no events table", str(stop.exception))
 
     def test_compare_finds_nothing_between_a_run_and_itself(self):
         result, out = quiet(compare_runs.main, [str(self.base), str(self.base)])
@@ -127,8 +148,11 @@ class DebugPlotsTest(unittest.TestCase):
         self.assertFalse(result.identical)
         self.assertEqual(result.first["t"], 0)
         self.assertIn("First divergence: t = 0", out)
-        self.assertTrue(any(p.name.startswith("compare_") for p in
-                            (self.base / "debug").iterdir()))
+        # The PNG goes next to the run under test (RUN_B), never into the reference.
+        self.assertTrue(any(p.name.startswith("compare_base_vs_three") for p in
+                            (self.three / "debug").iterdir()))
+        self.assertFalse(any(p.name.startswith("compare_base_vs_three") for p in
+                             (self.base / "debug").iterdir()))
 
 
 if __name__ == "__main__":
