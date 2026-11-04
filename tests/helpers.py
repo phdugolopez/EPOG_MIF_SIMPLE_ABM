@@ -1,5 +1,6 @@
 """Shared helpers for the tests: modified copies of parameters.py and small industries."""
 
+from pathlib import Path
 from types import SimpleNamespace
 
 import run
@@ -59,3 +60,9 @@ def three_plant_industry():
     b.cash = 1e6
     industry.money = industry.roe.cash + sum(f.cash for f in industry.firms)
     return industry, a, b, old, x
+
+
+def write_run(industry, out, run_id: str = "test") -> None:
+    """Write the tables of a finished run to the folder `out`, as run.py does."""
+    row = run.runs_row(industry, run_id, "test", "test", "test", 0.0)
+    run.write(run.tables(industry, row), Path(out), "csv")

@@ -9,26 +9,16 @@ import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
 
 import parameters  # noqa: E402
+from debug._common import INK, MUTED, RC_PARAMS, TECHNIQUE_COLOR, TYPE_STYLE  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent
 OUTPUTS = ROOT / "outputs"
 macro = pd.read_csv(OUTPUTS / "macro.csv")
 t = macro["t"]
 
-# Categorical slots (validated): types blue / orange, techniques aqua / violet / red.
-TYPE_STYLE = {
-    "shaikh": {"color": "#2a78d6", "linestyle": "-", "label": "Shaikh (h = 0)"},
-    "okishio": {"color": "#eb6834", "linestyle": "--", "label": "Okishio (h = best rate)"},
-}
-TECHNIQUE_COLOR = {"C": "#1baf7a", "D1": "#6250d6", "D2": "#e34948"}
-INK, MUTED, GRID = "#0b0b0b", "#52514e", "#e4e3df"
-
-plt.rcParams.update({
-    "axes.edgecolor": MUTED, "axes.labelcolor": INK, "xtick.color": MUTED,
-    "ytick.color": MUTED, "axes.grid": True, "grid.color": GRID, "grid.linewidth": 0.6,
-    "axes.spines.top": False, "axes.spines.right": False, "lines.linewidth": 2,
-    "font.size": 9, "legend.frameon": False,
-})
+# Categorical slots (validated), shared with debug/: types blue / orange, techniques
+# aqua / violet / red. The debugging pages' legend backgrounds are reset here.
+plt.rcParams.update(RC_PARAMS)
 
 
 def save(fig, name):
