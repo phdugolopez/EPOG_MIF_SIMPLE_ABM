@@ -20,6 +20,9 @@ MENU: tuple[str, ...] = ("C", "D1", "D2")  # techniques on offer for new plants
 
 DELTA: float = 0.10  # depreciation rate, 1/T
 PLANT_LIFE: int | None = None  # no maximum age; version 1: 10 (T = 1/delta)
+# "time": straight line, delta kappa qbar a period. "use": delta kappa x, so idle plants do not
+# depreciate, and PLANT_LIFE counts periods of normal output (wear) instead of age.
+DEPRECIATION: str = "time"  # or "use"
 PLANT_SIZE: float | None = 20.0  # capacity of every plant (initial, new, entrant); version 1: None, any size
 RBAR: float = 0.05  # general rate of profit, set outside the industry; version 1: 0.16
 U_MAX: float = 1.2  # output can stretch to U_MAX * capacity

@@ -27,6 +27,7 @@ class Plant:
     lifetime_profit: float = 0.0
     periods_below_cost: int = 0
     periods_idle: int = 0  # consecutive periods in which the firm did not need the plant
+    wear: float = 0.0  # output so far, in periods of normal output (sum of x_v / qbar_v)
 
     @property
     def purchase_cost(self) -> float:

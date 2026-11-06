@@ -1,6 +1,6 @@
 from equations.anchor_price import leader_anchor, markup_price, target_return_price
 from equations.competitiveness import competitiveness
-from equations.depreciation import depreciation
+from equations.depreciation import depreciation, depreciation_by_use
 from equations.desired_capacity import desired_capacity
 from equations.market_shares import logit_shares, replicator_shares
 from equations.new_plant_rate import new_plant_rate
@@ -256,12 +256,17 @@ def produce(firm, config) -> None:
 
 
 def account(industry, firm, config) -> None:
-    """Profit, dividends and cash; book values fall by depreciation."""
+    """Profit, dividends and cash; book values fall by depreciation, over time or (DEPRECIATION
+    = "use") with output."""
     roe = industry.roe
     firm.revenue = firm.price * firm.sales
     firm.interest = interest_payment(firm.debt, config.RHO)
     for plant in firm.plants:
-        dep = depreciation(plant.kappa, plant.capacity, config.DELTA, plant.book_value)
+        if config.DEPRECIATION == "use":
+            dep = depreciation_by_use(plant.kappa, plant.output, config.DELTA, plant.book_value)
+        else:
+            dep = depreciation(plant.kappa, plant.capacity, config.DELTA, plant.book_value)
+        plant.wear += plant.output / plant.capacity
         plant.book_value -= dep
         firm.depreciation += dep
         plant.profit = plant_profit(
@@ -316,8 +321,11 @@ def retire_plants(industry, firm, config) -> list:
             scrap_cost(plant.ucs, plant.kappa, config.DELTA, config.SCRAP_COST),
         )
         plant.periods_idle = plant.periods_idle + 1 if is_idle else 0
+        # A plant's life: periods of operation, or (DEPRECIATION = "use") periods of normal
+        # output, so that a plant worn out by output leaves when it is fully depreciated.
+        life_used = round(plant.wear, 9) if config.DEPRECIATION == "use" else plant.age
         reason = retirement_reason(
-            plant.age, config.PLANT_LIFE, plant.periods_below_cost,
+            life_used, config.PLANT_LIFE, plant.periods_below_cost,
             config.OBSOLESCENCE_PERIODS, plant.periods_idle,
             config.IDLE_PERIODS if config.IDLE_SCRAPPING else None,
         )

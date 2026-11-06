@@ -62,6 +62,7 @@ class TestModel(unittest.TestCase):
                           {"HURDLE_FLOOR_AT_ZERO": False}, {"REPLACEMENT": False},
                           {"INVESTMENT_SALES_LAG": 0}, {"BORROWING": True}, {"CASH_SHORTFALL": "overdraft"}, {"PLANT_SIZE": 20.0},
                           {"PLANT_LIFE": None}, {"SCRAP_COST": "unit_cost"},
+                          {"DEPRECIATION": "use"}, {"DEPRECIATION": "use", "PLANT_LIFE": 10},
                           {"IDLE_SCRAPPING": True}, {"INVESTMENT_RULE": "retained_earnings"},
                           PLANT_ALTERNATIVES, {"TECH_DRAWS": True},
                           dict(PLANT_ALTERNATIVES, TECH_DRAWS=True)):

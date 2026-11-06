@@ -28,6 +28,19 @@ pay, and the firm goes bankrupt at the end of the period (section~\ref{sec:entry
 firm sells only what plants whose $ucs$ the price covers can make, and dividends come out of
 positive profit, cash runs out only when interest exceeds the operating margin.
 
+\paragraph{Alternative: depreciation by use.} With \code{DEPRECIATION = "use"} (the default
+is \code{"time"}) a plant depreciates with what it produces, $\delta\,\kappa_v\,x_{v,t}$
+(overtime included), instead of $\delta\,\kappa_v\,\qbar_v$ a period, until its book value is
+zero. Its purchase cost is then spread over a lifetime output of $\qbar_v/\delta$. At normal
+output both rules charge the same, and the capital charge per unit of output is
+$\delta\kappa_v$ in both, so $uc = ucs + \delta\kappa$, and with it the hurdle, the
+technique choice, replacement and the scrap cost, are unchanged. What changes is the cost of
+idle capacity: an idle plant does not depreciate, so a firm at low utilisation reports a
+higher profit, and a plant scrapped while idle leaves a larger write-off. Under this rule
+\code{PLANT\_LIFE} counts periods of normal output rather than age: a plant leaves once it
+has produced \code{PLANT\_LIFE}$\times\qbar_v$, which with \code{PLANT\_LIFE} $= 1/\delta$ is
+when it is fully depreciated. The rule is the same for both types.
+
 \paragraph{Closure.} Wages and materials, plant purchases, interest, dividends, loans,
 equity and the industry's demand all go through one rest-of-economy account. Every payment
 goes through \code{markets/payments.pay}, which records the transaction-flow matrix. At the
