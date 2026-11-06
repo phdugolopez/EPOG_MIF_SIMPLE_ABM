@@ -20,15 +20,21 @@ def remove_firm(industry, firm, reason: str) -> None:
     rescale_shares(industry.firms)
 
 
-def create_entrant(industry, firm_type: str, price: float, technique, capacity: float):
+def create_entrant(industry, firm_type: str, price: float, technique, capacity: float,
+                   plant_size: float | None = None):
     """The entrant's owners bring the cost of its plant as equity; the plant arrives next
-    period and the entrant starts with a share in proportion to its capacity."""
+    period and the entrant starts with a share in proportion to its capacity. With a
+    plant_size, capacity (a multiple of it) comes as plants of that size."""
     incumbents = list(industry.firms)
     firm = industry.new_firm(firm_type, price, share=0.0, born=industry.time)
     cost = technique.kappa * capacity
     pay(industry, industry.roe, firm, cost, "equity")
     firm.equity_in = cost
-    buy_plant(industry, firm, technique, capacity)
+    if plant_size is None:
+        buy_plant(industry, firm, technique, capacity)
+    else:
+        for _ in range(round(capacity / plant_size)):
+            buy_plant(industry, firm, technique, plant_size)
     next_capacity = sum(
         f.capacity + sum(p.capacity for p in f.pending_plants) for f in incumbents
     )

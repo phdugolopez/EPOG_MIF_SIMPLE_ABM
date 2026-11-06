@@ -10,7 +10,7 @@ higher profit rate at the going price, the Okishio firms, grow faster. Investmen
 creates the excess capacity that starts price wars, which favour Shaikh firms. The volume
 rule sets the balance between the two selection channels, so it is identical for both types.
 
-\paragraph{Starting rule.}
+\paragraph{Version 1 rule.}
 \[
 \qbar^{\,d}_{i,t} = (1+g)\, x_{i,t-1}, \qquad
 I_{i,t} = \max\{0,\ \qbar^{\,d}_{i,t} - \qbar_{i,t}\}, \qquad
@@ -23,18 +23,56 @@ zero, which picks the highest profit rate at that price. New plants arrive next 
 are paid from cash, then debt up to twice the period's sales revenue; investment is scaled
 down when it cannot be financed.
 
+\paragraph{Version 2 rules (the defaults).} \code{PLANT\_SIZE} $= S$ gives every plant the
+capacity $S$, including the initial plants (split into the nearest number of plants) and
+entrants'. \code{INVESTMENT\_RULE = "retained\_earnings"} replaces the accelerator: whatever
+the demand, firm $i$ buys as many plants of the technique $j^*$ as its retained earnings pay
+for, without borrowing,
+\[
+I_{i,t} = S \left\lfloor \frac{\min\{RE_{i,t},\ M_{i,t}\}}{\kappa_{j^*} S} \right\rfloor,
+\qquad RE_{i,t} = RE_{i,t-1} + \Pi_{i,t} - \mathit{Div}_{i,t} - \kappa_{j^*} I_{i,t-1},
+\]
+with $\Pi$ profit after depreciation and interest and $M$ cash. Without a demand condition,
+capacity is bounded only by scrapping: without \code{IDLE\_SCRAPPING} it grows without limit
+(section~\ref{sec:scrapping}, \code{docs/design/choices.md}).
+
+\paragraph{Technical change (version 2 default).} With \code{TECH\_DRAWS = True}, the default (\code{TECH\_CONFLICT} $= q = 0.5$), a firm that invests is
+offered one new design $n$, drawn relative to the technique $o$ it would otherwise build and
+judged at its own price $p$. Every design is Marx-biased: operating cost falls by a share
+$a \le$ \code{TECH\_STEP} and capital per unit rises by a share $b$,
+\[
+ucs_n = (1-a)\,ucs_o, \qquad \kappa_n = (1+b)\,\kappa_o .
+\]
+Unit cost falls if $b < b_S = a\,ucs_o/(\delta\kappa_o)$, and the profit rate at $p$ rises if
+$b < b_O = a\,ucs_o/(\delta\kappa_o + p - uc_o)$. With probability \code{TECH\_CONFLICT} the
+design lies in the conflict zone $b_O \le b < b_S$, which only the unit-cost rule adopts;
+otherwise $0 < b < b_O$ and both rules adopt it. The conflict zone vanishes as the margin
+$p - uc_o$ falls to zero, where the two rules coincide. The firm adopts $n$ if
+$ucs_n + (\delta + h_i)\kappa_n < ucs_o + (\delta + h_i)\kappa_o$, the same comparison as the
+technique choice, and keeps it among the techniques it knows; if not, it still invests, in
+$o$, so a rejected design never costs a firm capacity.
+
 \paragraph{Tests} (\code{tests/test\_investment.py}): at $p = 100$ Shaikh firms build D2 and
 Okishio firms D1, and with only C and D2 on offer Okishio firms keep C; on random menus the
 argmin with $h$ equal to the best profit rate picks the same technique as maximising the
 profit rate directly; with constant demand and no scrapping, investment stops once capacity
 meets expected sales; borrowing for plants never takes debt above its cap; two firms of
-different types with the same sales add the same capacity.
+different types with the same sales add the same capacity. For the switches: whole plants
+for a capacity; retained earnings buy whole plants and never borrow; every plant, entrants'
+included, has the fixed size; every design uses more capital and less operating cost and is
+adopted exactly by the rules its category names; at zero margin both rules adopt a conflict
+design; operating costs stay positive over a long run; a rejected design still leaves the
+firm investing in its best known technique, an adopted one is built and kept; the label
+swap holds with draws.
 
 \subsection*{Code}
 \eqfile{hurdle.py}
 \eqfile{technique_choice.py}
 \eqfile{desired_capacity.py}
 \eqfile{investment.py}
+\eqfile{retained_earnings_investment.py}
+\eqfile{plant_number.py}
+\eqfile{new_technique.py}
 \eqfile{borrowing_capacity.py}
 \marketfile{plant_market.py}
 \schedulerpart{investment}{\code{model/scheduler.py}: step 5}

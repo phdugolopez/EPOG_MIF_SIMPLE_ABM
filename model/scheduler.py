@@ -1,4 +1,4 @@
-from equations.anchor_price import markup_price, target_return_price
+from equations.anchor_price import leader_anchor, markup_price, target_return_price
 from equations.competitiveness import competitiveness
 from equations.depreciation import depreciation
 from equations.desired_capacity import desired_capacity
@@ -21,9 +21,14 @@ from equations.plant_profit import plant_profit
 from equations.posted_price import posted_price
 from equations.price_floor import price_floor
 from equations.price_war import price_war
+from equations.real_competition_price import real_competition_price
 from equations.profit_rate import profit_rate
 from equations.replacement import replacement_pays
-from equations.retirement import periods_below_cost, retirement_reason
+from equations.retirement import periods_below_cost, retirement_reason, scrap_cost
+from equations.plant_number import plant_number
+from equations.idle_plants import idle_plants
+from equations.new_technique import design_category, draw_design
+from equations.retained_earnings_investment import retained_earnings_investment
 from equations.technique_choice import choose_technique
 from equations.unit_cost import unit_cost
 from markets.credit_market import settle_cash_position
@@ -32,6 +37,7 @@ from markets.goods_market import allocate
 from markets.payments import pay
 from markets.plant_market import affordable_spending, buy_plant
 from model.collector import check_stock_flow, collect
+from model.entities import Technique
 
 # Lines "# {name}" ... "# {endname}" mark the ranges that docs/sections/*.tex include.
 
@@ -83,16 +89,88 @@ def start_period(industry) -> None:
 
 
 def set_prices(industry) -> None:
-    """Firms post p_i from last period's prices, utilisation and leader."""
+    """Firms post p_i from last period's prices, costs, utilisation and excess demand."""
+    if industry.parameters.PRICING_RULE == "anchor":
+        _anchor_prices(industry)
+    else:
+        _real_competition_prices(industry)
+    # The leader for next period: this period's lowest posted price.
+    industry.leader_price = min(f.price for f in industry.firms)
+
+
+def _real_competition_prices(industry) -> None:
+    """Follow the lowest price; undercut it only with spare capacity and a cost edge;
+    raise prices after excess demand. No anchor, no war trigger."""
     config = industry.parameters
-    for firm in industry.firms:
-        if not firm.plants:
-            continue
+    active = [f for f in industry.firms if f.plants]
+    previous = {f.firm_id: f.price for f in active}  # all firms post at once
+    best_uc = {
+        f.firm_id: min(unit_cost(p.ucs, p.kappa, config.DELTA) for p in f.plants)
+        for f in active
+    }
+    # Last period: demand = sales + unserved; normal capacity = sales / utilisation.
+    last_demand = sum(f.previous_sales for f in industry.firms) + industry.unserved
+    if config.EXCESS_DEMAND == "unserved":
+        excess = industry.unserved  # demand beyond all output, overtime included
+    else:
+        last_capacity = sum(
+            f.previous_sales / f.util_history[-1]
+            if f.util_history and f.util_history[-1] > 0.0 else f.capacity
+            for f in industry.firms
+        )
+        excess = max(0.0, last_demand - last_capacity)  # demand beyond normal capacity
+    excess_share = excess / last_demand if last_demand > 0.0 else 0.0
+    for firm in active:
+        rivals = [f.firm_id for f in active if f.firm_id != firm.firm_id]
+        if config.PRICE_FLOOR == "operating_cost":
+            floor = price_floor(
+                [p.ucs for p in firm.plants],
+                [p.capacity for p in firm.plants],
+                firm.previous_sales,
+                config.U_MAX,
+                config.OVERTIME_PREMIUM,
+            )
+        else:
+            floor = best_uc[firm.firm_id]
+        util = firm.util_history[-1] if firm.util_history else firm.previous_sales / firm.capacity
+        spare = util < config.U_FULL - 1e-9
+        firm.price, firm.at_war = real_competition_price(
+            previous[firm.firm_id],
+            [previous[j] for j in rivals],
+            [best_uc[j] for j in rivals],
+            best_uc[firm.firm_id],
+            floor,
+            spare,
+            excess_share,
+            config.PRICE_CUT,
+            config.SHORTAGE_RESPONSE,
+        )
+
+
+def _anchor_prices(industry) -> None:
+    """Version 1: move toward an anchor within a band of the leader; cut after a run of
+    low utilisation (PRICING_RULE = "anchor")."""
+    config = industry.parameters
+    active = [f for f in industry.firms if f.plants]
+    previous = {f.firm_id: f.price for f in industry.firms}
+    averages = {}
+    for firm in active:
         weights = [p.capacity for p in firm.plants]
         uc = _average([unit_cost(p.ucs, p.kappa, config.DELTA) for p in firm.plants], weights)
         kappa = _average([p.kappa for p in firm.plants], weights)
+        averages[firm.firm_id] = (uc, kappa)
+    if config.PRICING_ANCHOR == "leader" and active:
+        common_anchor = leader_anchor(
+            [target_return_price(*averages[f.firm_id], config.RBAR) for f in active],
+            [previous[f.firm_id] for f in active],
+        )
+    for firm in active:
+        uc, kappa = averages[firm.firm_id]
+        weights = [p.capacity for p in firm.plants]
         if config.PRICING_ANCHOR == "markup":
             anchor = markup_price(uc, config.MARKUP)
+        elif config.PRICING_ANCHOR == "leader":
+            anchor = common_anchor
         else:
             anchor = target_return_price(uc, kappa, config.RBAR)
         floor = price_floor(
@@ -107,8 +185,6 @@ def set_prices(industry) -> None:
             firm.price, anchor, industry.leader_price, floor, firm.at_war,
             config.PRICE_SPEED, config.PRICE_BAND, config.PRICE_CUT,
         )
-    # The leader for next period: this period's lowest posted price.
-    industry.leader_price = min(f.price for f in industry.firms)
 
 
 def _average(values: list[float], weights: list[float]) -> float:
@@ -199,6 +275,7 @@ def account(industry, firm, config) -> None:
     )
     firm.profit_rate = profit_rate(firm.profit, firm.capital)
     firm.dividends = dividends(firm.profit, config.PAYOUT)
+    firm.retained_earnings += firm.profit - firm.dividends
 
     pay(industry, roe, firm, firm.revenue, "sales")
     pay(industry, firm, roe, firm.operating_cost, "wages and materials")
@@ -217,8 +294,8 @@ def scrap_plants(industry) -> None:
     config = industry.parameters
     for firm in industry.firms:
         firm.hurdle = hurdle(
-            config.HURDLE_RULES[firm.type], firm.price, industry.menu, config.DELTA,
-            config.HURDLE_FLOOR_AT_ZERO,
+            config.HURDLE_RULES[firm.type], firm.price, firm.known or industry.menu,
+            config.DELTA, config.HURDLE_FLOOR_AT_ZERO,
         )
         retired = retire_plants(industry, firm, config)
         if config.REPLACEMENT:
@@ -229,13 +306,20 @@ def scrap_plants(industry) -> None:
 
 def retire_plants(industry, firm, config) -> list:
     retired = []
-    for plant in list(firm.plants):
+    idle = idle_plants(
+        [p.ucs for p in firm.plants], [p.vintage for p in firm.plants],
+        [p.capacity for p in firm.plants], firm.sales,
+    )
+    for plant, is_idle in zip(list(firm.plants), idle):
         plant.periods_below_cost = periods_below_cost(
-            plant.periods_below_cost, firm.price, plant.ucs
+            plant.periods_below_cost, firm.price,
+            scrap_cost(plant.ucs, plant.kappa, config.DELTA, config.SCRAP_COST),
         )
+        plant.periods_idle = plant.periods_idle + 1 if is_idle else 0
         reason = retirement_reason(
             plant.age, config.PLANT_LIFE, plant.periods_below_cost,
-            config.OBSOLESCENCE_PERIODS,
+            config.OBSOLESCENCE_PERIODS, plant.periods_idle,
+            config.IDLE_PERIODS if config.IDLE_SCRAPPING else None,
         )
         if reason:
             remove_plant(industry, firm, plant)
@@ -246,7 +330,9 @@ def retire_plants(industry, firm, config) -> list:
 def replace_plants(industry, firm, config) -> None:
     """Scrap a working plant when a new technique is cheap enough to justify new capital,
     if the firm can pay for it (cash, then debt up to the cap)."""
-    technique = choose_technique(industry.menu, firm.hurdle, config.DELTA, config.TAU)
+    technique = choose_technique(
+        firm.known or industry.menu, firm.hurdle, config.DELTA, config.TAU
+    )
     for plant in list(firm.plants):
         if not replacement_pays(
             plant.ucs, technique.ucs, technique.kappa, config.DELTA, firm.hurdle
@@ -285,10 +371,25 @@ def fails_renewal(retired, rbar: float) -> bool:
 
 def invest(industry) -> None:
     """Expected sales, desired capacity, technique chosen with h, cash then capped debt.
-    New plants arrive next period."""
+    Or (INVESTMENT_RULE = "retained_earnings") whatever retained earnings pay for, whatever
+    the demand. With PLANT_SIZE, plants come whole. New plants arrive next period."""
     config = industry.parameters
+    size = config.PLANT_SIZE
     for firm in industry.firms:
         if firm.non_renewal:
+            continue
+        if config.INVESTMENT_RULE == "retained_earnings":
+            funds = min(firm.retained_earnings, firm.cash)  # earned, and still in cash
+            reference = choose_technique(
+                firm.known or industry.menu, firm.hurdle, config.DELTA, config.TAU
+            )
+            if retained_earnings_investment(funds, reference.kappa, size) <= 0.0:
+                continue
+            technique = _technique_to_build(industry, firm, config)
+            units = retained_earnings_investment(funds, technique.kappa, size)
+            if units > 0.0:
+                _buy_capacity(industry, firm, technique, units, size)
+                firm.retained_earnings -= technique.kappa * units
             continue
         expected_sales = firm.previous_sales if config.INVESTMENT_SALES_LAG else firm.sales
         on_order = sum(p.capacity for p in firm.pending_plants)
@@ -298,9 +399,45 @@ def invest(industry) -> None:
         )
         if units <= 0.0:
             continue
-        technique = choose_technique(industry.menu, firm.hurdle, config.DELTA, config.TAU)
+        technique = _technique_to_build(industry, firm, config)
         affordable = affordable_spending(firm, config.DEBT_CAP) / technique.kappa
-        buy_plant(industry, firm, technique, min(units, affordable))
+        if size is None:
+            buy_plant(industry, firm, technique, min(units, affordable))
+        else:  # enough whole plants to cover the gap, as many as can be financed
+            n = min(plant_number(units, size, "up"), int(affordable / size + 1e-9))
+            _buy_capacity(industry, firm, technique, n * size, size)
+
+
+def _technique_to_build(industry, firm, config):
+    """The firm's best known technique under its hurdle; with TECH_DRAWS it is first offered
+    a new design, which it adopts (and keeps knowing) if its hurdle prefers it."""
+    reference = choose_technique(
+        firm.known or industry.menu, firm.hurdle, config.DELTA, config.TAU
+    )
+    if not config.TECH_DRAWS:
+        return reference
+    rng = industry.rng
+    category = design_category(rng.random(), config.TECH_CONFLICT)
+    ucs, kappa = draw_design(
+        reference.ucs, reference.kappa, config.DELTA, firm.price, category,
+        1.0 - rng.random(), rng.random(), config.TECH_STEP,
+    )
+    industry.next_design += 1
+    design = Technique(name=f"T{industry.next_design}", ucs=ucs, kappa=kappa)
+    chosen = choose_technique([reference, design], firm.hurdle, config.DELTA, config.TAU)
+    adopted = chosen is design
+    industry.draw_log.append((industry.time, firm.firm_id, category, adopted))
+    if adopted:
+        firm.known.append(design)
+    return chosen
+
+
+def _buy_capacity(industry, firm, technique, units: float, size: float | None) -> None:
+    if size is None:
+        buy_plant(industry, firm, technique, units)
+        return
+    for _ in range(round(units / size)):
+        buy_plant(industry, firm, technique, size)
 # {endinvestment}
 
 
@@ -355,14 +492,29 @@ def admit_entrant(industry) -> None:
         [f.type for f in industry.firms], [f.share for f in industry.firms],
         config.MUTATION, industry.rng,
     )
-    price = entrant_price(industry.leader_price, config.ENTRANT_UNDERCUT)
-    h = hurdle(config.HURDLE_RULES[firm_type], price, industry.menu, config.DELTA,
+    # Under real-competition pricing an entrant has no price history: it starts at the lowest
+    # price posted this period and from its first period of production prices by the same
+    # rule as every other firm. Under the anchor rule it undercuts the leader (version 1).
+    undercut = config.ENTRANT_UNDERCUT if config.PRICING_RULE == "anchor" else 0.0
+    price = entrant_price(industry.leader_price, undercut)
+    known = list(industry.menu)
+    if config.TECH_DRAWS:  # an entrant can build any technique in use
+        names = {t.name for t in known}
+        for f in industry.firms:
+            for p in f.plants:
+                if p.technique not in names:
+                    names.add(p.technique)
+                    known.append(Technique(name=p.technique, ucs=p.ucs, kappa=p.kappa))
+    h = hurdle(config.HURDLE_RULES[firm_type], price, known, config.DELTA,
                config.HURDLE_FLOOR_AT_ZERO)
-    technique = choose_technique(industry.menu, h, config.DELTA, config.TAU)
+    technique = choose_technique(known, h, config.DELTA, config.TAU)
     capacities = [f.capacity for f in industry.firms if f.capacity > 0.0]
     if not capacities:
         return
     capacity = config.ENTRANT_SIZE * sum(capacities) / len(capacities)
-    entrant = create_entrant(industry, firm_type, price, technique, capacity)
+    if config.PLANT_SIZE is not None:
+        capacity = config.PLANT_SIZE * plant_number(capacity, config.PLANT_SIZE)
+    entrant = create_entrant(industry, firm_type, price, technique, capacity, config.PLANT_SIZE)
     entrant.hurdle = h
+    entrant.known = known
 # {endentry}

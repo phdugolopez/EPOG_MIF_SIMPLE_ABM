@@ -26,6 +26,7 @@ class Plant:
     profit: float = 0.0  # this period: (p - ucs) x - premium - depreciation
     lifetime_profit: float = 0.0
     periods_below_cost: int = 0
+    periods_idle: int = 0  # consecutive periods in which the firm did not need the plant
 
     @property
     def purchase_cost(self) -> float:
@@ -60,6 +61,8 @@ class Firm:
     write_offs: float = 0.0
     investment: float = 0.0  # spending on new plants, replacements included
     equity_in: float = 0.0
+    retained_earnings: float = 0.0  # profit - dividends since birth, less spending on plants
+    known: list = field(default_factory=list)  # techniques the firm can build (TECH_DRAWS)
     at_war: bool = False
     non_renewal: bool = False
     net_worth_start: float = 0.0

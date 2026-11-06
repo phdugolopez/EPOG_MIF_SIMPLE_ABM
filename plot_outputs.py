@@ -31,8 +31,8 @@ plt.rcParams.update({
 })
 
 
-def save(fig, name):
-    fig.tight_layout()
+def save(fig, name, rect=None):
+    fig.tight_layout(rect=rect)
     fig.savefig(OUTPUTS / name, dpi=180)
     plt.close(fig)
 
@@ -97,5 +97,37 @@ for firm_type, style in TYPE_STYLE.items():
 ax.set(xlabel="Period", ylabel="Firms", title="Number of firms")
 ax.legend(loc="upper right")
 save(fig, "n_firms.png")
+
+# 6. Profit rate of each firm, one panel per firm (same scales)
+firms = pd.read_csv(OUTPUTS / "firms.csv")
+firms = firms[firms["capacity"] > 0]  # an entrant's first period, before its plants arrive
+ids = sorted(firms["firm_id"].unique())
+ncols = 5
+nrows = -(-len(ids) // ncols)
+height = 1.7 * nrows + 0.8
+fig, axes = plt.subplots(nrows, ncols, figsize=(10, height), sharex=True, sharey=True,
+                         squeeze=False)
+for ax, firm_id in zip(axes.flat, ids):
+    rows = firms[firms["firm_id"] == firm_id]
+    firm_type = rows["type"].iloc[0]
+    style = TYPE_STYLE[firm_type]
+    ax.plot(rows["time"], rows["profit_rate"], color=style["color"], linewidth=1.2)
+    ax.axhline(parameters.RBAR, color=MUTED, linewidth=0.8, linestyle=":")
+    ax.set_title(f"Firm {firm_id} · {firm_type.capitalize()} · t {rows['time'].min()}–"
+                 f"{rows['time'].max()}", fontsize=8, color=INK)
+    ax.set_xlim(0, t.iloc[-1])
+for ax in list(axes.flat)[len(ids):]:
+    ax.set_visible(False)
+for ax in axes[:, 0]:
+    ax.set_ylabel("Profit rate")
+for ax in axes[-1, :]:
+    ax.set_xlabel("Period")
+handles = [plt.Line2D([], [], color=s["color"], linewidth=1.2, label=s["label"])
+           for s in TYPE_STYLE.values()]
+handles.append(plt.Line2D([], [], color=MUTED, linewidth=0.8, linestyle=":", label="rbar"))
+fig.suptitle("Profit rate of each firm (net, on capital at cost)", y=1 - 0.08 / height,
+             fontsize=10)
+fig.legend(handles=handles, loc="upper center", ncol=3, bbox_to_anchor=(0.5, 1 - 0.32 / height))
+save(fig, "profit_rates_by_firm.png", rect=(0, 0, 1, 1 - 0.5 / height))
 
 print(f"Figures saved in: {OUTPUTS}")

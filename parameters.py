@@ -19,8 +19,9 @@ SHAIKH_PLANTS: dict[str, tuple[float, float, float]] = {
 MENU: tuple[str, ...] = ("C", "D1", "D2")  # techniques on offer for new plants
 
 DELTA: float = 0.10  # depreciation rate, 1/T
-PLANT_LIFE: int = 10  # T = 1/delta, maximum age of a plant in periods
-RBAR: float = 0.16  # general rate of profit, set outside the industry
+PLANT_LIFE: int | None = None  # no maximum age; version 1: 10 (T = 1/delta)
+PLANT_SIZE: float | None = 20.0  # capacity of every plant (initial, new, entrant); version 1: None, any size
+RBAR: float = 0.05  # general rate of profit, set outside the industry; version 1: 0.16
 U_MAX: float = 1.2  # output can stretch to U_MAX * capacity
 OVERTIME_PREMIUM: float = 0.10  # extra unit operating cost on output above capacity
 
@@ -47,11 +48,20 @@ HURDLE_FLOOR_AT_ZERO: bool = True  # Okishio h = max(0, best rate on the menu)
 TAU: float = 0.0  # share of a period's operating cost counted as capital advanced
 
 # --- Pricing (Jake) ----------------------------------------------------------------
-PRICING_ANCHOR: str = "target_return"  # or "markup"
+# "real_competition": no anchor and no war trigger. Firms follow the lowest price, cut below
+# it only with spare capacity and a cost edge, and raise prices when demand went unserved.
+# "anchor": the version 1 rule (anchor, band and utilisation-triggered price wars).
+PRICING_RULE: str = "real_competition"  # or "anchor"
+PRICE_CUT: float = 0.02  # c: size of an undercut (both rules; per period in an "anchor" war)
+U_FULL: float = 1.0  # utilisation at or above which a firm has no spare capacity
+SHORTAGE_RESPONSE: float = 0.5  # rise of the highest price per unit of excess-demand share
+EXCESS_DEMAND: str = "normal_capacity"  # shortage: demand above normal capacity, or "unserved"
+PRICE_FLOOR: str = "unit_cost"  # floor when following: uc of the best plant, or "operating_cost"
+# Anchor rule only:
+PRICING_ANCHOR: str = "target_return"  # or "markup", or "leader" (one anchor for all)
 MARKUP: float = 0.282  # mu, for PRICING_ANCHOR = "markup"
 PRICE_SPEED: float = 0.25  # lambda, speed toward the anchor
 PRICE_BAND: float = 0.025  # b, how far above the leader a firm may stay
-PRICE_CUT: float = 0.02  # c, cut per period in a price war
 WAR_PERIODS: int = 2  # T in the pricing rule: periods below U_WAR that start a cut
 U_WAR: float = 0.95  # utilisation threshold of a price war
 
@@ -67,19 +77,32 @@ PAYOUT: float = 0.5  # d, dividends = d * max(0, profit)
 REPAYMENT_RATE: float = 0.10  # share of debt repaid each period, from cash
 
 # --- Scrapping (Vincent) -----------------------------------------------------------
-OBSOLESCENCE_PERIODS: int = 4  # N: periods with price below ucs before retirement
+OBSOLESCENCE_PERIODS: int = 2  # N: periods with price below the scrap cost before retirement; version 1: 4
+SCRAP_COST: str = "unit_cost"  # cost compared with the price: ucs + delta kappa; version 1: "operating_cost", ucs
+IDLE_SCRAPPING: bool = True  # scrap plants the firm did not need for IDLE_PERIODS periods; version 1: False
+IDLE_PERIODS: int = 2
 REPLACEMENT: bool = True  # replace working plants when the hurdle inequality holds
 
 # --- Investment (Ugo) --------------------------------------------------------------
 EXPECTED_GROWTH: float = 0.0  # g in desired capacity
 INVESTMENT_SALES_LAG: int = 1  # 1: x_{t-1} as in the brief; 0: this period's sales
 DEBT_CAP: float = 2.0  # Lambda: debt for plants up to DEBT_CAP * sales revenue
+INVESTMENT_RULE: str = "retained_earnings"  # buy what retained earnings pay for, no debt; version 1: "accelerator"
+
+# --- Technical change ---------------------------------------------------------------
+# With TECH_DRAWS, a firm that invests is offered one new plant design, drawn relative to the
+# technique it would otherwise build, at its own price. Every design is Marx-biased: more
+# capital per unit, lower operating cost. It adopts the design if its hurdle rule prefers it,
+# and otherwise invests in its current best technique.
+TECH_DRAWS: bool = True  # version 1: False, the menu stays fixed
+TECH_CONFLICT: float = 0.5  # share of designs in the conflict zone (only the unit-cost rule adopts)
+TECH_STEP: float = 0.05  # largest fall in operating cost ucs per design, as a share
 
 # --- Entry and exit (unassigned) ---------------------------------------------------
 ENTRY_WINDOW: int = 5  # k: plants built in the last k periods drive r_new
 ENTRY_SPEED: float = 5.0  # theta
 MUTATION: float = 0.02  # m: probability that an entrant flips the inherited type
 ENTRANT_SIZE: float = 0.5  # phi: entrant capacity / average incumbent capacity
-ENTRANT_UNDERCUT: float = 0.01  # entrant price = (1 - undercut) * leader
+ENTRANT_UNDERCUT: float = 0.01  # anchor pricing only: entrant price = (1 - undercut) * leader
 MIN_SHARE: float = 0.01  # f_min: exit below this market share
 MIN_FIRMS: int = 2  # floor on the number of firms

@@ -1,27 +1,56 @@
 \section{Pricing (Jake)}\label{sec:pricing}
 
 Pricing is where real competition happens: the low-cost firm cuts its price, followers
-match, and cuts stop at operating cost (Shaikh 2016, Table 7.3). The rule decides whether a
-cheaper but more capital-intensive firm can ever use its cost advantage.
+match, and cuts stop at cost (Shaikh 2016, Table 7.3). Version 2 has no anchor and no war
+trigger: a firm cuts only when it is cheaper than a rival at the lowest price, so price wars
+come from cost differences, and technical change is what renews them.
 
-\paragraph{The trap: the anchor decides the winner.} Firms need a normal price to return to
-between price wars. With a markup on unit cost, $(1+\mu)uc$ with $\mu = 28.2\,\%$, C posts
-100 and D2 96.15: the unit-cost rule wins by construction. With a target return on capital,
-$uc + \rbar\kappa$, C posts 100 and D2 100.26: C is cheaper in normal times and D2 can win
-only through price wars. Version 1 uses the target return; the markup is the switch
-\code{PRICING\_ANCHOR = "markup"}, and comparing the two is itself a result.
+\paragraph{Rule} (\code{PRICING\_RULE = "real\_competition"}). With
+$R_{i,t} = \min_{j\neq i} p_{j,t-1}$ the lowest rival price,
+$uc_i = \min_{v}(ucs_v + \delta\kappa_v)$ the unit cost of firm $i$'s best plant, $E_{t-1}$
+last period's demand above normal capacity and $D_{t-1}$ last period's demand,
+\[
+p_{i,t} =
+\begin{cases}
+\min\{\, p_{j,t-1} : p_{j,t-1} > p_{i,t-1} \,\} & \text{if } E_{t-1} > 0
+  \text{ and some rival priced higher}, \\
+(1 + \eta\, E_{t-1}/D_{t-1})\, p_{i,t-1} & \text{if } E_{t-1} > 0
+  \text{ and no rival priced higher}, \\
+\min\{\, p_{i,t-1},\ (1-c)\,R_{i,t} \,\} & \text{if } u_{i,t-1} < 1 \text{ and }
+  uc_i < \min\{(1-c)R_{i,t},\ \max_{j:\,p_{j,t-1}=R_{i,t}} uc_j\}, \\
+\max\{\, \min\{p_{i,t-1}, R_{i,t}\},\ uc_i \,\} & \text{otherwise,}
+\end{cases}
+\]
+with $c = 0.02$ and $\eta = 0.5$. In words: under excess demand, move up to the next higher
+price, and the firm at the top raises it; with spare capacity and a cost edge over a rival
+at the lowest price, undercut it; otherwise follow the lowest price, never below one's own
+unit cost. The leader is whoever posts the lowest price: it is not assigned, and the
+lowest-cost firm leads in 187 of 200 periods (seeds 1--10).
 
-\paragraph{Leader, band, war, floor, recovery.} The leader is last period's lowest posted
-price, so that leadership emerges rather than being assigned to the lowest-cost firm (row 3
-of Table 7.3 is an outcome to check, not a rule). A firm stays within a band $b$ of the
-leader, which produces correlated rather than identical prices. After \code{WAR\_PERIODS}
-periods with utilisation below $u^{war}$ it cuts by $c$ a period, never below the operating
-cost $ucs$ of the most expensive plant it needs to run (depreciation is sunk in the short
-run, Shaikh 2016, p.~316). Once utilisation recovers, prices climb back towards the anchor at
-speed $\lambda$: without a way up, prices would ratchet down and profit rates fall by
-construction.
+\paragraph{Why each detail.} $R$ excludes the firm itself, or a lone leader would undercut
+itself every period. A cut never raises the firm's price. The edge is over \emph{a} rival at
+$R$, so an identical twin at $R$ does not block the cut. The top-priced firm must be able to
+raise, or prices could only fall. Excess demand is measured against normal capacity
+(\code{EXCESS\_DEMAND = "normal\_capacity"}): against all output with overtime
+(\code{"unserved"}), the 20\,\% overtime margin absorbs every shortage and prices end at
+C's unit cost, 78.5. The floor is the firm's own unit cost; \code{PRICE\_FLOOR =
+"operating\_cost"} uses the version 1 floor ($ucs$, Shaikh 2016, p.~316), with which
+followers match the leader all the way down.
 
-\paragraph{Starting rule.}
+\paragraph{What it needs from investment.} In the baseline the war of t = 0--19 drives prices
+to 78.5, a capacity shortage at t = 20 lifts them to 89.9, and then nothing moves: capacity is
+rebuilt to last sales, every firm runs at full capacity, no firm can cut and no shortage
+returns. The price stays below the regulating price of production (100.3) and the profit
+rate at 9.5\,\% against $\rbar = 16\,\%$. In Shaikh the price returns to the price of
+production through investment that responds to profitability. With desired capacity
+$x_{t-1}(1+\beta(r_i-\rbar)/\rbar)$, $\beta = 0.25$ (a scratch test, not in the code), the
+price gravitates around 99, the profit rate around 15.7\,\%, and a cheaper technique offered
+at t = 100 lowers the price towards its own price of production
+(\code{docs/design/choices.md}).
+
+\paragraph{Version 1} (\code{PRICING\_RULE = "anchor"}), kept for comparison. Firms move
+towards an anchor, stay within a band of the leader, and cut collectively after a run of low
+utilisation:
 \begin{gather*}
 p^N_i = uc_i + \rbar\,\kappa_i \quad\text{(capacity-weighted over the firm's plants)}, \qquad
 p_{i,t} = \max\{\, ucs_i,\ \tilde p_{i,t} \,\}, \\
@@ -31,16 +60,25 @@ p_{i,t} = \max\{\, ucs_i,\ \tilde p_{i,t} \,\}, \\
 \min\{\, p_{i,t-1} + \lambda\,(p^{N}_i - p_{i,t-1}),\ (1+b)\, p^{lead}_{t-1} \,\} & \text{otherwise,}
 \end{cases}
 \end{gather*}
-with $ucs_i$ the floor defined above, $c = 0.02$, $T_{war} = 2$, $u^{war} = 0.95$,
-$b = 0.025$, $\lambda = 0.25$.
+with $u^{war} = 0.95$, $T_{war} = 2$, $b = 0.025$, $\lambda = 0.25$.
+\code{PRICING\_ANCHOR = "markup"} uses $(1+\mu)uc_i$; \code{"leader"} gives every firm the
+target-return price of last period's leader. Over seeds 1--10 the final share of Shaikh
+firms is 0.12 under each firm's own target return, 0.82 under the markup and 0.51 under the
+leader's anchor: the anchor decides the winner.
 
-\paragraph{Tests} (\code{tests/test\_pricing.py}): no price below the floor; identical firms
-at normal capacity keep their anchor; on the test industry at demand 340 a war starts,
-deepens, ends and prices recover; swapping the type labels changes nothing.
+\paragraph{Tests} (\code{tests/test\_pricing.py}): the rule's branches one by one (cut with an
+edge and spare capacity; no cut without either, nor against an identical twin; a cut never
+raises a price; the leader does not undercut itself; follow down to the floor and no further;
+excess demand moves prices up); no price below the floor and no rise without excess demand
+over 2\,000 random cases; identical firms with spare capacity never start a war; on the test
+industry D2 cuts first, the others follow to their unit costs, and excess demand raises every
+price; with the operating-cost floor the war ends on one price; the label swap holds under each
+switch. Version 1 keeps its tests (1)--(4) and the leader-anchor tests.
 
 \subsection*{Code}
 \eqfile{anchor_price.py}
 \eqfile{price_floor.py}
 \eqfile{price_war.py}
+\eqfile{real_competition_price.py}
 \eqfile{posted_price.py}
 \schedulerpart{pricing}{\code{model/scheduler.py}: step 1}

@@ -59,11 +59,11 @@ update its row.
 
 | Mechanism (step) | Owner | Files |
 |---|---|---|
-| Pricing (1) | Jake | `equations/anchor_price.py`, `price_floor.py`, `price_war.py`, `posted_price.py`; `set_prices` |
+| Pricing (1) | Jake | `equations/real_competition_price.py`, `anchor_price.py`, `price_floor.py`, `price_war.py`, `posted_price.py`; `set_prices` |
 | Demand (2) | Pierre-Loup | `equations/competitiveness.py`, `market_shares.py`, `offered_capacity.py`; `markets/goods_market.py`; `allocate_demand` |
 | Production and accounts (3) | unassigned | `equations/merit_order.py`, `operating_cost.py`, `depreciation.py`, `interest_payment.py`, `firm_profit.py`, `profit_rate.py`, `plant_profit.py`, `dividends.py`, `debt_repayment.py`; `markets/payments.py`, `credit_market.py`; `produce_and_account`; `model/collector.py` |
-| Scrapping (4) | Vincent | `equations/retirement.py`, `replacement.py`, `lifetime_profit_rate.py`; `scrap_plants` |
-| Investment (5) | Ugo | `equations/hurdle.py`, `technique_choice.py`, `desired_capacity.py`, `investment.py`, `borrowing_capacity.py`; `markets/plant_market.py`; `invest` |
+| Scrapping (4) | Vincent | `equations/retirement.py`, `idle_plants.py`, `replacement.py`, `lifetime_profit_rate.py`; `scrap_plants` |
+| Investment (5) | Ugo | `equations/hurdle.py`, `technique_choice.py`, `desired_capacity.py`, `investment.py`, `retained_earnings_investment.py`, `plant_number.py`, `new_technique.py`, `borrowing_capacity.py`; `markets/plant_market.py`; `invest` |
 | Entry and exit (6) | unassigned | `equations/new_plant_rate.py`, `entry_probability.py`, `inherited_rule.py`, `entrant_price.py`, `exit_conditions.py`; `markets/entry_exit.py`; `enter_and_exit` |
 
 Shared: `parameters.py`, `model/entities.py`, `model/model.py`, `run_period`. Change shared

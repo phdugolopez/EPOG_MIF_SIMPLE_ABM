@@ -55,7 +55,7 @@ class TestAccounts(unittest.TestCase):
 
     def test_firm_without_sales_loses_depreciation_plus_interest(self):
         """(5) A firm without sales loses exactly depreciation plus interest."""
-        industry = one_firm_industry("D2", INITIAL_DEBT=5_000.0)
+        industry = one_firm_industry("D2", INITIAL_DEBT=5_000.0, PLANT_SIZE=None)
         firm = industry.firms[0]
         firm.share = 0.0
         start_period(industry)

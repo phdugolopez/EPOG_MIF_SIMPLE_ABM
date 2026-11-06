@@ -2,7 +2,7 @@
 
 import unittest
 
-from helpers import history_without_labels, make_config, swapped_config
+from helpers import PLANT_ALTERNATIVES, history_without_labels, make_config, swapped_config
 from model import Industry
 from model.collector import StockFlowError, check_stock_flow
 
@@ -54,9 +54,17 @@ class TestModel(unittest.TestCase):
         self.assertGreater(sum(r["entries"] for r in self.baseline.history), 0)
 
     def test_switches_run(self):
-        for overrides in ({"PRICING_ANCHOR": "markup"}, {"DEMAND_FORM": "logit"},
+        for overrides in ({"PRICING_RULE": "anchor"},
+                          {"PRICING_RULE": "anchor", "PRICING_ANCHOR": "markup"},
+                          {"PRICING_RULE": "anchor", "PRICING_ANCHOR": "leader"},
+                          {"PRICE_FLOOR": "operating_cost"}, {"EXCESS_DEMAND": "unserved"},
+                          {"DEMAND_FORM": "logit"},
                           {"HURDLE_FLOOR_AT_ZERO": False}, {"REPLACEMENT": False},
-                          {"INVESTMENT_SALES_LAG": 0}):
+                          {"INVESTMENT_SALES_LAG": 0}, {"PLANT_SIZE": 20.0},
+                          {"PLANT_LIFE": None}, {"SCRAP_COST": "unit_cost"},
+                          {"IDLE_SCRAPPING": True}, {"INVESTMENT_RULE": "retained_earnings"},
+                          PLANT_ALTERNATIVES, {"TECH_DRAWS": True},
+                          dict(PLANT_ALTERNATIVES, TECH_DRAWS=True)):
             Industry(make_config(PERIODS=60, **overrides)).run()
 
 

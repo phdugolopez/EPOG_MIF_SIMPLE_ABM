@@ -33,7 +33,7 @@ class TestEntryExit(unittest.TestCase):
         industry = Industry(make_config())
         industry.run(200)
         for row in industry.history:
-            if row["r_new"] is None or row["r_new"] <= 0.16:
+            if row["r_new"] is None or row["r_new"] <= industry.parameters.RBAR:
                 self.assertEqual(row["entries"], 0)
 
     def test_negative_net_worth_exit_shares_out_customers(self):
@@ -103,6 +103,16 @@ class TestEntryExit(unittest.TestCase):
         b.run(200)
         self.assertGreater(sum(r["entries"] for r in a.history), 0)
         self.assertEqual(history_without_labels(a), history_without_labels(b))
+
+    def test_entrant_starts_at_the_lowest_price(self):
+        """Under real-competition pricing an entrant posts the lowest price of its entry
+        period (no undercut); under the anchor rule it undercuts the leader by 1 %."""
+        for rule, factor in (("real_competition", 1.0), ("anchor", 0.99)):
+            industry = Industry(make_config(PRICING_RULE=rule))
+            for _ in range(200):
+                industry.step()
+                for entrant in industry.entries:
+                    self.assertAlmostEqual(entrant.price, factor * industry.leader_price)
 
 
 if __name__ == "__main__":

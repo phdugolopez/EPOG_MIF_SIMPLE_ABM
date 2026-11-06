@@ -19,9 +19,12 @@ def check_stock_flow(industry) -> None:
     4. Every row of the transaction-flow matrix sums to zero, and each column sums to
        the change in that sector's cash.
     """
+    # Rounding grows with the stocks as well as with the period's flows.
     scale = 1.0 + sum(
         abs(v) for row in industry.flows.values() for v in row.values()
-    ) + abs(industry.money)
+    ) + abs(industry.money) + abs(industry.roe.cash) + abs(industry.roe.loans) + sum(
+        abs(f.cash) + abs(f.debt) for f in industry.firms
+    )
     money = industry.roe.cash + sum(f.cash for f in industry.firms)
     if not _close(money, industry.money, scale):
         raise StockFlowError(f"t={industry.time}: money {money} != {industry.money}")
@@ -204,6 +207,10 @@ def collect_macro_data(industry) -> dict:
         row[f"profit_rate_{firm_type}"] = _weighted(
             [f.profit_rate for f in group],
             [sum(p.purchase_cost for p in f.producing_plants) for f in group],
+        )
+        row[f"unit_cost_{firm_type}"] = _weighted(
+            [p.ucs + delta * p.kappa for f in group for p in f.producing_plants],
+            [p.capacity for f in group for p in f.producing_plants],
         )
         for name in techniques:
             row[f"capacity_{firm_type}_{name}"] = sum(

@@ -1,6 +1,7 @@
 import random
 
 import parameters
+from equations.plant_number import plant_number
 from model.entities import Firm, Plant, RestOfEconomy, Technique
 from model.scheduler import run_period
 
@@ -34,15 +35,22 @@ class Industry:
             firm = self.new_firm(firm_type, config.INITIAL_PRICE, share=0.0, born=0)
             firm.cash = config.INITIAL_CASH
             firm.debt = config.INITIAL_DEBT
-            firm.plants.append(
-                self.new_plant(technique, capacity, vintage=0, initial=True)
-            )
+            if config.PLANT_SIZE is None:
+                sizes = [capacity]
+            else:  # Shaikh's plant split into the nearest number of plants of PLANT_SIZE
+                sizes = [config.PLANT_SIZE] * plant_number(capacity, config.PLANT_SIZE)
+            for size in sizes:
+                firm.plants.append(self.new_plant(technique, size, vintage=0, initial=True))
         total_capacity = sum(f.capacity for f in self.firms)
         self.initial_demand = config.DEMAND_TO_CAPACITY * total_capacity
         for firm in self.firms:
             firm.share = firm.capacity / total_capacity
             firm.previous_sales = firm.share * self.initial_demand
             firm.sales = firm.previous_sales
+        for firm in self.firms:
+            firm.known = list(self.menu)
+        self.next_design = 0
+        self.draw_log: list[tuple[int, int, str, bool]] = []  # time, firm_id, category, adopted
         self.roe.loans = sum(f.debt for f in self.firms)
         self.money = self.roe.cash + sum(f.cash for f in self.firms)
 
