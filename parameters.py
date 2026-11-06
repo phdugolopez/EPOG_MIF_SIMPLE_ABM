@@ -75,6 +75,7 @@ DEMAND_GROWTH: float = 0.0  # D_t = D_0 (1 + g)^t
 RHO: float = 0.05  # interest rate on debt, below RBAR
 PAYOUT: float = 0.5  # d, dividends = d * max(0, profit)
 REPAYMENT_RATE: float = 0.10  # share of debt repaid each period, from cash
+CASH_SHORTFALL: str = "bankruptcy"  # negative cash: bankrupt at the end of the period; version 1: "overdraft"
 
 # --- Scrapping (Vincent) -----------------------------------------------------------
 OBSOLESCENCE_PERIODS: int = 2  # N: periods with price below the scrap cost before retirement; version 1: 4

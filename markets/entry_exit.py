@@ -8,7 +8,13 @@ from markets.plant_market import buy_plant
 def remove_firm(industry, firm, reason: str) -> None:
     """A leaving firm repays what it can, the rest of its debt is a loss of the lender,
     remaining cash goes back to its owners, and its plants are written off (scrap value 0).
-    Its customers are shared out in proportion to the other firms' shares."""
+    Its customers are shared out in proportion to the other firms' shares. Bills it could
+    not pay (negative cash, CASH_SHORTFALL = "bankruptcy") are a loss of the rest of the
+    economy."""
+    if firm.cash < 0.0:
+        shortfall = -firm.cash
+        pay(industry, industry.roe, firm, shortfall, "unpaid bills")
+        industry.roe.unpaid_bills += shortfall
     default(industry, firm)
     pay(industry, firm, industry.roe, firm.cash, "equity")
     for plant in firm.plants + firm.pending_plants:

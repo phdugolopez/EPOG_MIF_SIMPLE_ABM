@@ -22,12 +22,13 @@ def repay(industry, firm, amount: float) -> None:
 
 
 def settle_cash_position(industry, firm) -> None:
-    """Cover a negative cash balance with an overdraft loan; otherwise repay a share of debt.
-
-    The overdraft lies outside the debt cap, which binds only borrowing for plants.
+    """With cash left, repay a share of debt. A negative balance is covered by an overdraft
+    loan outside the debt cap (CASH_SHORTFALL = "overdraft", version 1), or stays as bills
+    the firm could not pay ("bankruptcy"): it then goes bankrupt at the end of the period.
     """
     if firm.cash < 0.0:
-        borrow(industry, firm, -firm.cash)
+        if industry.parameters.CASH_SHORTFALL == "overdraft":
+            borrow(industry, firm, -firm.cash)
     else:
         repay(
             industry,

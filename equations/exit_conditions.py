@@ -4,10 +4,12 @@ def exit_reason(
     min_share: float,
     non_renewal: bool,
     has_capacity: bool,
+    illiquid: bool = False,
 ) -> str | None:
-    """Three channels, the same for both types: bankruptcy (NW < 0), a share below f_min,
-    and non-renewal (the last plant retired and is not rebuilt)."""
-    if net_worth < 0.0:
+    """Three channels, the same for both types: bankruptcy (NW < 0, or illiquid: cash ran
+    out, CASH_SHORTFALL = "bankruptcy"), a share below f_min, and non-renewal (the last
+    plant retired and is not rebuilt)."""
+    if net_worth < 0.0 or illiquid:
         return "bankruptcy"
     if non_renewal or not has_capacity:
         return "non-renewal"

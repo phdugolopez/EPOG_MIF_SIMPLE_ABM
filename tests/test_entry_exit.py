@@ -4,8 +4,10 @@ import random
 import unittest
 
 from equations.entry_probability import entry_probability
+from equations.exit_conditions import exit_reason
 from equations.inherited_rule import inherited_type
 from helpers import history_without_labels, make_config, swapped_config
+from markets.credit_market import settle_cash_position
 from markets.entry_exit import create_entrant, remove_firm
 from model import Industry
 from model.collector import check_stock_flow
@@ -113,6 +115,59 @@ class TestEntryExit(unittest.TestCase):
                 industry.step()
                 for entrant in industry.entries:
                     self.assertAlmostEqual(entrant.price, factor * industry.leader_price)
+
+
+class TestCashShortfall(unittest.TestCase):
+    """CASH_SHORTFALL = "bankruptcy" (version 2): a firm whose cash runs out goes bankrupt
+    at the end of the period, instead of taking an overdraft loan (version 1)."""
+
+    def test_overdraft_or_unpaid_bills(self):
+        for mode, cash, debt in (("overdraft", 0.0, 50.0), ("bankruptcy", -50.0, 0.0)):
+            industry = Industry(make_config(CASH_SHORTFALL=mode))
+            firm = industry.firms[0]
+            firm.cash, firm.debt = -50.0, 0.0
+            settle_cash_position(industry, firm)
+            self.assertAlmostEqual(firm.cash, cash)
+            self.assertAlmostEqual(firm.debt, debt)
+
+    def test_exit_reason_when_illiquid(self):
+        self.assertEqual(exit_reason(1_000.0, 0.5, 0.01, False, True, True), "bankruptcy")
+        self.assertIsNone(exit_reason(1_000.0, 0.5, 0.01, False, True, False))
+
+    def test_illiquid_firm_leaves_and_its_unpaid_bills_are_a_loss(self):
+        """A firm with positive net worth but cash of -100 leaves as bankrupt; the rest of
+        the economy bears the 100 and money is conserved."""
+        industry = Industry(make_config())
+        run_to_entry(industry)
+        doomed = industry.firms[0]
+        self.assertGreater(doomed.net_worth, 100.0)
+        moved = doomed.cash + 100.0  # bills paid beyond its cash, by hand
+        doomed.cash -= moved
+        industry.roe.cash += moved
+        exit_firms(industry)
+        self.assertNotIn(doomed, industry.firms)
+        self.assertEqual(industry.exits[0], (doomed, "bankruptcy"))
+        self.assertAlmostEqual(industry.roe.unpaid_bills, 100.0)
+        self.assertAlmostEqual(sum(f.share for f in industry.firms), 1.0)
+        money = industry.roe.cash + sum(f.cash for f in industry.firms)
+        self.assertAlmostEqual(money, industry.money)
+
+    def test_full_run_with_interest_above_the_margin(self):
+        """Debt of 100 000 per firm: interest (5 000) exceeds the operating margin, cash
+        runs out at t = 0. The stock-flow check holds every period (run asserts it), firms
+        go bankrupt instead of borrowing, and the label swap holds."""
+        for mode in ("overdraft", "bankruptcy"):
+            a = Industry(make_config(INITIAL_DEBT=100_000.0, CASH_SHORTFALL=mode))
+            b = Industry(swapped_config(INITIAL_DEBT=100_000.0, CASH_SHORTFALL=mode))
+            a.run(40)
+            b.run(40)
+            self.assertEqual(history_without_labels(a), history_without_labels(b))
+            self.assertGreater(sum(r["exits_bankruptcy"] for r in a.history), 0)
+            if mode == "bankruptcy":
+                self.assertGreater(a.roe.unpaid_bills, 0.0)
+                self.assertLessEqual(a.roe.loans, 6 * 100_000.0 + 1e-6)  # no new loans
+            else:
+                self.assertEqual(a.roe.unpaid_bills, 0.0)
 
 
 if __name__ == "__main__":

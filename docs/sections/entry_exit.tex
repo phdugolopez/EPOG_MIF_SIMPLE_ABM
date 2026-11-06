@@ -26,16 +26,19 @@ every other firm; it builds a plant of
 $\phi = 0.5$ times the average incumbent's capacity with the technique its own $h$ picks at
 that price, and starts with a share in proportion to its capacity. Its owners bring the
 plant's cost as equity from the rest of the economy. A firm exits when its net worth is
-negative, its share falls below $f_{\min} = 0.01$, or by non-renewal: its last plant retires
+negative or (version 2, \code{CASH\_SHORTFALL = "bankruptcy"}) its cash is, its share falls below $f_{\min} = 0.01$, or by non-renewal: its last plant retires
 having earned less than $\rbar$ over its life (plants of the initial endowment are exempt).
-A leaving firm repays what it can; the rest of its debt is a loss of the rest of the
-economy. The population is open, with a floor of two firms.
+A leaving firm repays what it can; the rest of its debt, and any bills it could not pay,
+are a loss of the rest of the economy. The population is open, with a floor of two firms.
 
 \paragraph{Tests} (\code{tests/test\_entry\_exit.py}): no entry while $r^{new} \le \rbar$; a
 firm with negative net worth leaves, its customers are shared out and shares still sum to
 one; over many draws entrants' rules match incumbents' shares up to the mutation rate; at
 $p = 100$ an Okishio entrant builds D1 and a Shaikh entrant D2; capacity and money identities
-at entry and exit; the floor of two firms; swapping the type labels changes nothing over a
+at entry and exit; the floor of two firms; with \code{CASH\_SHORTFALL = "bankruptcy"} a firm whose cash runs
+out leaves as bankrupt even with positive net worth, the rest of the economy bears its unpaid
+bills and money is conserved, and over a run where interest exceeds the margin no firm takes
+an overdraft and the label swap holds; swapping the type labels changes nothing over a
 full run.
 
 \subsection*{Code}

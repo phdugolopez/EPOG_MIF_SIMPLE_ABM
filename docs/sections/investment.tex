@@ -35,8 +35,8 @@ I_{i,t} = S \left\lfloor \frac{\min\{RE_{i,t},\ M_{i,t}\}}{\kappa_{j^*} S} \righ
 with $\Pi$ profit after depreciation and interest, $M$ cash, and $I$ all spending on plants,
 replacement included. \code{BORROWING = False} removes borrowing for plants everywhere:
 investment, under either rule, and replacement are paid from cash only, and the debt cap no
-longer binds anything. Losses are still covered by an overdraft
-(section~\ref{sec:accounts}). Without a demand condition,
+longer binds anything. With \code{CASH\_SHORTFALL = "bankruptcy"} there is no overdraft
+either (section~\ref{sec:accounts}). Without a demand condition,
 capacity is bounded only by scrapping: without \code{IDLE\_SCRAPPING} it grows without limit
 (section~\ref{sec:scrapping}, \code{docs/design/choices.md}).
 

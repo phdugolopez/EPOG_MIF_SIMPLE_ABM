@@ -197,6 +197,7 @@ def collect_macro_data(industry) -> dict:
         "roe_cash": industry.roe.cash,
         "roe_loans": industry.roe.loans,
         "loan_losses": industry.roe.loan_losses,
+        "unpaid_bills": industry.roe.unpaid_bills,
     }
     for firm_type in ("shaikh", "okishio"):
         group = [f for f in firms if f.type == firm_type]

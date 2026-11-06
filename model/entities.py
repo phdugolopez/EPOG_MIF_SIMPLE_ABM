@@ -100,3 +100,4 @@ class RestOfEconomy:
     cash: float = 0.0
     loans: float = 0.0
     loan_losses: float = 0.0
+    unpaid_bills: float = 0.0  # bills of bankrupt firms left unpaid (CASH_SHORTFALL)

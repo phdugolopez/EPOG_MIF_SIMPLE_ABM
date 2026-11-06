@@ -461,14 +461,16 @@ def enter_and_exit(industry) -> None:
 
 
 def exit_firms(industry) -> None:
-    """Exit on negative net worth, a share below f_min, or non-renewal, keeping at least
-    MIN_FIRMS firms (those with the highest net worth stay)."""
+    """Exit on negative net worth or negative cash (CASH_SHORTFALL = "bankruptcy"), a share
+    below f_min, or non-renewal, keeping at least MIN_FIRMS firms (those with the highest
+    net worth stay; a firm kept this way carries its unpaid bills into the next period)."""
     config = industry.parameters
     leaving = []
     for firm in industry.firms:
         reason = exit_reason(
             firm.net_worth, firm.share, config.MIN_SHARE, firm.non_renewal,
             bool(firm.plants or firm.pending_plants),
+            config.CASH_SHORTFALL == "bankruptcy" and firm.cash < 0.0,
         )
         if reason:
             leaving.append((firm, reason))
