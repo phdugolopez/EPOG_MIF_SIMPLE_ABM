@@ -62,6 +62,7 @@ class Firm:
     investment: float = 0.0  # spending on new plants, replacements included
     equity_in: float = 0.0
     retained_earnings: float = 0.0  # profit - dividends since birth, less spending on plants
+    # (investment and replacement; an entrant's first plant is paid by equity)
     known: list = field(default_factory=list)  # techniques the firm can build (TECH_DRAWS)
     at_war: bool = False
     non_renewal: bool = False

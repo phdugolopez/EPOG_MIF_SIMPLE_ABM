@@ -15,7 +15,7 @@ PLANT_ALTERNATIVES = dict(
 # The version 1 plants, scrapping, investment and fixed menu, for the tests written for them.
 VERSION_1_PLANTS = dict(
     PLANT_SIZE=None, PLANT_LIFE=10, SCRAP_COST="operating_cost", OBSOLESCENCE_PERIODS=4,
-    IDLE_SCRAPPING=False, INVESTMENT_RULE="accelerator", TECH_DRAWS=False,
+    IDLE_SCRAPPING=False, INVESTMENT_RULE="accelerator", TECH_DRAWS=False, BORROWING=True,
 )
 
 

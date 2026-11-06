@@ -329,7 +329,8 @@ def retire_plants(industry, firm, config) -> list:
 
 def replace_plants(industry, firm, config) -> None:
     """Scrap a working plant when a new technique is cheap enough to justify new capital,
-    if the firm can pay for it (cash, then debt up to the cap)."""
+    if the firm can pay for it: from cash, then (BORROWING) debt up to the cap. The cost
+    comes out of retained earnings, like any spending on plants."""
     technique = choose_technique(
         firm.known or industry.menu, firm.hurdle, config.DELTA, config.TAU
     )
@@ -338,11 +339,18 @@ def replace_plants(industry, firm, config) -> None:
             plant.ucs, technique.ucs, technique.kappa, config.DELTA, firm.hurdle
         ):
             continue
-        if technique.kappa * plant.capacity > affordable_spending(firm, config.DEBT_CAP):
+        cost = technique.kappa * plant.capacity
+        if cost > affordable_spending(firm, _debt_cap(config)):
             continue
         remove_plant(industry, firm, plant)
         buy_plant(industry, firm, technique, plant.capacity)
+        firm.retained_earnings -= cost
         industry.replacements += 1
+
+
+def _debt_cap(config) -> float:
+    """Debt allowed for plants, relative to sales revenue: none without BORROWING."""
+    return config.DEBT_CAP if config.BORROWING else 0.0
 
 
 def remove_plant(industry, firm, plant) -> None:
@@ -370,7 +378,8 @@ def fails_renewal(retired, rbar: float) -> bool:
 
 
 def invest(industry) -> None:
-    """Expected sales, desired capacity, technique chosen with h, cash then capped debt.
+    """Expected sales, desired capacity, technique chosen with h, paid from cash, then
+    (BORROWING) capped debt.
     Or (INVESTMENT_RULE = "retained_earnings") whatever retained earnings pay for, whatever
     the demand. With PLANT_SIZE, plants come whole. New plants arrive next period."""
     config = industry.parameters
@@ -400,12 +409,13 @@ def invest(industry) -> None:
         if units <= 0.0:
             continue
         technique = _technique_to_build(industry, firm, config)
-        affordable = affordable_spending(firm, config.DEBT_CAP) / technique.kappa
+        affordable = affordable_spending(firm, _debt_cap(config)) / technique.kappa
         if size is None:
-            buy_plant(industry, firm, technique, min(units, affordable))
+            units = min(units, affordable)
         else:  # enough whole plants to cover the gap, as many as can be financed
-            n = min(plant_number(units, size, "up"), int(affordable / size + 1e-9))
-            _buy_capacity(industry, firm, technique, n * size, size)
+            units = size * min(plant_number(units, size, "up"), int(affordable / size + 1e-9))
+        _buy_capacity(industry, firm, technique, units, size)
+        firm.retained_earnings -= technique.kappa * units
 
 
 def _technique_to_build(industry, firm, config):

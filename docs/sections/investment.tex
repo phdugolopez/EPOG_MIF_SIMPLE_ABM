@@ -27,12 +27,16 @@ down when it cannot be financed.
 capacity $S$, including the initial plants (split into the nearest number of plants) and
 entrants'. \code{INVESTMENT\_RULE = "retained\_earnings"} replaces the accelerator: whatever
 the demand, firm $i$ buys as many plants of the technique $j^*$ as its retained earnings pay
-for, without borrowing,
+for,
 \[
 I_{i,t} = S \left\lfloor \frac{\min\{RE_{i,t},\ M_{i,t}\}}{\kappa_{j^*} S} \right\rfloor,
 \qquad RE_{i,t} = RE_{i,t-1} + \Pi_{i,t} - \mathit{Div}_{i,t} - \kappa_{j^*} I_{i,t-1},
 \]
-with $\Pi$ profit after depreciation and interest and $M$ cash. Without a demand condition,
+with $\Pi$ profit after depreciation and interest, $M$ cash, and $I$ all spending on plants,
+replacement included. \code{BORROWING = False} removes borrowing for plants everywhere:
+investment, under either rule, and replacement are paid from cash only, and the debt cap no
+longer binds anything. Losses are still covered by an overdraft
+(section~\ref{sec:accounts}). Without a demand condition,
 capacity is bounded only by scrapping: without \code{IDLE\_SCRAPPING} it grows without limit
 (section~\ref{sec:scrapping}, \code{docs/design/choices.md}).
 
@@ -58,7 +62,8 @@ argmin with $h$ equal to the best profit rate picks the same technique as maximi
 profit rate directly; with constant demand and no scrapping, investment stops once capacity
 meets expected sales; borrowing for plants never takes debt above its cap; two firms of
 different types with the same sales add the same capacity. For the switches: whole plants
-for a capacity; retained earnings buy whole plants and never borrow; every plant, entrants'
+for a capacity; retained earnings buy whole plants and never borrow; with \code{BORROWING = False} no firm
+borrows for plants over a run, under either investment rule, and replacement waits for cash; every plant, entrants'
 included, has the fixed size; every design uses more capital and less operating cost and is
 adopted exactly by the rules its category names; at zero margin both rules adopt a conflict
 design; operating costs stay positive over a long run; a rejected design still leaves the

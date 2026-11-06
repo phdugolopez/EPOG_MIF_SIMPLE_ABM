@@ -86,7 +86,8 @@ REPLACEMENT: bool = True  # replace working plants when the hurdle inequality ho
 # --- Investment (Ugo) --------------------------------------------------------------
 EXPECTED_GROWTH: float = 0.0  # g in desired capacity
 INVESTMENT_SALES_LAG: int = 1  # 1: x_{t-1} as in the brief; 0: this period's sales
-DEBT_CAP: float = 2.0  # Lambda: debt for plants up to DEBT_CAP * sales revenue
+DEBT_CAP: float = 2.0  # Lambda: debt for plants up to DEBT_CAP * sales revenue (with BORROWING)
+BORROWING: bool = False  # borrow for plants (investment, replacement) up to DEBT_CAP; version 1: True
 INVESTMENT_RULE: str = "retained_earnings"  # buy what retained earnings pay for, no debt; version 1: "accelerator"
 
 # --- Technical change ---------------------------------------------------------------

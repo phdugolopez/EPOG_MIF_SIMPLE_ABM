@@ -6,7 +6,8 @@ from markets.payments import pay
 
 
 def affordable_spending(firm, debt_cap: float) -> float:
-    """Cash first, then debt up to the cap relative to this period's sales revenue."""
+    """Cash first, then debt up to the cap relative to this period's sales revenue (a cap of
+    0: cash only, BORROWING = False)."""
     return max(0.0, firm.cash) + borrowing_capacity(firm.debt, firm.revenue, debt_cap)
 
 

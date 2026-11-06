@@ -2,6 +2,7 @@
 
 import random
 import unittest
+from unittest import mock
 
 from equations.hurdle import best_profit_rate, hurdle
 from equations.new_technique import CATEGORIES, design_category, draw_design
@@ -19,7 +20,8 @@ from model import Industry
 from model.entities import Technique
 from model.model import build_menu
 from model.scheduler import (
-    allocate_demand, invest, produce_and_account, scrap_plants, set_prices, start_period,
+    allocate_demand, invest, produce_and_account, replace_plants, scrap_plants, set_prices,
+    start_period,
 )
 
 CONFIG = make_config()
@@ -235,6 +237,53 @@ class TestTechnicalChange(unittest.TestCase):
         b.run(80)
         self.assertEqual(history_without_labels(a), history_without_labels(b))
         self.assertEqual(a.draw_log, b.draw_log)
+
+
+class TestNoBorrowing(unittest.TestCase):
+    """BORROWING = False (version 2): plants are paid from cash only, everywhere."""
+
+    def test_no_firm_borrows_for_plants_over_a_run(self):
+        import markets.plant_market as plant_market
+        for overrides in ({}, dict(VERSION_1_PLANTS, BORROWING=False)):
+            loans = []
+
+            def record(industry, firm, amount, real=plant_market.borrow):
+                loans.append(amount)
+                real(industry, firm, amount)
+
+            with mock.patch.object(plant_market, "borrow", record):
+                industry = Industry(make_config(**overrides))
+                industry.run(120)
+            self.assertTrue(loans)  # buy_plant was called
+            self.assertLess(max(loans), 1e-6)
+            self.assertGreater(sum(r["investment"] for r in industry.history), 0.0)
+
+    def test_replacement_waits_for_cash(self):
+        """A technique with uc 20 makes every C plant (ucs 64.25) worth replacing; with
+        cash for one plant of 20 (2 000) the firm replaces one, without debt, and pays for
+        it out of retained earnings. With BORROWING the debt cap pays for all six."""
+        for borrowing, replaced in ((False, 1), (True, 6)):
+            industry = one_firm_industry("C", BORROWING=borrowing, TECH_DRAWS=False)
+            firm = industry.firms[0]
+            firm.known = [Technique(name="X", ucs=10.0, kappa=100.0)]
+            firm.hurdle = 0.0
+            firm.cash, firm.revenue, firm.retained_earnings = 2_500.0, 10_000.0, 2_500.0
+            replace_plants(industry, firm, industry.parameters)
+            self.assertEqual(len(firm.pending_plants), replaced)
+            if borrowing:
+                self.assertGreater(firm.debt, 0.0)
+            else:
+                self.assertEqual(firm.debt, 0.0)
+                self.assertAlmostEqual(firm.cash, 500.0)
+                self.assertAlmostEqual(firm.retained_earnings, 500.0)
+
+    def test_label_swap_without_borrowing_under_the_accelerator(self):
+        overrides = dict(VERSION_1_PLANTS, BORROWING=False)
+        a = Industry(make_config(**overrides))
+        b = Industry(swapped_config(**overrides))
+        a.run(120)
+        b.run(120)
+        self.assertEqual(history_without_labels(a), history_without_labels(b))
 
 
 if __name__ == "__main__":
