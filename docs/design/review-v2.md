@@ -549,7 +549,9 @@ Not fixed by hand: the entry churn (rbar, θ), the finance arm (`INVESTMENT_RULE
 `BORROWING`) and the replacement channel. They enter step 4 as factors or outputs.
 
 **Step 2. Documentation** (section 3; each section's owner for their `.tex`, Ugo for the
-overview, the choices, the briefs' amendment and `CLAUDE.md`; two to three hours).
+overview, the choices, the briefs' amendment and `CLAUDE.md`; two to three hours). **Done
+on 7 November (commit e666066 on `v2-collector`)**: every item of section 3 applied; the
+report builds without warnings; the owners review their sections in the pull request.
 
 - Everything in section 3, with the wording of the decision: frozen defaults, two treatment
   arms for pricing and two for technical change, every number with its configuration.
