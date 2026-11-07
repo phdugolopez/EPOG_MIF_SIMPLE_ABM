@@ -19,14 +19,24 @@ M_{i,t} &= M_{i,t-1} + \Pi_{i,t} + \textstyle\sum_v \delta\,\kappa_v\,\qbar_v - 
   - \kappa_{j^*}\,I_{i,t} + \Delta B_{i,t}, \qquad \mathit{Div}_{i,t} = d\,\max\{0, \Pi_{i,t}\}, \\
 NW_{i,t} &= M_{i,t} + K^{b}_{i,t} - B_{i,t},
 \end{align*}
-with $\rho = 0.05 < \rbar$ and $d = 0.5$ for both types. Book values fall in a straight line
+with $\rho = 0.05$ ($= \rbar$ in version 2, $< \rbar$ in version 1) and $d = 0.5$ for both
+types. Retained earnings, the funds the version 2 investment rule spends
+(section~\ref{sec:investment}), are
+\[
+RE_{i,t} = RE_{i,t-1} + \Pi_{i,t} - \mathit{Div}_{i,t} - \text{spending on plants}_{i,t},
+\]
+replacement included; an entrant's first plant is paid by equity and does not enter $RE$.
+Book values fall in a straight line
 over $T$ periods; a plant retired early leaves its book value as a write-off, which lowers
 net worth while no cash moves. Firms repay 10\,\% of their debt a period from cash. In version 1 a
 negative cash balance is covered by an overdraft loan; in version 2
 (\code{CASH\_SHORTFALL = "bankruptcy"}, the default) it stays as bills the firm could not
-pay, and the firm goes bankrupt at the end of the period (section~\ref{sec:entry}). Since a
-firm sells only what plants whose $ucs$ the price covers can make, and dividends come out of
-positive profit, cash runs out only when interest exceeds the operating margin.
+pay, and the firm goes bankrupt at the end of the period (section~\ref{sec:entry}); the
+rest of the economy bears them, next to the debt lost on defaults (\code{unpaid\_bills} and
+\code{loan\_losses} in the outputs). Since a firm sells only what plants whose $ucs$ the
+price covers can make, and dividends come out of positive profit, cash runs out only when
+interest exceeds the operating margin; with no borrowing (version 2) that needs initial
+debt, so in the baseline no firm goes bankrupt.
 
 \paragraph{Alternative: depreciation by use.} With \code{DEPRECIATION = "use"} (the default
 is \code{"time"}) a plant depreciates with what it produces, $\delta\,\kappa_v\,x_{v,t}$

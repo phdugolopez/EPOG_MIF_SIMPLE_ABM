@@ -291,6 +291,28 @@ r^new_t is the average profit rate, at the current price, of plants built in the
 
 Read it clockwise: each step hands its outputs to the next, and the loop closes on next period’s prices. Only the two highlighted steps may treat Shaikh and Okishio firms differently, and they must use the same h; the dashed steps still need an owner.
 
+## Version 2 amendments (6 November 2026, recorded 7 November)
+
+The briefs above are the specification as exported from Claude Docs on 3 November and are
+not edited. The group kept every starting rule behind a switch and changed the defaults as
+follows. **Pricing:** no anchor and no war trigger; a firm follows the lowest price and
+undercuts only with spare capacity and a cost edge; the floor is its own best plant's unit
+cost (the group notebook's leader-follow rule, under which every firm cuts whenever
+capacity is not short down to a markup floor, is the other arm of the price-war
+treatment). **Accounts:** bankruptcy when cash runs out, no overdraft. **Scrapping:** plants
+of S = 20, no maximum age, retirement after two periods with the price below unit cost or
+two periods idle. **Investment:** all retained earnings spent on whole plants, no borrowing;
+one Marx-biased design offered at each investment (an innovation set is specified as the
+second arm, `review-v2.md`, section 4). **Entry:** rbar = 0.05; entrants start at the lowest
+price and then price by the common rule. The order of events is unchanged; step 4 now
+retires by age, obsolescence or idleness, step 5 buys from retained earnings. The test
+industry runs at rbar = 5 % (the 16 % above is the version 1 value) with demand 680 and
+plants of 20. Notation added: S (`PLANT_SIZE`), RE_i (`retained_earnings`), wear_v
+(`wear`), a and b (a design's proportional fall in ucs and rise in κ), q (`TECH_CONFLICT`),
+z and the floor markup of the leader-follow rule (`LEADER_RISE`, `FLOOR_MARKUP`).
+Defaults are frozen since 7 November 2026 pending the sensitivity analysis. Details:
+`choices.md`; review, decisions and plan: `review-v2.md`.
+
 ## Sources
 
 All checked in Ugo’s Zotero on 3 November: all are in his own library. Page and equation numbers for Dosi & Roventini were read in the PDF.

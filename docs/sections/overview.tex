@@ -21,10 +21,20 @@ pass it on to entrants; the label-swap tests
 run the model with the labels swapped everywhere except the hurdle and require identical
 trajectories.
 
-\paragraph{Version 1.} Each mechanism uses the starting rule of its brief, copied in
-\code{docs/design/}; every further choice is listed in
-section~\ref{sec:choices} and in \code{docs/design/choices.md}. The test industry is
-Shaikh's three plants (2016, Tables 7.10--7.11):
+\paragraph{Version 2.} Each mechanism keeps the starting rule of its brief behind a switch
+and runs by default on the rules agreed on 6 November 2026: plants of fixed size $S = 20$
+with no maximum age, scrapped after two periods with the price below their unit cost or
+two periods idle; pricing without anchor or war trigger, where cuts come from cost edges;
+investment of all retained earnings in whole plants, with no borrowing, and one
+Marx-biased design offered at each investment; bankruptcy when cash runs out; entrants
+pricing by the common rule; $\rbar = 0.05$. The pricing rule (cost-edge undercutting, or
+the group's leader-follow rule under which every firm cuts whenever capacity is not short)
+and the technical-change rule (designs drawn by category, or from an innovation set) are
+the model's two most sensitive parts: both are switches, their defaults are frozen since
+7 November 2026, and a sensitivity analysis decides whether each becomes a fixed choice or
+a treatment (\code{docs/design/review-v2.md}). Every further choice is listed in
+section~\ref{sec:choices} and in \code{docs/design/choices.md}, which also records the
+version 1 values. The test industry is Shaikh's three plants (2016, Tables 7.10--7.11):
 
 \begin{center}
 \begin{tabular}{lrrrrrr}
@@ -39,18 +49,21 @@ D2 & 133 & 21{,}000 & 157.89 & 75 & 59.21 & 15.83\,\% \\
 \end{center}
 
 Each plant is given to one Shaikh and one Okishio firm (six firms, identical within each
-pair), demand is $680 = (340/383)\times 766$, $\delta = 0.10$, $\rbar = 0.05$ (0.16 in version 1) and
-$u_{\max} = 1.2$.
+pair) and split into plants of 20; demand is $680 = (340/383)\times 766$, $\delta = 0.10$,
+$\rbar = 0.05$ (0.16 in version 1) and $u_{\max} = 1.2$.
 
 \paragraph{Baseline run.} Figures~\ref{fig:prices}--\ref{fig:firms} show the baseline
-(seed 42, 200 periods). Excess capacity starts a price war at $t = 2$; it ends when the
-initial plants retire at $t = 9$ and capacity is rebuilt to demand. At the war price
-(about 85) D2 is the most profitable technique even at the current price, so almost every
-firm rebuilds with D2 and C disappears. Afterwards Okishio firms build D1 and Shaikh firms
-D2; with target-return pricing D1 firms post the lowest price (98.77 against 100.26) and
-Shaikh firms lose market share steadily. This is the anchor trap of the pricing brief, not
-yet a result on the two rules: the comparison with markup pricing, weaker selection and
-other finance rules is what the group's experiments are for.
+(seed 42, 200 periods, version 2 defaults). The D1 and D2 firms undercut C from $t = 0$
+and the opening war takes prices from 100 to 73 by $t = 20$; afterwards prices follow unit
+costs down as designs are adopted (Shaikh firms' unit cost 46 at $t = 199$, price 49),
+with a cut in 126 of 200 periods and 50 periods of excess demand after scrapping. With
+$\rbar = 0.05$ the rate on new plants is above $\rbar$ almost every period: 43 firms enter
+and 42 leave, nearly all by falling below 1\,\% of the market. Okishio firms fall below
+1\,\% of the market at $t = 75$ and entrants that switch rule bring them back to 7\,\% by
+$t = 199$; 7 firms remain. Over seeds 1--20 Shaikh firms win 16 runs. Whether they win
+through prices or through accumulation is what the collector's decomposition
+(section~\ref{sec:accounts}, \code{docs/design/collector.md}) is for; until the
+sensitivity analysis has run, this is a baseline, not a result.
 
 \begin{figure}[p]
 \centering

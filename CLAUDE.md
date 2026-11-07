@@ -34,7 +34,9 @@ exit treat both types identically.
 silently.** `docs/design/mechanism-briefs.md` is the specification (notation, order of
 events, test industry, the six mechanisms with their starting rule and tests).
 `docs/design/choices.md` lists every choice the briefs leave open: when you change one,
-update its row.
+update its row. `docs/design/review-v2.md` holds the review of version 2, the decisions of
+7 November 2026 and the plan (fixes, documentation, the innovation-set switch, the
+sensitivity analysis); `docs/design/collector.md` is generated from `model/schema.py`.
 
 ## Coding convention (from the course template)
 
@@ -59,7 +61,7 @@ update its row.
 
 | Mechanism (step) | Owner | Files |
 |---|---|---|
-| Pricing (1) | Jake | `equations/real_competition_price.py`, `anchor_price.py`, `price_floor.py`, `price_war.py`, `posted_price.py`; `set_prices` |
+| Pricing (1) | Jake | `equations/real_competition_price.py`, `leader_follow_price.py`, `anchor_price.py`, `price_floor.py`, `price_war.py`, `posted_price.py`; `set_prices` |
 | Demand (2) | Pierre-Loup | `equations/competitiveness.py`, `market_shares.py`, `offered_capacity.py`; `markets/goods_market.py`; `allocate_demand` |
 | Production and accounts (3) | unassigned | `equations/merit_order.py`, `operating_cost.py`, `depreciation.py`, `interest_payment.py`, `firm_profit.py`, `profit_rate.py`, `plant_profit.py`, `dividends.py`, `debt_repayment.py`; `markets/payments.py`, `credit_market.py`; `produce_and_account`; `model/collector.py` |
 | Scrapping (4) | Vincent | `equations/retirement.py`, `idle_plants.py`, `replacement.py`, `lifetime_profit_rate.py`; `scrap_plants` |
@@ -86,7 +88,9 @@ CI (`.github/workflows/build.yml`) runs the same steps on Python 3.11 and upload
 
 1. Write the alternative as a new function, in the mechanism's equation file or a new file
    in `equations/` (one rule per file).
-2. Add a switch to `parameters.py`, with the version 1 rule as default (examples:
+2. Add a switch to `parameters.py`, keeping the current default: a default changes only by
+   a group decision recorded in `docs/design/choices.md` (defaults are frozen since
+   7 November 2026 pending the sensitivity analysis of `docs/design/review-v2.md`). Examples:
    `PRICING_ANCHOR`, `DEMAND_FORM`, `HURDLE_FLOOR_AT_ZERO`, `REPLACEMENT`,
    `INVESTMENT_SALES_LAG`).
 3. Branch on the switch in the scheduler step that calls the rule.

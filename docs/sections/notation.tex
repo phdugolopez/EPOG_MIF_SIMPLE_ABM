@@ -26,10 +26,19 @@ $\Pi_i$ & \code{profit} & profit after depreciation and interest \\
 $NW_i$ & \code{net\_worth} & cash plus book value of plants, minus debt \\
 $\rho$ & \code{rho} & interest rate on debt \\
 $r^{new}$ & \code{r\_new} & profit rate on plants built in the last $k$ periods \\
+\midrule
+$S$ & \code{PLANT\_SIZE} & capacity of every plant (version 2) \\
+$RE_i$ & \code{retained\_earnings} & profit less dividends since birth, less spending on plants \\
+$\mathit{wear}_v$ & \code{wear} & output so far in periods of normal output, $\sum_t x_{v,t}/\qbar_v$ \\
+$a, b$ & \code{draw\_design} & a design's proportional fall in $ucs$ and rise in $\kappa$ \\
+$q$ & \code{TECH\_CONFLICT} & share of designs drawn in the conflict zone \\
+$z$, floor markup & \code{LEADER\_RISE}, \code{FLOOR\_MARKUP} & leader-follow rule: rise after a shortage; markup of the floor on average unit cost \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
 Two symbols of the brief are used twice there and are renamed in the code: the plant life
 $T = 1/\delta$ is \code{PLANT\_LIFE} and the length of the price-war trigger is
-\code{WAR\_PERIODS}; the price band $b$ is \code{PRICE\_BAND}.
+\code{WAR\_PERIODS}; the price band $b$ is \code{PRICE\_BAND}. The mutation rate of the
+entry brief is $m$; the leader-follow floor markup is written out in words to keep $m$ for
+it.

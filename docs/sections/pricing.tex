@@ -3,7 +3,11 @@
 Pricing is where real competition happens: the low-cost firm cuts its price, followers
 match, and cuts stop at cost (Shaikh 2016, Table 7.3). Version 2 has no anchor and no war
 trigger: a firm cuts only when it is cheaper than a rival at the lowest price, so price wars
-come from cost differences, and technical change is what renews them.
+come from cost differences, and technical change is what renews them. The group's
+leader-follow rule, in which every firm cuts whenever capacity is not short, is the other
+end of the price-war treatment; the two rules are the model's most sensitive switch, and
+the sensitivity analysis decides whether one is fixed or both are kept as a treatment
+(\code{docs/design/review-v2.md}).
 
 \paragraph{Rule} (\code{PRICING\_RULE = "real\_competition"}). With
 $R_{i,t} = \min_{j\neq i} p_{j,t-1}$ the lowest rival price,
@@ -25,7 +29,8 @@ with $c = 0.02$ and $\eta = 0.5$. In words: under excess demand, move up to the 
 price, and the firm at the top raises it; with spare capacity and a cost edge over a rival
 at the lowest price, undercut it; otherwise follow the lowest price, never below one's own
 unit cost. The leader is whoever posts the lowest price: it is not assigned, and the
-lowest-cost firm leads in 187 of 200 periods (seeds 1--10).
+lowest-cost firm leads in 187 of 200 periods with the version 1 plants and accelerator
+(seeds 1--10, $\rbar = 0.16$), in 58 under the version 2 defaults.
 
 \paragraph{Why each detail.} $R$ excludes the firm itself, or a lone leader would undercut
 itself every period. A cut never raises the firm's price. The edge is over \emph{a} rival at
@@ -37,16 +42,17 @@ C's unit cost, 78.5. The floor is the firm's own unit cost; \code{PRICE\_FLOOR =
 "operating\_cost"} uses the version 1 floor ($ucs$, Shaikh 2016, p.~316), with which
 followers match the leader all the way down.
 
-\paragraph{What it needs from investment.} In the baseline the war of t = 0--19 drives prices
-to 78.5, a capacity shortage at t = 20 lifts them to 89.9, and then nothing moves: capacity is
-rebuilt to last sales, every firm runs at full capacity, no firm can cut and no shortage
-returns. The price stays below the regulating price of production (100.3) and the profit
-rate at 9.5\,\% against $\rbar = 16\,\%$. In Shaikh the price returns to the price of
-production through investment that responds to profitability. With desired capacity
-$x_{t-1}(1+\beta(r_i-\rbar)/\rbar)$, $\beta = 0.25$ (a scratch test, not in the code), the
-price gravitates around 99, the profit rate around 15.7\,\%, and a cheaper technique offered
-at t = 100 lowers the price towards its own price of production
-(\code{docs/design/choices.md}).
+\paragraph{What moves the price in version 2.} Under the version 2 defaults the price does
+not get stuck: retained earnings keep buying plants, idle scrapping keeps capacity near
+demand, and each adopted design gives its owner a cost edge that starts a cut (a cut in 126
+of 200 periods at seed 42). Shortages come from scrapping, not from under-investment. With
+the version 1 plants and accelerator ($\rbar = 0.16$) the war of t = 0--19 drove prices to
+78.5, a shortage at t = 20 lifted them to 89.9, and then nothing moved: capacity was rebuilt
+to last sales and no firm could cut. The scratch test with profit-sensitive investment,
+desired capacity $x_{t-1}(1+\beta(r_i-\rbar)/\rbar)$ with $\beta = 0.25$, under which the
+price gravitates around 99 and the profit rate around 15.7\,\%
+(\code{docs/design/choices.md}), remains the proposal for the accelerator arm of the
+finance treatment.
 
 \paragraph{Version 1} (\code{PRICING\_RULE = "anchor"}), kept for comparison. Firms move
 towards an anchor, stay within a band of the leader, and cut collectively after a run of low
@@ -83,8 +89,14 @@ with $c = 0.02$, $m = 0.20$, $z = 0.03$, $\bar m = 3$ (\code{PRICE\_CUT}, \code{
 Every firm cuts whenever capacity is not short, so prices fall each period to the floors, and
 the firm with the lowest floor sets the price. Unlike the notebook, $c$, $m$ and $z$ are the
 same for every firm rather than drawn at random for each, so identical firms stay identical
-and the label swap holds. Over seeds 1--10 the leader is the lowest-cost firm in 195 of 200
-periods (58 under the default rule) and the final share of Shaikh firms is 0.55 (0.81).
+and the label swap holds. Over seeds 1--10 under the version 2 defaults the leader is the
+lowest-cost firm in 195 of 200 periods (58 under the default rule) and the final share of
+Shaikh firms is 0.55 (0.81). Two points of the rule are open for the sensitivity analysis:
+the floor, a 20\,\% markup on the firm's average unit cost under which no plant ever sells
+below its unit cost and the Okishio hurdle never reaches zero (the version 2 default stops
+cuts at the best plant's unit cost, version 1 at operating cost); and the shortage branch,
+under which every firm posts $(1+z)\,p^{lead}_{t-1}$, so that a firm priced above that
+lowers its price in a shortage.
 
 \paragraph{Tests} (\code{tests/test\_pricing.py}): the rule's branches one by one (cut with an
 edge and spare capacity; no cut without either, nor against an identical twin; a cut never

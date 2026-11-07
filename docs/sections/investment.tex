@@ -40,6 +40,16 @@ either (section~\ref{sec:accounts}). Without a demand condition,
 capacity is bounded only by scrapping: without \code{IDLE\_SCRAPPING} it grows without limit
 (section~\ref{sec:scrapping}, \code{docs/design/choices.md}).
 
+\paragraph{The two channels.} The retained-earnings rule is the accumulation channel of
+the brief's trap, chosen deliberately: capacity grows with each type's profits, and the
+firms with the higher profit rate at the going price grow faster. The price channel runs
+alongside through market shares. The decomposition of each type's capacity share into net
+investment, entry and exit, and of its sales share into price-driven, entry-exit and
+rationing terms (\code{docs/design/collector-brief.md}, \S4.2--4.3;
+\code{analysis/indicators.py}), is reported with every result. The version 1 accelerator
+with borrowing (\code{INVESTMENT\_RULE = "accelerator"}, \code{BORROWING = True}) is the
+other arm of the finance treatment.
+
 \paragraph{Technical change (version 2 default).} With \code{TECH\_DRAWS = True}, the default (\code{TECH\_CONFLICT} $= q = 0.5$), a firm that invests is
 offered one new design $n$, drawn relative to the technique $o$ it would otherwise build and
 judged at its own price $p$. Every design is Marx-biased: operating cost falls by a share
@@ -54,7 +64,19 @@ otherwise $0 < b < b_O$ and both rules adopt it. The conflict zone vanishes as t
 $p - uc_o$ falls to zero, where the two rules coincide. The firm adopts $n$ if
 $ucs_n + (\delta + h_i)\kappa_n < ucs_o + (\delta + h_i)\kappa_o$, the same comparison as the
 technique choice, and keeps it among the techniques it knows; if not, it still invests, in
-$o$, so a rejected design never costs a firm capacity.
+$o$, so a rejected design never costs a firm capacity. Each draw is logged (its zone, its
+unit cost, whether it was adopted, and the order that builds it).
+
+This rule has limits that keep it from carrying the contest on its own: the conflict share
+$q$ is set by a coin flip rather than produced by an innovation set, so a price war cannot
+close the conflict zone except at zero margin; no design is ever rejected by a unit-cost
+firm; there are no capital-saving designs; the draw reads the firm's price; a firm that
+invests more often is offered more designs; and designs are private to the adopter but
+public to entrants. An innovation set drawn independently of the firm, with the zones as
+outcomes of the draw and of the price, public diffusion with a lag and draws per period,
+is specified in \code{docs/design/review-v2.md} (section 4) and is to be implemented as
+the second arm of the switch \code{TECH\_CHANGE}, the default staying as it is until the
+sensitivity analysis.
 
 \paragraph{Tests} (\code{tests/test\_investment.py}): at $p = 100$ Shaikh firms build D2 and
 Okishio firms D1, and with only C and D2 on offer Okishio firms keep C; on random menus the

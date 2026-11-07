@@ -1,9 +1,18 @@
-# Version 1: choices the brief leaves open
+# Choices the brief leaves open (version 2 defaults; version 1 values kept for the record)
+
+> **Defaults frozen on 7 November 2026 pending the sensitivity analysis** (section
+> "Sensitivity analysis (planned)" below, plan in `review-v2.md`). Pricing and technical
+> change are treatment arms until then.
 
 The brief (`mechanism-briefs.md`) gives each mechanism a starting rule. This file records
 every other choice made to get one runnable model, so that each owner knows what to revisit.
 **Fixed by Ugo** = decided at the planning stage; **default** = the simplest neutral choice,
 open for the owner to change. Parameter names are those of `parameters.py`.
+
+Version 2 (6 November 2026) changes the defaults of pricing, accounts, scrapping,
+investment and entry; each version 1 rule stays behind a switch. **Default (version 2)** in
+the tables marks the current default. Records of runs say which version, which pricing rule
+and which rbar they used; a number without its configuration is not a result.
 
 Each choice must respect the neutrality rule: only the technique choice (investment,
 replacement, entry) may use the hurdle h. In the code, `firm.type` is used only to look up
@@ -39,7 +48,9 @@ No anchor and no war trigger: price cuts come only from cost differences.
 | Excess demand: last period's demand above normal capacity (`EXCESS_DEMAND = "normal_capacity"`), Shaikh's signal that capacity is short | Default | `"unserved"`: demand above all output with overtime (u_max = 1.2); prices then almost never rise (see below) |
 | Floor when following: the firm's own best-plant unit cost (`PRICE_FLOOR = "unit_cost"`) | Default (Jake) | `"operating_cost"`: the version 1 floor (ucs, Shaikh 2016, p. 316). Followers then match the leader all the way and a war ends on one price; same baseline |
 | c = `PRICE_CUT` = 0.02, `SHORTAGE_RESPONSE` = 0.5 | Default | |
-| **Proposed alternative:** `PRICING_RULE = "leader_follow"`, the group notebook's rule (`equations/leader_follow_price.py`). L = lowest price last period. (1) A lone firm raises its price by `LEADER_RISE` up to `MONOPOLY_CAP` = 3 × floor; (2) after excess demand (same signal as the default, `EXCESS_DEMAND`), every firm posts (1 + `LEADER_RISE`) L; (3) otherwise every firm posts max{floor, (1 − c) L}, so prices fall each period until floors bind: a price war whenever capacity is not short. Floor = (1 + `FLOOR_MARKUP`) × capacity-weighted average uc. Differences from the notebook, for neutrality: ε, the floor markup m and the shortage rise z are common parameters (c = 0.02, m = 0.20, z = 0.03, the notebook's means) instead of random draws per firm, and shares come from the replicator, not a price queue. Seeds 1–10, current defaults otherwise: final Shaikh share 0.55 (real competition: 0.81), leader is the lowest-cost firm in 195 of 200 periods (58), mean price over t ≥ 50 69.0 (75.7), profit rate S/O 7.0 / 6.4 % (8.9 / 6.4 %), 6.4 firms at t = 199 (18.1) | Proposed (Ugo), to agree with Jake | Random ε, m, z per firm, as in the notebook |
+| **The other arm of the price-war treatment:** `PRICING_RULE = "leader_follow"`, the group notebook's rule (`equations/leader_follow_price.py`). L = lowest price last period. (1) A lone firm raises its price by `LEADER_RISE` up to `MONOPOLY_CAP` = 3 × floor; (2) after excess demand (same signal as the default, `EXCESS_DEMAND`), every firm posts (1 + `LEADER_RISE`) L; (3) otherwise every firm posts max{floor, (1 − c) L}, so prices fall each period until floors bind: a price war whenever capacity is not short. Floor = (1 + `FLOOR_MARKUP`) × capacity-weighted average uc. Differences from the notebook, for neutrality: ε, the floor markup m and the shortage rise z are common parameters (c = 0.02, m = 0.20, z = 0.03, the notebook's means) instead of random draws per firm, and shares come from the replicator, not a price queue. Seeds 1–10, current defaults otherwise: final Shaikh share 0.55 (real competition: 0.81), leader is the lowest-cost firm in 195 of 200 periods (58), mean price over t ≥ 50 69.0 (75.7), profit rate S/O 7.0 / 6.4 % (8.9 / 6.4 %), 6.4 firms at t = 199 (18.1) | Committed (cc1dd0c), a switch; fixed or treatment after the sensitivity analysis | Random ε, m, z per firm, as in the notebook |
+| Leader-follow floor: (1 + 0.20) × the capacity-weighted average uc of all the firm's plants, idle ones included. No plant then sells below its unit cost unless it is more than 20 % dearer than the firm's average, so obsolescence scrapping almost never fires and the Okishio hurdle never reaches zero: price wars never close the conflict zone | Open (step 1 of the plan: `PRICE_FLOOR` reused as a switch on the rule, `"markup"` staying its default) | `"unit_cost"` (the version 2 default's floor), `"operating_cost"` (version 1, Shaikh 2016, p. 316); all three in the sensitivity analysis |
+| Leader-follow shortage branch: after excess demand every firm posts (1 + z) L, so a firm priced above that lowers its price in a shortage and the price distribution collapses to one level 3 % above the leader | Open (step 1: `SHORTAGE_RULE = "leader"` as the default, the notebook's) | `"no_cut"`: max{p_{t−1}, (1 + z) L} |
 
 Version 1 rule (`PRICING_RULE = "anchor"`):
 
@@ -50,7 +61,7 @@ Version 1 rule (`PRICING_RULE = "anchor"`):
 | Floor = ucs of the most expensive plant needed to produce last period's sales in merit order; the cheapest plant's ucs when last sales were zero | Fixed by Ugo (rule); default (zero sales) | Floor including the overtime premium |
 | u_war = 0.95, `WAR_PERIODS` = 2, c = 0.02, b = 0.025, λ = 0.25 | Default (brief's ranges where given) | |
 | No war before a firm has `WAR_PERIODS` periods of history (entrants start at peace) | Default | |
-| War rule: every firm at war cuts its own price by c a period | Default | (`PRICE_WAR = "cost_gated"` removed in version 2: the real-competition rule replaces it) |
+| War rule: every firm at war cuts its own price by c a period | Default | (`PRICE_WAR = "cost_gated"` removed in version 2: the real-competition rule replaces it; its file `equations/war_price.py` is dead code, deleted in step 1 of the plan) |
 
 ## Demand (Pierre-Loup)
 
@@ -103,6 +114,7 @@ Version 1 rule (`PRICING_RULE = "anchor"`):
 | Replacement (step 4) is financed before expansion (step 5) | Default (order of events) | K+S: expansion first |
 | Ties between techniques go to the first one listed in `MENU` | Default | |
 | No technical change: the menu C, D1, D2 is fixed and known to every firm | Version 1, now a switch | **Default (version 2), q = 0.5:** `TECH_DRAWS = True`: each time a firm invests it is offered one new design, drawn relative to the technique it would otherwise build and judged at its own price. Every design is Marx-biased: operating cost falls by a share a ≤ `TECH_STEP` = 5 % (labour-saving) and capital per unit rises by a share b (capital-using). Unit cost falls if b < b_S = a ucs / (δκ); the profit rate at p rises if b < b_O = a ucs / (δκ + p − uc). With probability `TECH_CONFLICT` the design lies in the conflict zone b_O ≤ b < b_S (only the unit-cost rule adopts it), otherwise 0 < b < b_O (both adopt it). With no margin there is no conflict zone. The firm adopts the design if its hurdle prefers it (the same comparison as `choose_technique`) and keeps knowing it; if not, it still invests, in its best known technique. Hurdle and replacement use the firm's known techniques; an entrant can build any technique in use (`equations/new_technique.py`). Shaikh's menu is itself Marx-biased: D1 against C is a design both rules adopt at p = 100, D2 against D1 a conflict design |
+| **Innovation set** (`TECH_CHANGE = "innovation_set"`, to implement; `"categories"` = the rule above stays the default): a design is drawn relative to a reference technique with nothing read from the firm, ucs_n = (1 − a) ucs_o, κ_n = (1 + b) κ_o, a = u · `TECH_STEP`, b = k a, k log-normal around the median `TECH_BIAS` (the capital per unit given up per unit of operating cost saved, the treatment) with spread `TECH_BIAS_SPREAD`. The two rules filter the same draw: the unit-cost rule adopts if k < ucs_o/(δκ_o), the profit-rate rule at price p if k < ucs_o/(δκ_o + max{0, p − uc_o}); the zones (both adopt, conflict, both reject) are outcomes, and a price war closes the conflict zone. Options: `TECH_SET` `"marx"` / `"neutral"` (direction uniform on the circle: capital-saving designs and the second wedge appear, realised Marx bias becomes an outcome), `TECH_REFERENCE` `"own"` / `"frontier"`, `TECH_DRAW_TIMING` `"investment"` / `"period"` (a draw per firm per period with probability `TECH_DRAW_RATE`), `TECH_DIFFUSION` `"private"` / `"public"` (a technique known to every firm `IMITATION_LAG` periods after its first plant produces). Limits of the current rule it answers: the conflict share is a coin flip, no design is ever rejected by a unit-cost firm, no capital-saving designs, the draw reads the firm's price, more investment means more draws, designs are private to the adopter but public to entrants. Zone shares on the test industry and the full specification: `review-v2.md`, section 4 | Switch, in the sensitivity analysis (Ugo; step 3 of the plan) | Keep `"categories"` only |
 | Investment volume: the accelerator above | Version 1, now a switch | **Default (version 2):** `INVESTMENT_RULE = "retained_earnings"`: whatever the demand, a firm buys as many plants as its retained earnings pay for (profit after depreciation and interest, less dividends, accumulated and not yet spent on plants, and held as cash); no borrowing (`equations/retained_earnings_investment.py`) |
 
 ## Entry and exit (unassigned)
@@ -117,6 +129,7 @@ Version 1 rule (`PRICING_RULE = "anchor"`):
 | Exit if NW < 0, share < f_min = 0.01, or non-renewal; floor of two firms (the firms with the highest net worth stay) | Fixed by Ugo (channels); default (f_min) | Version 2 (`CASH_SHORTFALL = "bankruptcy"`, default): bankruptcy also when cash is negative after the period's payments, net worth whatever it is |
 | **Non-renewal at firm level**: a firm exits when its last plant retires, its lifetime profit rate (before interest) was below rbar, and it has no plant on order; such a firm does not invest that period. A firm left with no plant at all also exits. Plants of the initial endowment are exempt, since their record starts at t = 0 | Fixed by Ugo (firm level, last plant); default (exemption) | Plant level (Harrod): a retiring plant below rbar is not rebuilt |
 | A leaving firm repays what its cash allows, the rest of its debt is a loss of the rest of the economy, its remaining cash returns to its owners, its plants are written off; its share is shared out in proportion to the other shares | Default | |
+| Entry churn: with rbar = 0.05 and θ = 5 the trigger fires almost every period (67 entries and 58 exits by share over 200 periods, seeds 1–20, version 2 defaults; 15 firms at t = 199, most of them entrants at 1 % of the market); ρ = 0.05 now equals rbar | Default, kept; a factor of the sensitivity analysis | θ = 1; rbar = 0.10 or 0.16; a smaller `ENTRANT_SIZE` |
 
 ## Collector (unassigned; signed off by Ugo)
 
@@ -152,6 +165,43 @@ plan in `collector-plan.md`). Choices made while implementing phases 1–6:
 | `debug.compare_runs` matches rows on keys ((t); (t, group); (t, firm_id); (t, plant_id); (t, step, event, firm_id, plant_id, rank); (t, item)), compares text as well as numbers (NaN = NaN; text, NaN against a number and missing rows count as infinite), tolerance 1e-12 absolute; `--swap-labels` swaps the two labels in values and column names but not `rule`; tables with the names used before phase 2 are renamed first; its PNG is written next to RUN_B (the run under test), never into RUN_A (the reference) | Default | Numeric columns only; relative tolerance |
 
 | **Merge into version 2 (7 November 2026, branch `v2-collector`).** The collector predates the version 2 rules; reconciled as follows, with no change to any trajectory (every macro column shared with `v2` identical over seeds 42, 1 and 7). Retirement cause `idle` in the plants table and the `retire` events. Exit cause `bankruptcy` also covers negative cash (`CASH_SHORTFALL`); an `unpaid_bills` event (value = the bills left unpaid) is logged beside `default`; the cumulated `unpaid_bills` of the rest of the economy is a macro column. Designs under `TECH_DRAWS`: a `design` event per draw (tech = the design, other_tech = the reference it was drawn from, cause = its zone `both` or `unit_cost`, value = its unit cost) and an `adopt` event when the hurdle prefers it; whether it is then built shows as an `order` with that technique in the same period, so "adopted" and "built" are told apart; `designs_offered`, `designs_adopted` and `capacity_designs` (plants built with techniques not on the menu) in `macro`, `capacity_designs` in `groups`. `tech_other` and `r_best` are evaluated on the techniques the firm knows (`firm.known`), as the hurdle is; an entrant's hurdle and known techniques are set before its order (`create_entrant`), so `log_order` reads them. Firm columns `retained_earnings` and `n_known`; plant columns `periods_idle` and `wear`. `p_normal` is None under the rules without an anchor; `p_floor` is the floor each rule used. The floor check counts `floor_viol` under every rule but fails only under `PRICING_RULE = "anchor"`, the only rule that enforces its floor in every branch (the version 2 rules undercut or rise relative to rivals, and a shortage under `leader_follow` posts (1 + z) L whatever the floor). The money tolerance keeps the version 2 scale (flows + money + cash and debt stocks). The collector's fixtures that need bankruptcies, defaults, cancelled orders, an age retirement or a borrowed replacement run on the version 1 plants, investment and anchor pricing (`tests/helpers.py`: `BANKRUPTCIES`, `three_plant_industry`), since under the version 2 defaults no firm ever borrows and no plant retires by age. Wall time of `Industry.run()` on the version 2 defaults: 0.11 s (`run.py` 0.5 s in all; `debug.report` 15 s) | Default (Ugo) | Fail the floor check under every rule (false failures under `leader_follow`) |
+
+## Sensitivity analysis (planned, 7 November 2026)
+
+Decided on 7 November: the pricing rule and the technical-change rule are the model's two
+sensitive parts; no default changes until a first full sensitivity analysis, run after the
+collector merge (done) and the innovation-set switch (step 3 of the plan in `review-v2.md`),
+decides for each factor whether it is fixed or becomes a treatment. Design: one factor at a
+time around the version 2 defaults (about 20 cells, 50 seeds each, enough to detect a
+20-point gap in the share of seeds won), then a factorial over the factors that moved the
+outcome, 200 seeds for the cells that decide the fixed version; seeds fixed across cells;
+every cell with its neutral control (two groups on the same hurdle rule under different
+labels). Decision rule: a factor whose levels do not move the share of seeds won beyond the
+neutral control's interval is fixed at its default; one that does becomes a treatment, or is
+fixed at the level the group argues for from theory, with the sensitivity recorded here.
+
+| Factor | Levels | Mechanism | Result |
+|---|---|---|---|
+| `PRICING_RULE` | `real_competition`, `leader_follow` | Pricing | |
+| Floor (`PRICE_FLOOR`) | `operating_cost` (ucs), `unit_cost`, `markup` (leader-follow only) | Pricing | |
+| `SHORTAGE_RULE` (leader-follow) | `leader`, `no_cut` | Pricing | |
+| `CHI` (selection intensity) | 0.5, 1, 2 | Demand | |
+| Technical change | `categories` with q ∈ {0, 0.5}; `innovation_set` marx with m ∈ {0.5, 1.5, 3}; `innovation_set` neutral | Investment | |
+| `TECH_DIFFUSION` | `private`, `public` | Investment | |
+| `TECH_DRAW_TIMING` | `investment`, `period` | Investment | |
+| Finance | `retained_earnings` + `BORROWING = False`; `accelerator` + `BORROWING = True` | Investment | |
+| `RBAR`, `ENTRY_SPEED` | (0.05, 5), (0.05, 1), (0.16, 5) | Entry | |
+| `DEPRECIATION` | `time`, `use` | Accounts | |
+
+Outputs per cell, from the collector: share of seeds in which Shaikh firms hold more than
+half the capacity at t = 199 with a 95 % interval; final capacity and sales shares; the
+decomposition of each type's share change into price-driven, accumulation, entry and exit
+terms (`collector-brief.md` §4.2–4.3, `analysis/indicators.py`); share of draws in each
+adoption zone and the realised γ and χ by type; periods with a cut, mean price and profit
+rates over t ≥ 50; entries, exits and firms at the end; hurdle replacements by type; the
+neutral control's share of seeds won. Computing time: `Industry.run()` takes 0.11 s on the
+version 2 defaults, so 20 cells × 50 seeds take about two minutes and a 200-seed cell
+about half a minute.
 
 ## What the baseline shows (seed 42), for the record
 
@@ -211,9 +261,9 @@ Version 1 (`PRICING_RULE = "anchor"`):
   (from 0.5 to about 0.16 by t = 200). This is the anchor trap of the pricing brief at work,
   not a result about the two rules in general.
 
-## Pricing switches compared (seeds 1–10), for the record
+## Pricing switches compared (seeds 1–10; version 1 plants and accelerator, rbar = 0.16), for the record
 
-Everything else at its default. Final share of Shaikh firms at t = 199 (mean, with range over
+Everything else at its version 1 default (continuous plants, accelerator with borrowing, rbar = 0.16). Final share of Shaikh firms at t = 199 (mean, with range over
 seeds), periods (of 200) in which the price leader is the lowest-cost firm, and mean price and
 profit rates (Shaikh / Okishio) over t ≥ 50.
 
@@ -258,7 +308,7 @@ production (94). With the current investment rule the cheaper technique diffuses
 adopters keep the surplus profit, and the price never moves. This is a proposal for the
 investment owner (Ugo), not a change to the code.
 
-## Fixed plants, scrapping and retained-earnings investment (seeds 1–10), for the record
+## Fixed plants, scrapping and retained-earnings investment (seeds 1–10, rbar = 0.16), for the record
 
 `PLANT_SIZE` = S, `PLANT_LIFE = None`, `SCRAP_COST = "unit_cost"` with
 `OBSOLESCENCE_PERIODS = 2`, `INVESTMENT_RULE = "retained_earnings"`, pricing at its default
@@ -292,7 +342,7 @@ investment owner (Ugo), not a change to the code.
 - Large plants (S = 130) leave a firm with one or two plants: it cannot scrap part of its
   idle capacity, and utilisation stays near 0.64.
 
-## Technical change by draws (seeds 1–100), for the record
+## Technical change by draws (seeds 1–100, rbar = 0.16, before the entrant-pricing change of 4 November), for the record
 
 `TECH_DRAWS = True` with fixed plants of 20, no lifespan, scrapping below unit cost or when
 idle, and retained-earnings investment. To isolate the draws, all six firms start on C and

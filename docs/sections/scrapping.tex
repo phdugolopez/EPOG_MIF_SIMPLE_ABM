@@ -19,7 +19,7 @@ types, and only replacement uses $h$, the same $h$ as investment.
 price has stayed below its $ucs$ for $N = 4$ periods (its quasi-rent is negative, Salter
 1966). Replacement is on in version 1: the firm compares each working plant with the
 technique its own hurdle picks, and replaces it if the inequality holds and the firm can pay
-(cash, then debt up to the cap; cash only with \code{BORROWING = False}, the default). Scrap value is zero; remaining book value is written off.
+(cash, then debt up to the cap). Scrap value is zero; remaining book value is written off.
 Depreciation is accounting only. When a firm's last plant retires, its lifetime profit rate
 decides non-renewal (section~\ref{sec:entry}).
 
@@ -35,7 +35,13 @@ off and still produced its sales $x_i$ at normal capacity,
 Identical plants share output pro rata, so idleness is counted in whole plants. With fixed
 plant sizes and investment from retained earnings (section~\ref{sec:investment}), idle
 scrapping is what keeps capacity near demand: each new plant pushes out the firm's oldest,
-highest-cost plant two periods later (\code{docs/design/choices.md}). The version 1 rule above returns with \code{PLANT\_LIFE = 10}, \code{SCRAP\_COST = "operating\_cost"}, \code{OBSOLESCENCE\_PERIODS = 4} and \code{IDLE\_SCRAPPING = False}.
+highest-cost plant two periods later (\code{docs/design/choices.md}). Replacement is paid
+from cash only (\code{BORROWING = False}); with whole plants bought from retained earnings
+and scrapped when idle, replacement by the hurdle inequality rarely fires, since each new
+plant already pushes out the oldest. The number of hurdle replacements per period is
+collected (\code{replacements} in the \code{macro} table). The version 1 rule above
+returns with \code{PLANT\_LIFE = 10}, \code{SCRAP\_COST = "operating\_cost"},
+\code{OBSOLESCENCE\_PERIODS = 4} and \code{IDLE\_SCRAPPING = False}.
 
 \paragraph{Tests} (\code{tests/test\_scrapping.py}): a plant reaching age $T$ leaves; a plant
 whose $ucs$ stays above the price for $N$ periods leaves; an old plant with $ucs = 80$

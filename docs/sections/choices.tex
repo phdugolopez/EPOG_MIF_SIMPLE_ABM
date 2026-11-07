@@ -1,36 +1,49 @@
 \section{Choices left open by the briefs}\label{sec:choices}
 
-The briefs give a starting rule for each mechanism; version 1 needed further choices. The
-full list, with status (fixed at planning or default), alternatives and owner, is
+The briefs give a starting rule for each mechanism; version 1 needed further choices, and
+version 2 (6 November 2026) changed the defaults of pricing, accounts, scrapping,
+investment and entry, each version 1 rule staying behind a switch. The full list, with
+status (fixed at planning or default), alternatives and owner, is
 \code{docs/design/choices.md}; \code{docs/design/} is the design reference, and changes are
-proposed there. The main ones:
+proposed there. The defaults are frozen since 7 November 2026 pending the sensitivity
+analysis of \code{docs/design/review-v2.md}. The main choices:
 
 \begin{itemize}
-\item \textbf{Initial vintages.} One plant of age 0 per initial firm: all retire together at
-  $t = 9$, which leaves echo cycles every ten periods.
+\item \textbf{Plants of fixed size} $S = 20$, no maximum age. Initial plants are split into
+  plants of 20; the version 1 single plants retiring together at $t = 9$ are gone.
+\item \textbf{Scrapping} after two periods with the price below the plant's unit cost, or
+  two periods idle; the version 1 rule (age 10, four periods below $ucs$) stays behind
+  switches.
+\item \textbf{Investment of all retained earnings} in whole plants, no borrowing; the
+  version 1 accelerator with debt up to twice sales revenue stays behind
+  \code{INVESTMENT\_RULE} and \code{BORROWING}, as the other arm of the finance treatment.
+\item \textbf{Pricing}: cost-edge undercutting by default, the group's leader-follow rule
+  as the other arm of the price-war treatment; the version 1 anchor rule behind
+  \code{PRICING\_RULE}.
+\item \textbf{Technical change on}: one Marx-biased design per investment, half in the
+  conflict zone; the innovation set of \code{docs/design/review-v2.md} (section 4) is the
+  second arm.
 \item \textbf{Okishio hurdle floored at zero} in investment, replacement and entry. Without
   the floor, $h < 0$ in a deep price war would make replacement easier for Okishio firms
   than for Shaikh firms.
+\item \textbf{Bankruptcy when cash runs out}, instead of the version 1 overdraft; the rest
+  of the economy bears the unpaid bills.
 \item \textbf{Non-renewal at firm level}: a firm leaves when its last plant retires with a
   lifetime rate below $\rbar$; read at plant level, it would change the investment rule.
-\item \textbf{Debt cap and losses.} In version 1 the cap (twice sales revenue) binds
-  borrowing for plants; version 2 (\code{BORROWING = False}) pays for plants from cash only.
-  In version 1 losses are covered by an overdraft outside the cap; in version 2 a firm whose
-  cash runs out goes bankrupt. Firms repay 10\,\% of debt a period.
+  The entry trigger is the realised rate on recent plants; $\rbar = 0.05$; entrants price
+  by the common rule.
 \item \textbf{Overtime premium} of 10\,\% on output above normal capacity, added to the
-  brief's profit equation.
-\item \textbf{A plant runs only if the price covers its operating cost}: sales are capped at
-  the output offered at the posted price.
-\item \textbf{Ties are shared pro rata} in the merit order and the overflow: the paired
-  firms start identical, so ordering by firm would favour one type.
-\item \textbf{The entry trigger} is the realised rate on recent plants (the brief says both
-  ``realised'' and ``at the current price'').
-\item \textbf{Open values:} $u^{war} = 0.95$, $\lambda = 0.25$, $c = 0.02$, $b = 0.025$,
-  $\rho = 0.05$, $f_{\min} = 0.01$, entrant undercut 1\,\%, logit $\eta = 1$, initial price
-  100, initial cash and debt zero.
+  brief's profit equation; a plant runs only if the price covers its operating cost; ties
+  are shared pro rata in the merit order and the overflow, since the paired firms start
+  identical.
+\item \textbf{Open values:} $c = 0.02$, $\eta = 0.5$ (shortage response), $\rho = 0.05$,
+  $d = 0.5$, $f_{\min} = 0.01$, $\theta = 5$, $k = 5$, $\phi = 0.5$, $m = 0.02$,
+  $\chi = 1$, logit $\eta = 1$, initial price 100, initial cash and debt zero;
+  leader-follow floor markup 0.20, rise $z = 0.03$, monopoly cap 3; version 1 pricing
+  $u^{war} = 0.95$, $\lambda = 0.25$, $b = 0.025$, entrant undercut 1\,\%.
 \end{itemize}
 
 \paragraph{Adding an alternative rule.} Write the new equation in its own file (or as a
-second function in the mechanism's file), add a switch to \code{parameters.py} with the
-version 1 rule as default, branch on it in the scheduler step, add a test, and record the
-choice in \code{docs/design/choices.md}.
+second function in the mechanism's file), add a switch to \code{parameters.py} keeping the
+current default, branch on it in the scheduler step, add a test, and record the choice in
+\code{docs/design/choices.md}. A default changes only by a group decision recorded there.
