@@ -185,16 +185,22 @@ fixed at the level the group argues for from theory, with the sensitivity record
 
 | Factor | Levels | Mechanism | Result |
 |---|---|---|---|
-| `PRICING_RULE` | `real_competition`, `leader_follow` | Pricing | |
-| Floor: `PRICE_FLOOR` (default rule), `LEADER_FOLLOW_FLOOR` (leader-follow) | `operating_cost` (ucs), `unit_cost`; `markup` (leader-follow only) | Pricing | |
-| `SHORTAGE_RULE` (leader-follow) | `leader`, `no_cut` | Pricing | |
-| `CHI` (selection intensity) | 0.5, 1, 2 | Demand | |
-| `TECH_CHANGE`, `TECH_SET`, `TECH_BIAS` | `categories` with q ∈ {0, 0.5}; `innovation_set` marx with m ∈ {0.5, 1.5, 3}; `innovation_set` neutral | Investment | |
-| `TECH_DIFFUSION` | `private`, `public` | Investment | |
-| `TECH_DRAW_TIMING` | `investment`, `period` | Investment | |
-| Finance | `retained_earnings` + `BORROWING = False`; `accelerator` + `BORROWING = True` | Investment | |
-| `RBAR`, `ENTRY_SPEED` | (0.05, 5), (0.05, 1), (0.16, 5) | Entry | |
-| `DEPRECIATION` | `time`, `use` | Accounts | |
+| `PRICING_RULE` | `real_competition`, `leader_follow` | Pricing | Moves (stage 1: 0.81 → 0.66 for the unit-cost rule, both beyond drift); in stage 2 leader-follow 0.84, real competition 0.79, and it interacts with finance. **Treatment.** Two reversals beyond drift for the profit-rate rule: the anchor rule at rbar 0.16 (0.26; at drift at rbar 0.05) and, at 500 seeds, leader-follow with retained earnings, demand growing 0.01, categories and rbar 0.16 (0.32), which the accelerator with borrowing turns to 0.85 (`sensitivity-results.md`) |
+| Floor: `PRICE_FLOOR` (default rule), `LEADER_FOLLOW_FLOOR` (leader-follow) | `operating_cost` (ucs), `unit_cost`; `markup` (leader-follow only) | Pricing | `PRICE_FLOOR`: no move (0.74). **Fix** `unit_cost`. `LEADER_FOLLOW_FLOOR`: `unit_cost` moves leader-follow up (0.66 → 0.83); `operating_cost` leaves 81 of 200 seeds with no capacity. Recommended: `unit_cost` for the leader-follow arm (a group decision) |
+| `SHORTAGE_RULE` (leader-follow) | `leader`, `no_cut` | Pricing | Inert: leader-follow never has a shortage period at the defaults (identical runs). **Fix** `leader` |
+| `CHI` (selection intensity) | 0.5, 1, 2 | Demand | No level (0.25 to 4) moves the share won in stage 1. **Fix** 1; in the phase block it interacts with finance (higher CHI helps the unit-cost rule with retained earnings, hurts it with the accelerator under real competition): keep 0.25 and 4 as a robustness check of the finance result |
+| `TECH_CHANGE`, `TECH_SET`, `TECH_BIAS` | `categories` with q ∈ {0, 0.5}; `innovation_set` marx with m ∈ {0.5, 1.5, 3}; `innovation_set` neutral | Investment | The strongest factor. Without draws (`TECH_DRAWS = False`) the contest is at drift (0.51); categories q = 0.5 0.81, q = 0 0.62; innovation set marx 0.5 / 1.5 / 3 0.80 / 0.94 / 0.97, neutral 0.78. **Treatment**; recommended main specification the innovation set (marx 1.5), categories as the version 1 robustness check (a group decision) |
+| `TECH_DIFFUSION` | `private`, `public` | Investment | No move against the innovation-set cell (0.87 against 0.94, intervals overlap); `TECH_REFERENCE = frontier` neither (0.93). **Fix** `public`, `own` |
+| `TECH_DRAW_TIMING` | `investment`, `period` | Investment | `investment` pushes the unit-cost share to 0.995 (barely beyond the marx 1.5 cell's interval): draws per investment compound a lead. **Fix** `period` |
+| Finance | `retained_earnings` + `BORROWING = False`; `accelerator` + `BORROWING = True` | Investment | Moves (0.81 → 0.63 with borrowing, 0.59 without; neither beyond drift in stage 1); in stage 2 0.86 against 0.77, and under real competition with static demand 0.89 against 0.59. **Treatment** (retained earnings and accelerator + borrowing; the accelerator without borrowing can go) |
+| `RBAR`, `ENTRY_SPEED` | (0.05, 5), (0.05, 1), (0.16, 5) | Entry | θ = 1 no move (0.79). rbar 0.16 moves (0.64), mainly under the categories rule (stage 2: 0.59–0.64 against 0.70–0.74). **Fix** θ = 5 and rbar 0.05; rbar 0.16 a treatment with the categories rule only |
+| `DEPRECIATION` | `time`, `use` | Accounts | No move (0.75). **Fix** `time` |
+
+Also run in stage 1, not in the table above, and none moved the share won: demand form
+logit (η = 1 is the replicator with χ = 1: identical runs), `EXCESS_DEMAND = "unserved"`,
+scrapping 4 / 4, `PLANT_SIZE` 40, τ = 0.25, `HURDLE_FLOOR_AT_ZERO = False` (inert). Demand
+growth moves it down (0.01: 0.63; 0.03: 0.39, at drift) and initially unmet demand does not
+(0.76): demand is a treatment at static and 0.01. Results: `sensitivity-results.md`.
 
 Outputs per cell, from the collector: share of seeds in which Shaikh firms hold more than
 half the capacity at t = 199 with a 95 % interval; final capacity and sales shares; the

@@ -689,6 +689,9 @@ def rerun(run_id: str, out_dir: Path | None = None, runs_path: Path | None = Non
 
 
 # --- Figures -----------------------------------------------------------------------------
+# Rules that are not labels get neutral colours, so that blue and orange always mean the
+# labels "shaikh" and "okishio" (style.py).
+RULE_COLOURS = {"real_competition": "#6250d6", "leader_follow": "#1baf7a", "anchor": "#52514e"}
 PRICING_NAMES = {"real_competition": "real competition", "leader_follow": "leader-follow",
                  "anchor": "anchor"}
 
@@ -775,10 +778,16 @@ def fig_phase(cells: pd.DataFrame, path: Path, y_mode: str = "design") -> None:
     if s2.empty:
         return
     s2 = s2.join(cell_parameters(s2))
+    keep = [json.loads(o).get("RBAR", 0.05) == 0.05
+            and json.loads(o).get("TECH_DRAW_TIMING", "period") == "period" for o in s2["overrides"]]
+    s2 = s2[keep]  # the plane at rbar 0.05 and draws per period
     pricing = list(dict.fromkeys(s2["pricing_rule"]))
     finance = list(dict.fromkeys(s2["finance"]))
     demands = list(dict.fromkeys(s2["demand"]))
-    techs = list(dict.fromkeys(s2["tech"]))
+    tech_order = ["categories q=0", "categories q=0.5", "innovation set, marx 0.5",
+                  "innovation set, marx 1.5", "innovation set, marx 3", "innovation set, neutral"]
+    techs = [t for t in tech_order if t in set(s2["tech"])] + \
+        [t for t in dict.fromkeys(s2["tech"]) if t not in tech_order]
     markers = ["o", "s", "^", "D"]
     cmap = _diverging()
     fig, axes = plt.subplots(len(pricing), len(finance), figsize=(4.2 * len(finance), 3.6 * len(pricing)),
@@ -790,7 +799,7 @@ def fig_phase(cells: pd.DataFrame, path: Path, y_mode: str = "design") -> None:
             sub = s2[(s2["pricing_rule"] == pr) & (s2["finance"] == fi)]
             for k, d in enumerate(demands):
                 part = sub[sub["demand"] == d]
-                x = np.array([chis.index(c) for c in part["chi"]]) + (k - (len(demands) - 1) / 2) * 0.22
+                x = np.array([chis.index(c) for c in part["chi"]], dtype=float) + (k - (len(demands) - 1) / 2) * 0.18
                 if y_mode == "design":
                     yv = np.array([techs.index(t) for t in part["tech"]], dtype=float)
                 else:
@@ -801,6 +810,7 @@ def fig_phase(cells: pd.DataFrame, path: Path, y_mode: str = "design") -> None:
                                 marker=markers[k % 4], s=70, edgecolors=np.where(beyond, "#0b0b0b", "white"),
                                 linewidths=np.where(beyond, 1.2, 0.6), label=d)
             ax.set_xticks(range(len(chis)), [f"{c:g}" for c in chis])
+            ax.set_xlim(-0.6, len(chis) - 0.4)
             if y_mode == "design":
                 ax.set_yticks(range(len(techs)), techs, fontsize=7)
             ax.set_title(f"{PRICING_NAMES.get(pr, pr)}, {fi}", fontsize=8, loc="left")
@@ -812,7 +822,8 @@ def fig_phase(cells: pd.DataFrame, path: Path, y_mode: str = "design") -> None:
     fig.colorbar(sc, ax=axes, shrink=0.6, label="share of seeds won by \"shaikh\" (blue: unit cost)")
     what = "technical-change rule" if y_mode == "design" else "realised conflict share"
     fig.suptitle(f"Stage 2: where does the unit-cost rule win? Selection intensity × {what}, "
-                 "per pricing and investment rule\n(black edge: beyond both neutral controls)",
+                 "per pricing and investment rule\n(rbar 0.05, draws per period; demand levels other than static only at CHI = 1; "
+                 "black edge: beyond both neutral controls)",
                  fontsize=9, x=0.02, ha="left")
     fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
@@ -823,7 +834,7 @@ def fig_channels(cells: pd.DataFrame, path: Path) -> None:
     from style import MUTED
     mixed = cells[cells["population"] == "mixed"].copy()
     mixed = mixed.join(cell_parameters(mixed))
-    colours = {"real_competition": "#2a78d6", "leader_follow": "#eb6834", "anchor": "#52514e"}
+    colours = RULE_COLOURS
     fig, ax = plt.subplots(figsize=(6.5, 5))
     for pr, part in mixed.groupby("pricing_rule"):
         ax.scatter(part["d_share_price_all_mean"], part["d_share_accum_all_mean"], s=22, alpha=0.8,
@@ -859,7 +870,7 @@ def fig_demand(cells: pd.DataFrame, path: Path) -> None:
     groups = combined.groupby(["demand", "finance"])
     finances = list(dict.fromkeys(combined["finance"]))
     demands = list(dict.fromkeys(combined["demand"]))
-    shades = ["#2a78d6", "#eb6834", "#52514e"]
+    shades = ["#6250d6", "#1baf7a", "#52514e"]
     for ax, (col, label) in zip(axes, panels):
         width = 0.8 / len(finances)
         for k, fi in enumerate(finances):
@@ -886,7 +897,7 @@ def fig_price(cells: pd.DataFrame, path: Path) -> None:
     mixed = cells[cells["population"] == "mixed"].copy()
     mixed = mixed.join(cell_parameters(mixed))
     sub = mixed[(mixed["tech_change"] == "innovation_set") & (mixed["tech_set"] == "marx")]
-    colours = {"real_competition": "#2a78d6", "leader_follow": "#eb6834", "anchor": "#52514e"}
+    colours = RULE_COLOURS
     fig, axes = plt.subplots(1, 2, figsize=(10, 4))
     for pr, part in sub.groupby("pricing_rule"):
         agg = part.groupby("tech_bias")[["price_to_pp_mean", "price_rise_after_adoption_mean"]].mean()
