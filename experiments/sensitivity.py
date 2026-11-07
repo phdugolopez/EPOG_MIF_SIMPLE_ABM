@@ -91,27 +91,51 @@ STAGE1 = {
     "hurdle_no_floor": ("hurdle_floor", {"HURDLE_FLOOR_AT_ZERO": False}),
 }
 
-# Stage 2: the factorial on the movers of stage 1 (plan, section 7). Each factor:
-# level name -> overrides; the cell name joins the level names with "-".
+# Stage 2: the factorial on the movers of stage 1 (plan, section 7, applied to the stage 1
+# results in docs/design/sensitivity-results.md). Each factor: level name -> overrides; the
+# cell name joins the level names with "-". CHI moved no level beyond the base cell's
+# interval in stage 1, so it leaves the factorial (held at 1); the entry factor (rbar 0.16
+# moved) and the per-investment draw timing (moved) join it.
+ACD = {"INVESTMENT_RULE": "accelerator", "BORROWING": True}
 STAGE2_FACTORS = {
     "pricing": {"rc": {}, "lf": dict(LF)},
-    "finance": {"re": {}, "acd": {"INVESTMENT_RULE": "accelerator", "BORROWING": True}},
+    "finance": {"re": {}, "acd": dict(ACD)},
     "demand": {"static": {}, "g01": {"DEMAND_GROWTH": 0.01},
                "unmet": {"DEMAND_TO_CAPACITY": 1.2}},
-    "chi": {"chi05": {"CHI": 0.5}, "chi1": {}, "chi2": {"CHI": 2.0}},
     "tech": {"cat": {}, "is15": dict(IS, TECH_BIAS=1.5), "is3": dict(IS, TECH_BIAS=3.0),
+             "isneu": dict(IS, TECH_SET="neutral"),
+             "is15inv": dict(IS, TECH_BIAS=1.5, TECH_DRAW_TIMING="investment")},
+    "entry": {"r05": {}, "r16": {"RBAR": 0.16}},
+}
+# The phase block for the headline figure (selection intensity x technical change, one
+# panel per pricing and investment rule), static demand, rbar 0.05. Cells whose overrides
+# equal a factorial cell's are not run twice.
+PHASE_FACTORS = {
+    "pricing": {"rc": {}, "lf": dict(LF)},
+    "finance": {"re": {}, "acd": dict(ACD)},
+    "chi": {"chi025": {"CHI": 0.25}, "chi1": {}, "chi4": {"CHI": 4.0}},
+    "tech": {"catq0": {"TECH_CONFLICT": 0.0}, "cat": {}, "is05": dict(IS, TECH_BIAS=0.5),
+             "is15": dict(IS, TECH_BIAS=1.5), "is3": dict(IS, TECH_BIAS=3.0),
              "isneu": dict(IS, TECH_SET="neutral")},
 }
 
 
-def stage2_cells() -> dict:
+def _cross(factors: dict, prefix: str, factor_name: str) -> dict:
     cells = {}
-    names = list(STAGE2_FACTORS)
-    for combo in itertools.product(*(STAGE2_FACTORS[f].items() for f in names)):
+    for combo in itertools.product(*(factors[f].items() for f in factors)):
         overrides = {}
         for _, levels in combo:
             overrides.update(levels)
-        cells["-".join(level for level, _ in combo)] = ("factorial", overrides)
+        cells[prefix + "-".join(level for level, _ in combo)] = (factor_name, overrides)
+    return cells
+
+
+def stage2_cells() -> dict:
+    cells = _cross(STAGE2_FACTORS, "", "factorial")
+    seen = {json.dumps(o, sort_keys=True) for _, o in cells.values()}
+    for name, (factor, overrides) in _cross(PHASE_FACTORS, "ph-", "phase").items():
+        if json.dumps(overrides, sort_keys=True) not in seen:
+            cells[name] = (factor, overrides)
     return cells
 
 
@@ -623,8 +647,271 @@ def rerun(run_id: str, out_dir: Path | None = None, runs_path: Path | None = Non
 
 
 # --- Figures -----------------------------------------------------------------------------
+PRICING_NAMES = {"real_competition": "real competition", "leader_follow": "leader-follow",
+                 "anchor": "anchor"}
+
+
+def cell_parameters(cells: pd.DataFrame) -> pd.DataFrame:
+    """The parameters the figures read, from each cell's overrides over parameters.py."""
+    base = run.configure()
+    names = ["PRICING_RULE", "INVESTMENT_RULE", "BORROWING", "DEMAND_GROWTH",
+             "DEMAND_TO_CAPACITY", "CHI", "TECH_CHANGE", "TECH_SET", "TECH_BIAS",
+             "TECH_CONFLICT", "TECH_DRAWS"]
+    rows = []
+    for text in cells["overrides"]:
+        o = json.loads(text)
+        rows.append({n.lower(): o.get(n, getattr(base, n)) for n in names})
+    out = pd.DataFrame(rows, index=cells.index)
+    out["finance"] = np.where(out["investment_rule"] == "retained_earnings", "retained earnings",
+                              np.where(out["borrowing"], "accelerator + debt",
+                                       "accelerator, no debt"))
+    out["demand"] = [("unmet" if d > 1 else "static") if g == 0 else
+                     (f"growing {g:g}" if d <= 1 else f"unmet, growing {g:g}")
+                     for g, d in zip(out["demand_growth"], out["demand_to_capacity"])]
+    out["tech"] = [("no draws" if not draws else f"categories q={q:g}") if tc == "categories"
+                   else (f"innovation set, marx {b:g}" if ts == "marx" else "innovation set, neutral")
+                   for tc, ts, b, q, draws in zip(out["tech_change"], out["tech_set"],
+                                                  out["tech_bias"], out["tech_conflict"],
+                                                  out["tech_draws"])]
+    return out
+
+
+def _style():
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from style import RC_PARAMS
+    plt.rcParams.update(RC_PARAMS)
+    return plt
+
+
+def _diverging():
+    from matplotlib.colors import LinearSegmentedColormap
+    from style import TYPE_STYLE
+    return LinearSegmentedColormap.from_list(
+        "okishio_shaikh", [TYPE_STYLE["okishio"]["color"], "#d9d8d4", TYPE_STYLE["shaikh"]["color"]])
+
+
+def fig_tornado(cells: pd.DataFrame, path: Path) -> None:
+    plt = _style()
+    from style import MUTED, TYPE_STYLE
+    s1 = cells[cells["stage"] == "1"]
+    mixed = s1[s1["population"] == "mixed"].set_index("cell")
+    order = [c for c in STAGE1 if c in mixed.index]
+    factors = [STAGE1[c][0] for c in order]
+    fig, ax = plt.subplots(figsize=(7.5, 0.24 * len(order) + 1.4))
+    y = np.arange(len(order))[::-1]
+    for yi, cell in zip(y, order):
+        ctrl = s1[(s1["cell"] == cell) & (s1["population"] != "mixed")]
+        ax.fill_betweenx([yi - 0.38, yi + 0.38], ctrl["won_low"].min(), ctrl["won_high"].max(),
+                         color="#d9d8d4", lw=0)
+        r = mixed.loc[cell]
+        filled = bool(r["beyond_drift"])
+        ax.errorbar(r["share_won"], yi, xerr=[[r["share_won"] - r["won_low"]],
+                                              [r["won_high"] - r["share_won"]]],
+                    fmt="o", ms=6, color=TYPE_STYLE["shaikh"]["color"],
+                    mfc=TYPE_STYLE["shaikh"]["color"] if filled else "white", lw=1.2, capsize=0)
+    ax.axvline(mixed.loc["base", "share_won"], color=MUTED, ls="--", lw=1)
+    ax.axvline(0.5, color=MUTED, lw=0.6)
+    labels = [f"{c}  [{f}]" for c, f in zip(order, factors)]
+    ax.set_yticks(y, labels, fontsize=7)
+    ax.set_xlim(0, 1)
+    ax.set_xlabel("share of seeds in which the label \"shaikh\" holds > 1/2 of capacity at t = 199 "
+                  "(95 % Wilson interval)")
+    ax.set_title("Stage 1: which factor levels move the share of seeds won by the unit-cost rule?\n"
+                 "grey: the two neutral controls' intervals; filled: beyond drift; dashed: base",
+                 fontsize=9, loc="left")
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
+def fig_phase(cells: pd.DataFrame, path: Path, y_mode: str = "design") -> None:
+    plt = _style()
+    s2 = cells[(cells["stage"] == "2") & (cells["population"] == "mixed")].copy()
+    if s2.empty:
+        return
+    s2 = s2.join(cell_parameters(s2))
+    pricing = list(dict.fromkeys(s2["pricing_rule"]))
+    finance = list(dict.fromkeys(s2["finance"]))
+    demands = list(dict.fromkeys(s2["demand"]))
+    techs = list(dict.fromkeys(s2["tech"]))
+    markers = ["o", "s", "^", "D"]
+    cmap = _diverging()
+    fig, axes = plt.subplots(len(pricing), len(finance), figsize=(4.2 * len(finance), 3.6 * len(pricing)),
+                             squeeze=False, sharex=True, sharey=True)
+    chis = sorted(s2["chi"].unique())
+    for i, pr in enumerate(pricing):
+        for j, fi in enumerate(finance):
+            ax = axes[i][j]
+            sub = s2[(s2["pricing_rule"] == pr) & (s2["finance"] == fi)]
+            for k, d in enumerate(demands):
+                part = sub[sub["demand"] == d]
+                x = np.array([chis.index(c) for c in part["chi"]]) + (k - (len(demands) - 1) / 2) * 0.22
+                if y_mode == "design":
+                    yv = np.array([techs.index(t) for t in part["tech"]], dtype=float)
+                else:
+                    yv = part["zone_conflict_mean"].to_numpy()
+                    x = x + 0.0
+                beyond = part["beyond_drift"].astype(bool).to_numpy()
+                sc = ax.scatter(x, yv, c=part["share_won"], cmap=cmap, vmin=0, vmax=1,
+                                marker=markers[k % 4], s=70, edgecolors=np.where(beyond, "#0b0b0b", "white"),
+                                linewidths=np.where(beyond, 1.2, 0.6), label=d)
+            ax.set_xticks(range(len(chis)), [f"{c:g}" for c in chis])
+            if y_mode == "design":
+                ax.set_yticks(range(len(techs)), techs, fontsize=7)
+            ax.set_title(f"{PRICING_NAMES.get(pr, pr)}, {fi}", fontsize=8, loc="left")
+            if i == len(pricing) - 1:
+                ax.set_xlabel("selection intensity CHI")
+            if j == 0 and y_mode != "design":
+                ax.set_ylabel("realised conflict share of draws")
+    axes[0][0].legend(title="demand", fontsize=7, title_fontsize=7, loc="best")
+    fig.colorbar(sc, ax=axes, shrink=0.6, label="share of seeds won by \"shaikh\" (blue: unit cost)")
+    what = "technical-change rule" if y_mode == "design" else "realised conflict share"
+    fig.suptitle(f"Stage 2: where does the unit-cost rule win? Selection intensity × {what}, "
+                 "per pricing and investment rule\n(black edge: beyond both neutral controls)",
+                 fontsize=9, x=0.02, ha="left")
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+def fig_channels(cells: pd.DataFrame, path: Path) -> None:
+    plt = _style()
+    from style import MUTED
+    mixed = cells[cells["population"] == "mixed"].copy()
+    mixed = mixed.join(cell_parameters(mixed))
+    colours = {"real_competition": "#2a78d6", "leader_follow": "#eb6834", "anchor": "#52514e"}
+    fig, ax = plt.subplots(figsize=(6.5, 5))
+    for pr, part in mixed.groupby("pricing_rule"):
+        ax.scatter(part["d_share_price_mean"], part["d_share_accum_mean"], s=22, alpha=0.8,
+                   color=colours.get(pr, MUTED), label=PRICING_NAMES.get(pr, pr),
+                   edgecolors="white", linewidths=0.5)
+    ax.axhline(0, color=MUTED, lw=0.6)
+    ax.axvline(0, color=MUTED, lw=0.6)
+    ax.set_xlabel("price channel: cumulated price-driven change in Shaikh's sales share, t = 100-199")
+    ax.set_ylabel("accumulation channel: cumulated order/retire/cancel\nchange in Shaikh's capacity share")
+    ax.legend(title="pricing rule (colour, not a label)", fontsize=7, title_fontsize=7)
+    ax.set_title("Does the unit-cost rule win through prices or through accumulation?\n"
+                 "one point per cell (mixed population, mean over seeds), stages 1-3",
+                 fontsize=9, loc="left")
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
+def fig_demand(cells: pd.DataFrame, path: Path) -> None:
+    plt = _style()
+    from style import MUTED
+    stage = "2" if (cells["stage"] == "2").any() else "1"
+    mixed = cells[(cells["population"] == "mixed") & (cells["stage"] == stage)].copy()
+    mixed = mixed.join(cell_parameters(mixed))
+    s1 = cells[(cells["population"] == "mixed") & (cells["stage"] == "1")].copy()
+    s1 = s1.join(cell_parameters(s1))
+    s1 = s1[s1["cell"].isin(["base", "grow_01", "grow_03", "unmet", "unmet_grow_02",
+                             "accel_debt", "accel_cash"])]
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+    panels = [("unmet_share_mean", "mean unmet demand / demand, t = 100-199"),
+              ("entries_w_mean", "entries per period, t = 100-199")]
+    combined = pd.concat([s1, mixed[~mixed.index.isin(s1.index)]]) if stage == "2" else s1
+    groups = combined.groupby(["demand", "finance"])
+    finances = list(dict.fromkeys(combined["finance"]))
+    demands = list(dict.fromkeys(combined["demand"]))
+    shades = ["#2a78d6", "#eb6834", "#52514e"]
+    for ax, (col, label) in zip(axes, panels):
+        width = 0.8 / len(finances)
+        for k, fi in enumerate(finances):
+            vals = []
+            for d in demands:
+                v = combined[(combined["demand"] == d) & (combined["finance"] == fi)][col]
+                vals.append(v.mean() / (100.0 if col == "entries_w_mean" else 1.0) if len(v) else np.nan)
+            ax.bar(np.arange(len(demands)) + (k - (len(finances) - 1) / 2) * width, vals,
+                   width * 0.92, color=shades[k % 3], label=fi)
+        ax.set_xticks(range(len(demands)), demands, rotation=20, fontsize=7)
+        ax.set_ylabel(label)
+    axes[0].legend(title="investment rule", fontsize=7, title_fontsize=7)
+    fig.suptitle("Is demand met, and how much turnover? By demand condition and investment rule\n"
+                 "(mixed population, mean over cells and seeds of stages 1-2)", fontsize=9,
+                 x=0.02, ha="left")
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
+def fig_price(cells: pd.DataFrame, path: Path) -> None:
+    plt = _style()
+    from style import MUTED
+    mixed = cells[cells["population"] == "mixed"].copy()
+    mixed = mixed.join(cell_parameters(mixed))
+    sub = mixed[(mixed["tech_change"] == "innovation_set") & (mixed["tech_set"] == "marx")]
+    colours = {"real_competition": "#2a78d6", "leader_follow": "#eb6834", "anchor": "#52514e"}
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+    for pr, part in sub.groupby("pricing_rule"):
+        agg = part.groupby("tech_bias")[["price_to_pp_mean", "price_rise_after_adoption_mean"]].mean()
+        axes[0].plot(agg.index, agg["price_to_pp_mean"], marker="o", color=colours.get(pr, MUTED),
+                     label=PRICING_NAMES.get(pr, pr))
+        axes[0].scatter(part["tech_bias"], part["price_to_pp_mean"], s=10, alpha=0.4,
+                        color=colours.get(pr, MUTED))
+        axes[1].plot(agg.index, agg["price_rise_after_adoption_mean"], marker="o",
+                     color=colours.get(pr, MUTED), label=PRICING_NAMES.get(pr, pr))
+    axes[0].axhline(1, color=MUTED, lw=0.6)
+    axes[0].set_xlabel("median capital-using bias of the innovation set (TECH_BIAS)")
+    axes[0].set_ylabel("price at t = 199 / price of production\nof the lowest-uc technique in use")
+    axes[1].set_xlabel("median capital-using bias of the innovation set (TECH_BIAS)")
+    axes[1].set_ylabel("share of seeds with price(199) > price(100)")
+    axes[0].legend(title="pricing rule", fontsize=7, title_fontsize=7)
+    fig.suptitle("Price signature: does the long-run price rise after capital-using adoptions?\n"
+                 "(innovation set, marx; mixed population; line: mean over cells, dots: cells)",
+                 fontsize=9, x=0.02, ha="left")
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
+def fig_marx(cells: pd.DataFrame, path: Path) -> None:
+    plt = _style()
+    from style import MUTED, TYPE_STYLE
+    mixed = cells[cells["population"] == "mixed"].copy()
+    mixed = mixed.join(cell_parameters(mixed))
+    family = np.where(mixed["tech_change"] == "categories",
+                      np.where(mixed["tech_draws"].astype(bool), "categories", "no draws"),
+                      np.where(mixed["tech_set"] == "marx", "innovation set, marx",
+                               "innovation set, neutral"))
+    markers = {"categories": "o", "innovation set, marx": "^", "innovation set, neutral": "s",
+               "no draws": "x"}
+    fig, ax = plt.subplots(figsize=(6.5, 5))
+    for label in LABELS:
+        for fam, mk in markers.items():
+            part = mixed[family == fam]
+            if part.empty:
+                continue
+            ax.scatter(part[f"chi_{label}_mean"] * 100, part[f"gamma_{label}_mean"] * 100,
+                       marker=mk, s=24, alpha=0.75, color=TYPE_STYLE[label]["color"],
+                       label=f"{TYPE_STYLE[label]['label']}, {fam}")
+    ax.axhline(0, color=MUTED, lw=0.6)
+    ax.axvline(0, color=MUTED, lw=0.6)
+    ax.set_xlabel("χ: realised rise of capital per unit (kappa_mean), % per period, t = 100-199")
+    ax.set_ylabel("γ: realised fall of operating cost (ucs_mean), % per period")
+    ax.legend(fontsize=6, ncol=1, loc="best")
+    ax.set_title("Is realised technical change Marx-biased (γ > 0, χ > 0), and for which rule?\n"
+                 "one point per cell and label (mixed population, mean over seeds)",
+                 fontsize=9, loc="left")
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
 def figures(out: Path = OUT) -> None:
-    raise SystemExit("figures: written after the grid (next commit)")
+    cells = pd.read_csv(out / "cells.csv", dtype={"stage": str}, low_memory=False)
+    fdir = out / "figures"
+    fdir.mkdir(parents=True, exist_ok=True)
+    fig_tornado(cells, fdir / "1_tornado_stage1.png")
+    fig_phase(cells, fdir / "2_phase_stage2.png", "design")
+    fig_phase(cells, fdir / "2b_phase_stage2_conflict_share.png", "conflict")
+    fig_channels(cells, fdir / "3_channels.png")
+    fig_demand(cells, fdir / "4_demand_turnover.png")
+    fig_price(cells, fdir / "5_price_signature.png")
+    fig_marx(cells, fdir / "6_marx_bias.png")
+    print(f"Figures saved in: {fdir}")
 
 
 # --- Command line ------------------------------------------------------------------------

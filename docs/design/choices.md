@@ -206,6 +206,22 @@ neutral control's share of seeds won. Computing time: `Industry.run()` takes 0.1
 version 2 defaults, so 20 cells × 50 seeds take about two minutes and a 200-seed cell
 about half a minute.
 
+### Choices made running it (7 November 2026, branch `feature/sensitivity`)
+
+The decided plan is `sensitivity-plan.md` (section 7 binding); the results are in
+`sensitivity-results.md`. Choices the plan left to the script:
+
+| Choice | Status | Alternatives |
+|---|---|---|
+| `run.py --set NAME=value` (repeatable), parsed by `experiments.neutral_control.parse_overrides`, applied through `configure(seed, **overrides)`; an unknown name is an error. Without `--set` the six tables are identical to those of the commit before (`debug.compare_runs`: identical within 1e-12; `runs` differs only in `code_version` and `wall_seconds`) | Default (sensitivity) | |
+| One row per run in `outputs/sensitivity/runs.csv`: `run.runs_row` as is (`experiment` = the stage), then `stage`, `overrides` (the cell's overrides as sorted JSON, without the population's `HURDLE_RULES`), `error` (a run that raises is kept as a row with the message and no observables; none did), then the observables | Default (sensitivity) | Overrides including `HURDLE_RULES`: the population column already says it |
+| `code_version` is asked of git once per grid and handed to the workers (`runs_row` would call git at every run); it is the commit the grid ran on | Default (sensitivity) | |
+| Results gathered with `Pool.imap` (task order) and written cell by cell in (cell, population, seed) order; `runs.parquet` rewritten from `runs.csv` at the end of each `grid` call | Default (sensitivity) | Parquet rewritten after every cell |
+| Decomposition terms: `analysis.indicators` on the run's `groups` table, cumulated from t = 100 for the group "shaikh" (`d_share_price` = `term_price`; `d_share_accum` = `term_ordered` + `term_retired` + `term_cancelled`; `d_share_entry`, `d_share_exit` from the capacity decomposition; `d_share_entry_exit`, `d_share_rationing` from the sales decomposition) | Default (sensitivity) | |
+| Counts of events (wars, designs, adoptions, orders, defaults, replacements, floor violations) over the whole run; `war_episodes_w` and the `_w` entry and exit counts over the window; `shortage_periods`, `excess_capacity_periods`, `cut_periods`, `periods_above_rbar` over the window t = 100–199 | Default (sensitivity) | Everything over the window |
+| `price_min`, `price_max` of `price_avg` over the window; `price_to_pp` uses the running plant with the lowest uc at t = 199; `capital_age_{label}` over plants not retired at t = 199; `margin_spread` and `ucs_spread_mean` over firms with capacity; `conflict_adopted_shaikh` over design events with zone `unit_cost` offered to firms on the unit-cost rule (NaN in the all-profit-rate control); `diffusion_lag_mean` over drawn designs only (menu techniques excluded) | Default (sensitivity) | |
+| `cells.csv`: per (stage, cell, population) the share of decided seeds won (`undecided` excluded) with the Wilson interval; for each observable the mean, the 2.5 % and 97.5 % quantiles over seeds (`_lo`, `_hi`) and a normal 95 % interval of the mean (`_ci_lo`, `_ci_hi`); booleans as shares. For the mixed rows: the controls' shares won, `gap` = mixed − mean of the two controls, `beyond_drift` (disjoint from both controls' intervals) and `beyond_base` (disjoint from the same stage's `base` mixed interval, stage 1's when the stage has no `base`) | Default (sensitivity) | |
+
 ## Neutral control (seeds 1–20, version 2 defaults), for the record
 
 `python -m experiments.neutral_control --seeds 20` (7 November 2026): share of seeds in which
