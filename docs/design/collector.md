@@ -66,6 +66,7 @@ Parameters stored in `runs` (`{parameter}` and the aliases above):
 | `hurdle_rules` | `HURDLE_RULES` | type label -> technique rule; swap the values for the label-swap test. |
 | `idle_periods` | `IDLE_PERIODS` |  |
 | `idle_scrapping` | `IDLE_SCRAPPING` | scrap plants the firm did not need for IDLE_PERIODS periods; version 1: False |
+| `imitation_lag` | `IMITATION_LAG` |  |
 | `initial_cash` | `INITIAL_CASH` |  |
 | `initial_debt` | `INITIAL_DEBT` |  |
 | `initial_firms` | `INITIAL_FIRMS` | One firm per (plant, type): each of Shaikh's plants goes to one Shaikh and one Okishio firm, identical within each pair. One plant of age 0 per firm. |
@@ -102,8 +103,16 @@ Parameters stored in `runs` (`{parameter}` and the aliases above):
 | `shortage_response` | `SHORTAGE_RESPONSE` | rise of the highest price per unit of excess-demand share |
 | `shortage_rule` | `SHORTAGE_RULE` | After excess demand: "leader", every firm posts (1 + LEADER_RISE) x leader (the notebook's, a firm priced above that lowers its price); "no_cut", never below the firm's own price. |
 | `tau` | `TAU` | share of a period's operating cost counted as capital advanced |
-| `tech_conflict` | `TECH_CONFLICT` | share of designs in the conflict zone (only the unit-cost rule adopts) |
+| `tech_bias` | `TECH_BIAS` | median k: capital per unit given up per unit of operating cost saved |
+| `tech_bias_spread` | `TECH_BIAS_SPREAD` | sigma of log k |
+| `tech_change` | `TECH_CHANGE` | or "innovation_set" |
+| `tech_conflict` | `TECH_CONFLICT` | "categories": share of designs in the conflict zone |
+| `tech_diffusion` | `TECH_DIFFUSION` | a design known to all IMITATION_LAG periods after its first plant; or "private" |
 | `tech_draws` | `TECH_DRAWS` | version 1: False, the menu stays fixed |
+| `tech_draw_rate` | `TECH_DRAW_RATE` | probability of an offer per firm per period ("period" timing) |
+| `tech_draw_timing` | `TECH_DRAW_TIMING` | a draw per firm per period with TECH_DRAW_RATE, or "investment" |
+| `tech_reference` | `TECH_REFERENCE` | draw relative to the firm's best known technique, or "frontier" |
+| `tech_set` | `TECH_SET` | "marx": ucs falls, kappa rises; "neutral": direction uniform on the circle |
 | `tech_step` | `TECH_STEP` | largest fall in operating cost ucs per design, as a share |
 | `u_full` | `U_FULL` | utilisation at or above which a firm has no spare capacity |
 | `u_max` | `U_MAX` | output can stretch to U_MAX * capacity |
@@ -235,6 +244,10 @@ One row per period and label, empty groups included. Members: the firms that pro
 | `debt` | debt at the end of the period | w.u. | 6 | Production and accounts | v1 |
 | `net_worth` | net worth at the end of the period | w.u. | 6 | Production and accounts | v1 |
 | `hurdle_mean` | mean h weighted by producing capacity; None without capacity (constant per rule until h evolves) | per period | 4 | Investment | v1 |
+| `ucs_mean` | capacity-weighted ucs of the group's producing plants; its fall over time is the realised labour saving (gamma); None without capacity | w.u./unit | 3 | collector | v1 |
+| `kappa_mean` | capacity-weighted kappa of the group's producing plants; its rise over time is the realised capital using (chi); None without capacity | w.u. per unit/period | 3 | collector | v1 |
+| `n_designs_offered` | designs drawn by the group's firms this period (design events) | count | 5 | Investment | v1 |
+| `n_designs_adopted` | designs the group's firms adopted this period (adopt events) | count | 5 | Investment | v1 |
 | `capacity_{tech}` | producing capacity of this technique | units/period | 3 | collector | v1 |
 | `capacity_designs` | producing capacity of plants built with designs drawn under TECH_DRAWS | units/period | 3 | collector | v1 |
 
@@ -351,7 +364,7 @@ One row per event, sorted by (t, step, event, firm_id, plant_id).
 | `run_id` | experiment, cell, population and seed in one string: {experiment}_{cell}_{population}_s{seed} | text | 0 | run.py | v1 |
 | `t` | period | period | — | collector | v1 |
 | `step` | step of the period at which the event happens | step | — | collector | v1 |
-| `event` | order, retire, exit, default, unpaid_bills, cancel, entry, design, adopt, war_start, war_end, cut_start, cut_end | text | — | collector | v1 |
+| `event` | order, retire, exit, default, unpaid_bills, cancel, entry, design, adopt, public, war_start, war_end, cut_start, cut_end | text | — | collector | v1 |
 | `firm_id` | firm; -1 for an industry event | id | — | collector | v1 |
 | `plant_id` | plant; -1 if none | id | — | collector | v1 |
 | `group` | firm's label; empty for an industry event | text | — | collector | v1 |
@@ -360,8 +373,8 @@ One row per event, sorted by (t, step, event, firm_id, plant_id).
 | `tech` | technique of the plant; design and adopt: the design | id | — | collector | v1 |
 | `other_tech` | order: technique the other rule would pick; design and adopt: the reference technique the design was drawn from | id | 5 | collector | v1 |
 | `capacity` | capacity of the plant, or capacity left at exit | units/period | — | collector | v1 |
-| `value` | order: cost; retire and cancel: book value written off; exit: net worth; default: unpaid debt; unpaid_bills: the bills left unpaid; entry: price; design and adopt: the design's unit cost; war: price_avg; cut: price | as defined | — | collector | v1 |
-| `cause` | order: expansion, replacement, entry; retire: age, obsolescence, idle, replacement, exit; exit: bankruptcy, share, non-renewal; entry: inherited, mutated; design and adopt: the design's zone, both (both rules adopt it) or unit_cost (only the unit-cost rule does); war_end and cut_end: censored or exit | text | — | collector | v1 |
+| `value` | order: cost; retire and cancel: book value written off; exit: net worth; default: unpaid debt; unpaid_bills: the bills left unpaid; entry: price; design and adopt: the design's unit cost; public: the period the design became known to every firm; war: price_avg; cut: price | as defined | — | collector | v1 |
+| `cause` | order: expansion, replacement, entry; retire: age, obsolescence, idle, replacement, exit; exit: bankruptcy, share, non-renewal; entry: inherited, mutated; design and adopt: the design's zone at the firm's price, both (both rules adopt it), unit_cost (only the unit-cost rule: the conflict zone), profit_rate (only the profit-rate rule) or none; war_end and cut_end: censored or exit | text | — | collector | v1 |
 | `other_id` | entry: parent firm; war: episode number; -1 otherwise | id | — | collector | v1 |
 
 ## `flows`

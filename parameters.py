@@ -110,8 +110,23 @@ INVESTMENT_RULE: str = "retained_earnings"  # buy what retained earnings pay for
 # capital per unit, lower operating cost. It adopts the design if its hurdle rule prefers it,
 # and otherwise invests in its current best technique.
 TECH_DRAWS: bool = True  # version 1: False, the menu stays fixed
-TECH_CONFLICT: float = 0.5  # share of designs in the conflict zone (only the unit-cost rule adopts)
 TECH_STEP: float = 0.05  # largest fall in operating cost ucs per design, as a share
+# "categories": the rule above, each design placed by a coin flip in the zone both rules
+# adopt or in the conflict zone (equations/new_technique.py). "innovation_set": a design is
+# drawn with nothing read from the firm but its reference technique, and the zones are
+# outcomes of the draw and of the price (equations/innovation_set.py; the second arm of the
+# sensitivity analysis, docs/design/review-v2.md section 4).
+TECH_CHANGE: str = "categories"  # or "innovation_set"
+TECH_CONFLICT: float = 0.5  # "categories": share of designs in the conflict zone
+# "innovation_set" only:
+TECH_SET: str = "marx"  # "marx": ucs falls, kappa rises; "neutral": direction uniform on the circle
+TECH_BIAS: float = 1.5  # median k: capital per unit given up per unit of operating cost saved
+TECH_BIAS_SPREAD: float = 0.8  # sigma of log k
+TECH_REFERENCE: str = "own"  # draw relative to the firm's best known technique, or "frontier"
+TECH_DRAW_TIMING: str = "period"  # a draw per firm per period with TECH_DRAW_RATE, or "investment"
+TECH_DRAW_RATE: float = 0.2  # probability of an offer per firm per period ("period" timing)
+TECH_DIFFUSION: str = "public"  # a design known to all IMITATION_LAG periods after its first plant; or "private"
+IMITATION_LAG: int = 2
 
 # --- Entry and exit (unassigned) ---------------------------------------------------
 ENTRY_WINDOW: int = 5  # k: plants built in the last k periods drive r_new

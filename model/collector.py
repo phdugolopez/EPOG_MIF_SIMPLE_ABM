@@ -594,8 +594,9 @@ def group_rows(industry) -> list[dict]:
     producers = _by_label(industry, industry.producers)
     entrants = _by_label(industry, industry.entries)
     remaining = _by_label(industry, industry.firms)
+    period_events = industry.events[industry.record.get("events_start", 0):]
     replaced = {}  # firm_id -> hurdle replacements this period, from the retire events
-    for e in industry.events[industry.record.get("events_start", 0):]:
+    for e in period_events:
         if e["event"] == "retire" and e["cause"] == "replacement":
             replaced[e["firm_id"]] = replaced.get(e["firm_id"], 0) + 1
     industry.record["group_flows"] = {}  # read by residuals (cap_resid_group)
@@ -638,6 +639,24 @@ def group_rows(industry) -> list[dict]:
             "net_worth": sum(f.net_worth for f in remaining[label]),
             "hurdle_mean": _weighted_or_none(
                 [f.hurdle for f in firms], [f.producing_capacity for f in firms]
+            ),
+            # Capacity-weighted technique of the group, for the realised direction of
+            # technical change (gamma from ucs_mean, chi from kappa_mean).
+            "ucs_mean": _weighted_or_none(
+                [p.ucs for f in firms for p in f.producing_plants],
+                [p.capacity for f in firms for p in f.producing_plants],
+            ),
+            "kappa_mean": _weighted_or_none(
+                [p.kappa for f in firms for p in f.producing_plants],
+                [p.capacity for f in firms for p in f.producing_plants],
+            ),
+            "n_designs_offered": sum(
+                e["firm_id"] in {f.firm_id for f in firms} for e in period_events
+                if e["event"] == "design"
+            ),
+            "n_designs_adopted": sum(
+                e["firm_id"] in {f.firm_id for f in firms} for e in period_events
+                if e["event"] == "adopt"
             ),
         })
         for name in industry.techniques:

@@ -28,6 +28,7 @@ from equations.replacement import replacement_pays
 from equations.retirement import periods_below_cost, retirement_reason, scrap_cost
 from equations.plant_number import plant_number
 from equations.idle_plants import idle_plants
+from equations.innovation_set import adoption_zone, draw_marx, draw_neutral, frontier_technique
 from equations.new_technique import design_category, draw_design
 from equations.retained_earnings_investment import retained_earnings_investment
 from equations.technique_choice import choose_technique
@@ -89,6 +90,10 @@ def start_period(industry) -> None:
         "firms": sum(f.cash for f in industry.firms),
         "roe": industry.roe.cash,
     }
+    config = industry.parameters
+    if (config.TECH_DRAWS and config.TECH_CHANGE == "innovation_set"
+            and config.TECH_DIFFUSION == "public"):
+        diffuse_techniques(industry)
 
 
 # --- 1. Pricing ---------------------------------------------------------------------
@@ -440,6 +445,9 @@ def invest(industry) -> None:
     the demand. With PLANT_SIZE, plants come whole. New plants arrive next period."""
     config = industry.parameters
     size = config.PLANT_SIZE
+    if (config.TECH_DRAWS and config.TECH_CHANGE == "innovation_set"
+            and config.TECH_DRAW_TIMING == "period"):
+        offer_designs(industry)
     for firm in industry.firms:
         if firm.non_renewal:
             continue
@@ -476,32 +484,120 @@ def invest(industry) -> None:
 
 def _technique_to_build(industry, firm, config):
     """The firm's best known technique under its hurdle; with TECH_DRAWS it is first offered
-    a new design, which it adopts (and keeps knowing) if its hurdle prefers it."""
-    reference = choose_technique(
-        firm.known or industry.menu, firm.hurdle, config.DELTA, config.TAU
-    )
+    a new design, which it adopts (and keeps knowing) if its hurdle prefers it. Under the
+    innovation set with draws per period (TECH_DRAW_TIMING = "period") the offer was made
+    at the start of the step, so the firm only picks among what it knows."""
+    best = choose_technique(firm.known or industry.menu, firm.hurdle, config.DELTA, config.TAU)
     if not config.TECH_DRAWS:
-        return reference
+        return best
+    if config.TECH_CHANGE == "innovation_set" and config.TECH_DRAW_TIMING == "period":
+        return best
+    offer_design(industry, firm, config, best)
+    return choose_technique(firm.known or industry.menu, firm.hurdle, config.DELTA, config.TAU)
+
+
+def offer_designs(industry) -> None:
+    """TECH_DRAW_TIMING = "period": each firm with plants is offered one design with
+    probability TECH_DRAW_RATE, whether or not it invests; an adopted design joins what
+    it knows and is built when it next invests."""
+    config = industry.parameters
+    for firm in industry.firms:
+        if not firm.plants:
+            continue
+        if industry.rng.random() < config.TECH_DRAW_RATE:
+            best = choose_technique(
+                firm.known or industry.menu, firm.hurdle, config.DELTA, config.TAU
+            )
+            offer_design(industry, firm, config, best)
+
+
+def offer_design(industry, firm, config, best) -> bool:
+    """Draw one design (TECH_CHANGE: "categories", the coin-flip rule of
+    equations/new_technique.py; "innovation_set", equations/innovation_set.py), log it with
+    its zone, and adopt it into firm.known if the firm's hurdle prefers it to its reference.
+    `best` is the firm's best known technique; the reference the design is drawn from is
+    `best` (TECH_REFERENCE = "own") or the industry's lowest-unit-cost technique in use
+    ("frontier"). Returns whether the design was adopted."""
     rng = industry.rng
-    category = design_category(rng.random(), config.TECH_CONFLICT)
-    ucs, kappa = draw_design(
-        reference.ucs, reference.kappa, config.DELTA, firm.price, category,
-        1.0 - rng.random(), rng.random(), config.TECH_STEP,
-    )
+    reference = best
+    if config.TECH_CHANGE == "innovation_set":
+        if config.TECH_REFERENCE == "frontier":
+            reference = frontier_technique(_techniques_in_use(industry), config.DELTA)
+        if config.TECH_SET == "neutral":
+            ucs, kappa = draw_neutral(
+                reference.ucs, reference.kappa, 1.0 - rng.random(), rng.random(),
+                config.TECH_STEP,
+            )
+        else:
+            ucs, kappa = draw_marx(
+                reference.ucs, reference.kappa, 1.0 - rng.random(), rng.gauss(0.0, 1.0),
+                config.TECH_STEP, config.TECH_BIAS, config.TECH_BIAS_SPREAD,
+            )
+        zone = adoption_zone(
+            reference.ucs, reference.kappa, ucs, kappa, config.DELTA, firm.price,
+            config.HURDLE_FLOOR_AT_ZERO,
+        )
+    else:
+        zone = design_category(rng.random(), config.TECH_CONFLICT)
+        ucs, kappa = draw_design(
+            reference.ucs, reference.kappa, config.DELTA, firm.price, zone,
+            1.0 - rng.random(), rng.random(), config.TECH_STEP,
+        )
     industry.next_design += 1
     design = Technique(name=f"T{industry.next_design}", ucs=ucs, kappa=kappa)
-    chosen = choose_technique([reference, design], firm.hurdle, config.DELTA, config.TAU)
+    industry.designs[design.name] = design
+    # The firm compares the design with its own best technique, whatever the reference.
+    chosen = choose_technique([best, design], firm.hurdle, config.DELTA, config.TAU)
     adopted = chosen is design
-    industry.draw_log.append((industry.time, firm.firm_id, category, adopted))
+    industry.draw_log.append((industry.time, firm.firm_id, zone, adopted))
     # Event log: the design offered (its zone as cause, its unit cost as value) and, if
-    # the hurdle prefers it, its adoption; whether it is then built shows in the order.
+    # the hurdle prefers it, its adoption; whether it is then built shows in an order.
     log_event(industry, "design", 5, firm, tech=design.name, other_tech=reference.name,
-              value=unit_cost(ucs, kappa, config.DELTA), cause=category)
+              value=unit_cost(ucs, kappa, config.DELTA), cause=zone)
     if adopted:
         firm.known.append(design)
         log_event(industry, "adopt", 5, firm, tech=design.name, other_tech=reference.name,
-                  value=unit_cost(ucs, kappa, config.DELTA), cause=category)
-    return chosen
+                  value=unit_cost(ucs, kappa, config.DELTA), cause=zone)
+    return adopted
+
+
+def _techniques_in_use(industry) -> list:
+    """The distinct techniques of the plants in operation (the menu if none), as
+    Technique objects, in order of name: never in firm order."""
+    found = {}
+    for firm in industry.firms:
+        for plant in firm.plants:
+            if plant.technique not in found:
+                found[plant.technique] = (
+                    industry.designs.get(plant.technique)
+                    or industry.techniques.get(plant.technique)
+                    or Technique(name=plant.technique, ucs=plant.ucs, kappa=plant.kappa)
+                )
+    return [found[name] for name in sorted(found)] or list(industry.menu)
+
+
+def diffuse_techniques(industry) -> None:
+    """TECH_DIFFUSION = "public": a design becomes known to every firm IMITATION_LAG periods
+    after its first plant produces (plants are observable). Designs are added in order of
+    name, never in firm order."""
+    config = industry.parameters
+    lag = config.IMITATION_LAG
+    seen = industry.first_production  # design -> first period a plant of it produced
+    for firm in industry.firms:
+        for plant in firm.plants:
+            name = plant.technique
+            if name in industry.designs:
+                seen[name] = min(seen.get(name, plant.vintage), plant.vintage)
+    new = {name for name, first in seen.items()
+           if name not in industry.public and first <= industry.time - lag}
+    for name in sorted(new):
+        industry.public.add(name)
+        log_event(industry, "public", 0, None, None, tech=name, value=industry.time)
+    # Every firm knows every public design, last period's entrants included.
+    for firm in industry.firms:
+        known = {t.name for t in firm.known}
+        for name in sorted(industry.public - known):
+            firm.known.append(industry.designs[name])
 
 
 def _buy_capacity(industry, firm, technique, units: float, size: float | None) -> None:
@@ -572,13 +668,15 @@ def admit_entrant(industry) -> None:
     undercut = config.ENTRANT_UNDERCUT if config.PRICING_RULE == "anchor" else 0.0
     price = entrant_price(industry.leader_price, undercut)
     known = list(industry.menu)
-    if config.TECH_DRAWS:  # an entrant can build any technique in use
+    if config.TECH_DRAWS:  # an entrant can build any technique in use, or made public
         names = {t.name for t in known}
         for f in industry.firms:
             for p in f.plants:
                 if p.technique not in names:
                     names.add(p.technique)
                     known.append(Technique(name=p.technique, ucs=p.ucs, kappa=p.kappa))
+        for name in sorted(industry.public - names):
+            known.append(industry.designs[name])
     h = hurdle(config.HURDLE_RULES[firm_type], price, known, config.DELTA,
                config.HURDLE_FLOOR_AT_ZERO)
     technique = choose_technique(known, h, config.DELTA, config.TAU)

@@ -70,7 +70,12 @@ class TestModel(unittest.TestCase):
                           {"DEPRECIATION": "use"}, {"DEPRECIATION": "use", "PLANT_LIFE": 10},
                           {"IDLE_SCRAPPING": True}, {"INVESTMENT_RULE": "retained_earnings"},
                           PLANT_ALTERNATIVES, {"TECH_DRAWS": True},
-                          dict(PLANT_ALTERNATIVES, TECH_DRAWS=True), {"CHECKS_RAISE": False}):
+                          dict(PLANT_ALTERNATIVES, TECH_DRAWS=True), {"CHECKS_RAISE": False},
+                          {"TECH_CHANGE": "innovation_set"},
+                          {"TECH_CHANGE": "innovation_set", "TECH_SET": "neutral"},
+                          {"TECH_CHANGE": "innovation_set", "TECH_REFERENCE": "frontier"},
+                          {"TECH_CHANGE": "innovation_set", "TECH_DRAW_TIMING": "investment"},
+                          {"TECH_CHANGE": "innovation_set", "TECH_DIFFUSION": "private"}):
             Industry(make_config(PERIODS=60, **overrides)).run()
 
 

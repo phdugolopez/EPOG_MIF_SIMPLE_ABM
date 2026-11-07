@@ -233,6 +233,16 @@ SCHEMA: dict[str, list[Column]] = {
         Column("net_worth", "net worth at the end of the period", M, 6, PR),
         Column("hurdle_mean", "mean h weighted by producing capacity; None without "
                "capacity (constant per rule until h evolves)", R, 4, IN),
+        Column("ucs_mean", "capacity-weighted ucs of the group's producing plants; its "
+               "fall over time is the realised labour saving (gamma); None without "
+               "capacity", P, 3, CO),
+        Column("kappa_mean", "capacity-weighted kappa of the group's producing plants; its "
+               "rise over time is the realised capital using (chi); None without "
+               "capacity", KAPPA, 3, CO),
+        Column("n_designs_offered", "designs drawn by the group's firms this period "
+               "(design events)", "count", 5, IN),
+        Column("n_designs_adopted", "designs the group's firms adopted this period (adopt "
+               "events)", "count", 5, IN),
         Column("capacity_{tech}", "producing capacity of this technique", Q, 3, CO),
         Column("capacity_designs", "producing capacity of plants built with designs drawn "
                "under TECH_DRAWS", Q, 3, CO),
@@ -370,7 +380,8 @@ SCHEMA: dict[str, list[Column]] = {
         Column("t", "period", "period", None, CO),
         Column("step", "step of the period at which the event happens", "step", None, CO),
         Column("event", "order, retire, exit, default, unpaid_bills, cancel, entry, "
-               "design, adopt, war_start, war_end, cut_start, cut_end", "text", None, CO),
+               "design, adopt, public, war_start, war_end, cut_start, cut_end", "text",
+               None, CO),
         Column("firm_id", "firm; -1 for an industry event", "id", None, CO),
         Column("plant_id", "plant; -1 if none", "id", None, CO),
         Column("group", "firm's label; empty for an industry event", "text", None, CO),
@@ -383,13 +394,15 @@ SCHEMA: dict[str, list[Column]] = {
         Column("capacity", "capacity of the plant, or capacity left at exit", Q, None, CO),
         Column("value", "order: cost; retire and cancel: book value written off; exit: net "
                "worth; default: unpaid debt; unpaid_bills: the bills left unpaid; entry: "
-               "price; design and adopt: the design's unit cost; war: price_avg; cut: "
-               "price", "as defined", None, CO),
+               "price; design and adopt: the design's unit cost; public: the period the "
+               "design became known to every firm; war: price_avg; cut: price",
+               "as defined", None, CO),
         Column("cause", "order: expansion, replacement, entry; retire: age, obsolescence, "
                "idle, replacement, exit; exit: bankruptcy, share, non-renewal; entry: "
-               "inherited, mutated; design and adopt: the design's zone, both (both rules "
-               "adopt it) or unit_cost (only the unit-cost rule does); war_end and "
-               "cut_end: censored or exit", "text", None, CO),
+               "inherited, mutated; design and adopt: the design's zone at the firm's "
+               "price, both (both rules adopt it), unit_cost (only the unit-cost rule: "
+               "the conflict zone), profit_rate (only the profit-rate rule) or none; "
+               "war_end and cut_end: censored or exit", "text", None, CO),
         Column("other_id", "entry: parent firm; war: episode number; -1 otherwise", "id",
                None, CO),
     ],

@@ -570,7 +570,13 @@ report builds without warnings; the owners review their sections in the pull req
   decision recorded in `choices.md`; ownership table updated (`leader_follow_price.py`;
   `war_price.py` gone). Production and accounts, entry and exit still need an owner.
 
-**Step 3. Innovation set as a switch** (section 4; Ugo; one day).
+**Step 3. Innovation set as a switch** (section 4; Ugo; one day). **Done on 7 November on
+`v2-collector`**: `equations/innovation_set.py`, the scheduler branches (draw per period or
+per investment, own or frontier reference, public diffusion with a lag), the option
+parameters with the defaults of section 4.6, `tests/test_innovation_set.py` (the tests of
+section 4.4) and the switch combinations in `test_switches_run`; `groups` gets the
+capacity-weighted ucs and κ and the design counts; the investment section of the report
+describes the rule. `TECH_CHANGE = "categories"` stays the default.
 
 - `TECH_CHANGE = "categories"` stays the default; `"innovation_set"` adds `TECH_SET`
   (`"marx"` / `"neutral"`), `TECH_BIAS`, `TECH_BIAS_SPREAD`, `TECH_REFERENCE`,

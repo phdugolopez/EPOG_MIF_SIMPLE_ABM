@@ -51,7 +51,10 @@ class Industry:
         for firm in self.firms:
             firm.known = list(self.menu)
         self.next_design = 0
-        self.draw_log: list[tuple[int, int, str, bool]] = []  # time, firm_id, category, adopted
+        self.draw_log: list[tuple[int, int, str, bool]] = []  # time, firm_id, zone, adopted
+        self.designs: dict[str, Technique] = {}  # every design drawn, by name
+        self.public: set[str] = set()  # designs every firm knows (TECH_DIFFUSION = "public")
+        self.first_production: dict[str, int] = {}  # design -> first period a plant of it ran
         self.roe.loans = sum(f.debt for f in self.firms)
         self.money = self.roe.cash + sum(f.cash for f in self.firms)
 

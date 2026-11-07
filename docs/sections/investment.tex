@@ -72,11 +72,43 @@ $q$ is set by a coin flip rather than produced by an innovation set, so a price 
 close the conflict zone except at zero margin; no design is ever rejected by a unit-cost
 firm; there are no capital-saving designs; the draw reads the firm's price; a firm that
 invests more often is offered more designs; and designs are private to the adopter but
-public to entrants. An innovation set drawn independently of the firm, with the zones as
-outcomes of the draw and of the price, public diffusion with a lag and draws per period,
-is specified in \code{docs/design/review-v2.md} (section 4) and is to be implemented as
-the second arm of the switch \code{TECH\_CHANGE}, the default staying as it is until the
+public to entrants. The innovation set below answers them; it is the second arm of the
+switch \code{TECH\_CHANGE}, the default (\code{"categories"}) staying as it is until the
 sensitivity analysis.
+
+\paragraph{Innovation set} (\code{TECH\_CHANGE = "innovation\_set"},
+\code{equations/innovation\_set.py}). A design $n$ is drawn relative to a reference
+technique $o$ with nothing read from the firm but $o$:
+\[
+ucs_n = (1-a)\,ucs_o, \qquad \kappa_n = (1+b)\,\kappa_o, \qquad
+a = u\,\text{\code{TECH\_STEP}}, \qquad b = k\,a, \qquad k = m\,e^{\sigma z},
+\]
+with $u$ uniform on $(0, 1]$ and $z$ standard normal (\code{TECH\_SET = "marx"}: every
+design saves labour and uses capital). $k$ is the capital per unit given up per unit of
+operating cost saved, log-normal around the median $m$ (\code{TECH\_BIAS} $= 1.5$, the
+treatment) with spread $\sigma$ (\code{TECH\_BIAS\_SPREAD} $= 0.8$). The adoption
+inequality is unchanged, so in terms of $k$ the unit-cost rule adopts if
+$k < k_S = ucs_o/(\delta\kappa_o)$ and the profit-rate rule at price $p$ if
+$k < k_O(p) = ucs_o/(\delta\kappa_o + \max\{0, p - uc_o\})$: the zones (both adopt,
+conflict, both reject) are outcomes of the draw and of the price, and a price war closes
+the conflict zone. For C at $p = 100$, $k_O = 1.80$ and $k_S = 4.67$; at the median bias of
+the Penn World Table ($m = 0.53$) the rules agree on 94\,\% of draws at normal prices and
+on all of them in a war; at $m = 1.5$ to $3$ the conflict share is 20 to 45\,\% at normal
+prices and zero in a war (\code{docs/design/review-v2.md}, section 4, zone shares). The
+neutral set (\code{TECH\_SET = "neutral"}) draws the direction uniformly on the circle in
+the plane $(\Delta ucs/ucs, \Delta\kappa/\kappa)$ with size $u\,$\code{TECH\_STEP}:
+capital-saving and dearer designs appear, the second wedge (only the profit-rate rule
+adopts) with them, and realised Marx bias becomes an outcome, read from the
+capacity-weighted $ucs$ and $\kappa$ of each type in the \code{groups} table. Three further
+switches: the reference is the firm's best known technique (\code{TECH\_REFERENCE = "own"})
+or the industry's lowest-unit-cost technique in use (\code{"frontier"}); designs are
+offered once per firm and period with probability \code{TECH\_DRAW\_RATE} $= 0.2$ whether
+or not the firm invests (\code{TECH\_DRAW\_TIMING = "period"}; an adopted design is built at
+the next investment) or at each investment as in the categories rule
+(\code{"investment"}); a design becomes known to every firm \code{IMITATION\_LAG} $= 2$
+periods after its first plant produces (\code{TECH\_DIFFUSION = "public"}), or stays with
+its adopter and later entrants (\code{"private"}). Every draw is logged with its zone at
+the firm's price; the label swap holds under each switch.
 
 \paragraph{Tests} (\code{tests/test\_investment.py}): at $p = 100$ Shaikh firms build D2 and
 Okishio firms D1, and with only C and D2 on offer Okishio firms keep C; on random menus the
@@ -100,6 +132,7 @@ swap holds with draws.
 \eqfile{retained_earnings_investment.py}
 \eqfile{plant_number.py}
 \eqfile{new_technique.py}
+\eqfile{innovation_set.py}
 \eqfile{borrowing_capacity.py}
 \marketfile{plant_market.py}
 \schedulerpart{investment}{\code{model/scheduler.py}: step 5}
