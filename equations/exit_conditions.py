@@ -1,3 +1,7 @@
+# The three channels, as exit_reason names them; read by the collector and the tests.
+EXIT_CAUSES = ("bankruptcy", "share", "non-renewal")
+
+
 def exit_reason(
     net_worth: float,
     share: float,

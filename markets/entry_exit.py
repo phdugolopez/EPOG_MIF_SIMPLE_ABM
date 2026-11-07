@@ -11,6 +11,7 @@ def remove_firm(industry, firm, reason: str) -> None:
     Its customers are shared out in proportion to the other firms' shares. Bills it could
     not pay (negative cash, CASH_SHORTFALL = "bankruptcy") are a loss of the rest of the
     economy."""
+    industry.log_exit(firm, reason)
     if firm.cash < 0.0:
         shortfall = -firm.cash
         pay(industry, industry.roe, firm, shortfall, "unpaid bills")
@@ -27,20 +28,24 @@ def remove_firm(industry, firm, reason: str) -> None:
 
 
 def create_entrant(industry, firm_type: str, price: float, technique, capacity: float,
-                   plant_size: float | None = None):
+                   plant_size: float | None = None, hurdle: float = 0.0, known=None):
     """The entrant's owners bring the cost of its plant as equity; the plant arrives next
     period and the entrant starts with a share in proportion to its capacity. With a
-    plant_size, capacity (a multiple of it) comes as plants of that size."""
+    plant_size, capacity (a multiple of it) comes as plants of that size. hurdle and
+    known (the h the entrant chose its technique with, and the techniques it can build)
+    are set before the order so that the event log reads them."""
     incumbents = list(industry.firms)
     firm = industry.new_firm(firm_type, price, share=0.0, born=industry.time)
+    firm.hurdle = hurdle
+    firm.known = list(known) if known else []
     cost = technique.kappa * capacity
     pay(industry, industry.roe, firm, cost, "equity")
     firm.equity_in = cost
     if plant_size is None:
-        buy_plant(industry, firm, technique, capacity)
+        buy_plant(industry, firm, technique, capacity, cause="entry")
     else:
         for _ in range(round(capacity / plant_size)):
-            buy_plant(industry, firm, technique, plant_size)
+            buy_plant(industry, firm, technique, plant_size, cause="entry")
     next_capacity = sum(
         f.capacity + sum(p.capacity for p in f.pending_plants) for f in incumbents
     )

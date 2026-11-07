@@ -4,6 +4,7 @@ import parameters
 from equations.plant_number import plant_number
 from model.entities import Firm, Plant, RestOfEconomy, Technique
 from model.scheduler import run_period
+from model import collector
 
 
 def build_menu(config) -> dict[str, Technique]:
@@ -69,6 +70,10 @@ class Industry:
         self.firm_history: list[dict] = []
         self.plant_history: list[dict] = []
         self.flow_history: list[dict] = []
+        self.group_history: list[dict] = []  # one row per period and label
+        self.events: list[dict] = []  # the event log, written by model.collector.log_event
+        self.record: dict = {}  # the collector's copy of values later steps overwrite
+        self.n_check_fail = 0  # periods with a failing check (CHECKS_RAISE = False)
 
     def demand(self, time: int | None = None) -> float:
         """D_t = D_0 (1 + g)^t, insensitive to the industry price."""
@@ -98,6 +103,17 @@ class Industry:
         )
         self.next_plant_id += 1
         return plant
+
+    # The event log is written by model.collector; the markets reach it through these
+    # methods, so that no market module imports the model package.
+    def log_event(self, event: str, step: int, firm=None, plant=None, **fields) -> None:
+        collector.log_event(self, event, step, firm, plant, **fields)
+
+    def log_order(self, firm, plant, cost: float, cause: str) -> None:
+        collector.log_order(self, firm, plant, cost, cause)
+
+    def log_exit(self, firm, reason: str) -> None:
+        collector.log_exit(self, firm, reason)
 
     def step(self) -> None:
         run_period(self)

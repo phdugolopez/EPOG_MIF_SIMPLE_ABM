@@ -11,8 +11,10 @@ def affordable_spending(firm, debt_cap: float) -> float:
     return max(0.0, firm.cash) + borrowing_capacity(firm.debt, firm.revenue, debt_cap)
 
 
-def buy_plant(industry, firm, technique, capacity: float) -> None:
-    """Pay for a plant from cash, borrowing the gap; it arrives next period."""
+def buy_plant(industry, firm, technique, capacity: float, cause: str = "expansion") -> None:
+    """Pay for a plant from cash, borrowing the gap; it arrives next period.
+
+    cause ("expansion", "replacement" or "entry") is recorded in the event log only."""
     if capacity <= 0.0:
         return
     cost = technique.kappa * capacity
@@ -22,3 +24,4 @@ def buy_plant(industry, firm, technique, capacity: float) -> None:
     firm.pending_plants.append(
         industry.new_plant(technique, capacity, vintage=industry.time + 1)
     )
+    industry.log_order(firm, firm.pending_plants[-1], cost, cause)

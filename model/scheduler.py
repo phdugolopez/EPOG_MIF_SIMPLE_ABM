@@ -11,7 +11,7 @@ from equations.entry_probability import entry_probability
 from equations.exit_conditions import exit_reason
 from equations.firm_profit import firm_profit
 from equations.hurdle import hurdle
-from equations.inherited_rule import inherited_type
+from equations.inherited_rule import inherit
 from equations.lifetime_profit_rate import lifetime_profit_rate
 from equations.interest_payment import interest_payment
 from equations.leader_follow_price import leader_follow_price, markup_floor
@@ -37,7 +37,7 @@ from markets.entry_exit import create_entrant, remove_firm
 from markets.goods_market import allocate
 from markets.payments import pay
 from markets.plant_market import affordable_spending, buy_plant
-from model.collector import check_stock_flow, collect
+from model.collector import after_step, check_stock_flow, collect, log_event
 from model.entities import Technique
 
 # Lines "# {name}" ... "# {endname}" mark the ranges that docs/sections/*.tex include.
@@ -48,11 +48,17 @@ def run_period(industry) -> None:
     """Order all events in one period. Each step sees only what earlier steps produced."""
     start_period(industry)
     set_prices(industry)  # 1. Pricing
+    after_step(industry, 1)
     allocate_demand(industry)  # 2. Demand
+    after_step(industry, 2)
     produce_and_account(industry)  # 3. Production and accounts
+    after_step(industry, 3)
     scrap_plants(industry)  # 4. Scrapping
+    after_step(industry, 4)
     invest(industry)  # 5. Investment
+    after_step(industry, 5)
     enter_and_exit(industry)  # 6. Entry and exit
+    after_step(industry, 6)
     collect(industry)
     check_stock_flow(industry)
 # {endperiod}
@@ -143,6 +149,7 @@ def _real_competition_prices(industry) -> None:
             floor = best_uc[firm.firm_id]
         util = firm.util_history[-1] if firm.util_history else firm.previous_sales / firm.capacity
         spare = util < config.U_FULL - 1e-9
+        firm.p_normal, firm.p_floor = None, floor  # no anchor; recorded by the collector
         firm.price, firm.at_war = real_competition_price(
             previous[firm.firm_id],
             [previous[j] for j in rivals],
@@ -170,6 +177,7 @@ def _leader_follow_prices(industry) -> None:
             [p.capacity for p in firm.plants],
             config.FLOOR_MARKUP,
         )
+        firm.p_normal, firm.p_floor = None, floor  # no anchor; recorded by the collector
         firm.price, firm.at_war = leader_follow_price(
             firm.price, leader, floor, excess_share, len(active) == 1,
             config.PRICE_CUT, config.LEADER_RISE, config.MONOPOLY_CAP,
@@ -209,6 +217,7 @@ def _anchor_prices(industry) -> None:
             config.U_MAX,
             config.OVERTIME_PREMIUM,
         )
+        firm.p_normal, firm.p_floor = anchor, floor  # recorded by the collector
         firm.at_war = price_war(firm.util_history, config.WAR_PERIODS, config.U_WAR)
         firm.price = posted_price(
             firm.price, anchor, industry.leader_price, floor, firm.at_war,
@@ -359,7 +368,7 @@ def retire_plants(industry, firm, config) -> list:
             config.IDLE_PERIODS if config.IDLE_SCRAPPING else None,
         )
         if reason:
-            remove_plant(industry, firm, plant)
+            remove_plant(industry, firm, plant, cause=reason)
             retired.append(plant)
     return retired
 
@@ -379,8 +388,8 @@ def replace_plants(industry, firm, config) -> None:
         cost = technique.kappa * plant.capacity
         if cost > affordable_spending(firm, _debt_cap(config)):
             continue
-        remove_plant(industry, firm, plant)
-        buy_plant(industry, firm, technique, plant.capacity)
+        remove_plant(industry, firm, plant, cause="replacement")
+        buy_plant(industry, firm, technique, plant.capacity, cause="replacement")
         firm.retained_earnings -= cost
         industry.replacements += 1
 
@@ -390,8 +399,10 @@ def _debt_cap(config) -> float:
     return config.DEBT_CAP if config.BORROWING else 0.0
 
 
-def remove_plant(industry, firm, plant) -> None:
-    """Scrap value is zero: any remaining book value is written off."""
+def remove_plant(industry, firm, plant, cause: str = "") -> None:
+    """Scrap value is zero: any remaining book value is written off. cause ("age",
+    "obsolescence", "idle", "replacement") is recorded in the event log only."""
+    log_event(industry, "retire", 4, firm, plant, value=plant.book_value, cause=cause)
     firm.write_offs += plant.book_value
     plant.book_value = 0.0
     firm.plants.remove(plant)
@@ -474,8 +485,14 @@ def _technique_to_build(industry, firm, config):
     chosen = choose_technique([reference, design], firm.hurdle, config.DELTA, config.TAU)
     adopted = chosen is design
     industry.draw_log.append((industry.time, firm.firm_id, category, adopted))
+    # Event log: the design offered (its zone as cause, its unit cost as value) and, if
+    # the hurdle prefers it, its adoption; whether it is then built shows in the order.
+    log_event(industry, "design", 5, firm, tech=design.name, other_tech=reference.name,
+              value=unit_cost(ucs, kappa, config.DELTA), cause=category)
     if adopted:
         firm.known.append(design)
+        log_event(industry, "adopt", 5, firm, tech=design.name, other_tech=reference.name,
+                  value=unit_cost(ucs, kappa, config.DELTA), cause=category)
     return chosen
 
 
@@ -537,7 +554,7 @@ def enter_firm(industry) -> None:
 
 def admit_entrant(industry) -> None:
     config = industry.parameters
-    firm_type = inherited_type(
+    firm_type, parent, mutated = inherit(
         [f.type for f in industry.firms], [f.share for f in industry.firms],
         config.MUTATION, industry.rng,
     )
@@ -563,7 +580,10 @@ def admit_entrant(industry) -> None:
     capacity = config.ENTRANT_SIZE * sum(capacities) / len(capacities)
     if config.PLANT_SIZE is not None:
         capacity = config.PLANT_SIZE * plant_number(capacity, config.PLANT_SIZE)
-    entrant = create_entrant(industry, firm_type, price, technique, capacity, config.PLANT_SIZE)
-    entrant.hurdle = h
-    entrant.known = known
+    entrant = create_entrant(
+        industry, firm_type, price, technique, capacity, config.PLANT_SIZE, hurdle=h,
+        known=known,
+    )
+    log_event(industry, "entry", 6, entrant, entrant.pending_plants[0], value=price,
+              cause="mutated" if mutated else "inherited", other_id=industry.firms[parent].firm_id)
 # {endentry}

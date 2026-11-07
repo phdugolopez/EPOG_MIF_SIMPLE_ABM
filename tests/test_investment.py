@@ -73,7 +73,7 @@ class TestInvestment(unittest.TestCase):
                                     ENTRY_SPEED=0.0))
         industry = Industry(config)
         industry.run(12)
-        spending = [row["investment"] for row in industry.history]
+        spending = [row["invest_total"] for row in industry.history]
         self.assertGreater(spending[0], 0.0)
         self.assertTrue(all(s == 0.0 for s in spending[2:]))
         self.assertAlmostEqual(industry.firms[0].capacity, 1.1 * 120.0)
@@ -256,7 +256,7 @@ class TestNoBorrowing(unittest.TestCase):
                 industry.run(120)
             self.assertTrue(loans)  # buy_plant was called
             self.assertLess(max(loans), 1e-6)
-            self.assertGreater(sum(r["investment"] for r in industry.history), 0.0)
+            self.assertGreater(sum(r["invest_total"] for r in industry.history), 0.0)
 
     def test_replacement_waits_for_cash(self):
         """A technique with uc 20 makes every C plant (ucs 64.25) worth replacing; with

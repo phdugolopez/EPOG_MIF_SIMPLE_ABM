@@ -71,6 +71,8 @@ class Firm:
     util_history: list[float] = field(default_factory=list)
     producing_plants: list[Plant] = field(default_factory=list)  # plants that ran this period
     exit_reason: str = ""
+    p_normal: float = 0.0  # anchor and floor used by pricing this period (collector only)
+    p_floor: float = 0.0
 
     @property
     def capacity(self) -> float:

@@ -9,26 +9,15 @@ import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
 
 import parameters  # noqa: E402
+from style import INK, MUTED, RC_PARAMS, TECHNIQUE_COLOR, TYPE_STYLE  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent
 OUTPUTS = ROOT / "outputs"
 macro = pd.read_csv(OUTPUTS / "macro.csv")
-t = macro["time"]
+t = macro["t"]
 
-# Categorical slots (validated): types blue / orange, techniques aqua / violet / red.
-TYPE_STYLE = {
-    "shaikh": {"color": "#2a78d6", "linestyle": "-", "label": "Shaikh (h = 0)"},
-    "okishio": {"color": "#eb6834", "linestyle": "--", "label": "Okishio (h = best rate)"},
-}
-TECHNIQUE_COLOR = {"C": "#1baf7a", "D1": "#6250d6", "D2": "#e34948"}
-INK, MUTED, GRID = "#0b0b0b", "#52514e", "#e4e3df"
-
-plt.rcParams.update({
-    "axes.edgecolor": MUTED, "axes.labelcolor": INK, "xtick.color": MUTED,
-    "ytick.color": MUTED, "axes.grid": True, "grid.color": GRID, "grid.linewidth": 0.6,
-    "axes.spines.top": False, "axes.spines.right": False, "lines.linewidth": 2,
-    "font.size": 9, "legend.frameon": False,
-})
+# Colours and rcParams from style.py, shared with the debugging plots in debug/.
+plt.rcParams.update(RC_PARAMS)
 
 
 def save(fig, name, rect=None):
@@ -46,7 +35,7 @@ def label_end(ax, x, y, text, color=INK):
 fig, ax = plt.subplots(figsize=(7, 3.6))
 ax.fill_between(t, macro["min_price"], macro["max_price"], color="#2a78d6", alpha=0.15,
                 linewidth=0, label="Range of posted prices")
-ax.plot(t, macro["mean_price"], color="#2a78d6", label="Mean price (sales-weighted)")
+ax.plot(t, macro["price_avg"], color="#2a78d6", label="Mean price (sales-weighted)")
 ax.axhline(100, color=MUTED, linewidth=1, linestyle=":")
 ax.annotate("p = 100", (t.iloc[-1], 100), xytext=(4, 0), textcoords="offset points",
             va="center", fontsize=8, color=MUTED)
@@ -111,10 +100,10 @@ for ax, firm_id in zip(axes.flat, ids):
     rows = firms[firms["firm_id"] == firm_id]
     firm_type = rows["type"].iloc[0]
     style = TYPE_STYLE[firm_type]
-    ax.plot(rows["time"], rows["profit_rate"], color=style["color"], linewidth=1.2)
+    ax.plot(rows["t"], rows["r_avg"], color=style["color"], linewidth=1.2)
     ax.axhline(parameters.RBAR, color=MUTED, linewidth=0.8, linestyle=":")
-    ax.set_title(f"Firm {firm_id} · {firm_type.capitalize()} · t {rows['time'].min()}–"
-                 f"{rows['time'].max()}", fontsize=8, color=INK)
+    ax.set_title(f"Firm {firm_id} · {firm_type.capitalize()} · t {rows['t'].min()}–"
+                 f"{rows['t'].max()}", fontsize=8, color=INK)
     ax.set_xlim(0, t.iloc[-1])
 for ax in list(axes.flat)[len(ids):]:
     ax.set_visible(False)
