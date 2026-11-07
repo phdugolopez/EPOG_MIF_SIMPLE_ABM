@@ -28,6 +28,41 @@ cd docs && latexmk -pdf main.tex
 
 Windows: replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
 
+## Outputs and the debugging report
+
+`run.py` runs the model once and writes seven tables to a run folder (`outputs/` by
+default): `runs` (one row: seed, commit, every parameter, wall time), `macro` (one row per
+period: prices, shares, profit rates, price-war flags and every check residual), `groups`
+(one row per period and label: capacity flows, shares, technique mix, designs), `firms`,
+`plants`, `events` (orders, retirements, entries, exits, designs, price wars) and `flows`
+(the transaction-flow matrix). Every column is described in `docs/design/collector.md`,
+generated from `model/schema.py`. The collector observes and never decides: it draws no
+random number and writes nothing a mechanism reads, so adding a column never changes a
+trajectory.
+
+```bash
+.venv/bin/python run.py                                   # baseline -> outputs/*.csv
+.venv/bin/python run.py --seed 7 --out runs/s7            # another seed, another folder
+.venv/bin/python run.py --format parquet                  # needs pyarrow
+.venv/bin/python -m debug.report outputs                  # every debugging plot -> outputs/debug/report.pdf
+.venv/bin/python -m debug.checks outputs                  # are the accounts sound? (run this first when something looks odd)
+.venv/bin/python -m debug.firm_panel outputs --firm 3     # what one firm saw and did
+.venv/bin/python -m debug.compare_runs runs/old runs/new  # where two runs diverge (exit 1 if they do)
+.venv/bin/python -m experiments.neutral_control --seeds 50   # mixed population against two neutral controls
+.venv/bin/python -m analysis.schema_doc                   # regenerate docs/design/collector.md after a schema change
+```
+
+The report gathers, for one run folder, the check residuals, one page per firm, the
+plant Gantt, the merit order at three periods, the event timeline, the capacity bridge
+(the decomposition of each type's share into price-driven, accumulation, entry and exit
+terms) and the flow matrix. Each script also runs alone and writes PNGs to
+`RUN_DIR/debug/`; `debug/README.md` lists them with the question each one answers. To
+check that a change left the model untouched, write the old and the new run to two
+folders and compare them; `--swap-labels` does the same for the label-swap test. The
+neutral control runs the mixed population and two populations with both labels on one
+rule over the same seeds, and writes `outputs/experiments/neutral_control.csv`; its
+overrides are parameter assignments (`PRICING_RULE=leader_follow`, `CHI=2`).
+
 ## Architecture
 
 ```text
