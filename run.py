@@ -2,9 +2,12 @@
 firms, plants, events and flows, each with run_id as the first column.
 
     python run.py [--out DIR] [--format csv|parquet] [--experiment E] [--population P]
-                  [--cell C] [--seed N]
+                  [--cell C] [--seed N] [--set NAME=value ...]
 
-Defaults reproduce the baseline: outputs/*.csv, parameters.py as it stands.
+Defaults reproduce the baseline: outputs/*.csv, parameters.py as it stands. --set replaces
+an upper-case parameter (repeatable; values parsed as Python literals, strings as is, e.g.
+--set CHI=2 --set PRICING_RULE=leader_follow
+--set 'HURDLE_RULES={"shaikh": "unit_cost", "okishio": "unit_cost"}').
 """
 
 import argparse
@@ -130,14 +133,22 @@ def main(argv=None) -> dict[str, pd.DataFrame]:
     parser.add_argument("--cell", default="baseline")
     parser.add_argument("--seed", type=int, default=None,
                         help="master seed (default: SEED in parameters.py)")
+    parser.add_argument("--set", dest="overrides", action="append", default=[],
+                        metavar="NAME=value",
+                        help="replace a parameter of parameters.py (repeatable)")
     args = parser.parse_args(argv)
+    from experiments.neutral_control import parse_overrides  # imports run: import here
+    overrides = parse_overrides(args.overrides)
+    unknown = sorted(set(overrides) - set(vars(configure())))
+    if unknown:
+        parser.error(f"--set: no such parameter in parameters.py: {', '.join(unknown)}")
     if args.format == "parquet":
         try:
             import pyarrow  # noqa: F401
         except ImportError:
             parser.error("--format parquet needs pyarrow: pip install -r requirements.txt")
 
-    industry = Industry(configure(args.seed))
+    industry = Industry(configure(args.seed, **overrides))
     start = time.perf_counter()
     industry.run()  # the scheduler checks stock-flow consistency every period
     wall = time.perf_counter() - start
