@@ -2,7 +2,9 @@
 
 Written 7 November 2026 on branch `feature/sensitivity` (from `v2-collector` at `8649eb1`),
 in answer to `sensitivity-prompt.md`. Nothing has been run beyond the checks of section 0.
-**Waiting for an answer to section 6 before the grid runs.**
+**Section 7 (added the same day) settles every open point of section 6 and sets the seeds
+for an unattended 8-hour run: the session that runs the grid follows section 7 and does not
+stop after the plan.**
 
 ## 0. Checks done
 
@@ -68,7 +70,7 @@ Populations per cell: `mixed` (`HURDLE_RULES` of `parameters.py`), `all_unit_cos
 `all_profit_rate`; 3 populations × N seeds = 3N runs per cell. Seeds 1..N in every cell.
 `run_id = {stage}_{cell}_{population}_s{seed}` (`run.py --experiment {stage}`).
 
-### Stage 1: one factor at a time around the version 2 defaults (N = 50)
+### Stage 1: one factor at a time around the version 2 defaults (N = 50 in the prompt; **N = 200**, section 7)
 
 Overrides relative to the version 2 defaults; `lf` = `PRICING_RULE = leader_follow`,
 `is` = `TECH_CHANGE = innovation_set`. The base of the leader-follow sub-factors (floor,
@@ -117,7 +119,7 @@ Stage 1: 32 cells, 4 800 runs (36 cells, 5 400 runs with the additions). Estimat
 0.2 s a run plus the slow demand cells: about 27 min on one core, **about 4 min on 8
 workers** (the 3 % growth cell alone is 450 s of core time).
 
-### Stage 2: factorial on the movers (N = 50)
+### Stage 2: factorial on the movers (N = 50 in the prompt; **N = 100**, section 7)
 
 Decided from stage 1 by the decision rule (a level moves the outcome when the mixed
 population's Wilson interval leaves both controls' intervals, or when the share of seeds won
@@ -130,7 +132,7 @@ demand growth is a mover, the 0.01 level replaces "initially unmet" (the 0.03 le
 cost 20 × more per run and only enters stage 3). A factor that did not move in stage 1 is
 held at its default.
 
-### Stage 3: the cells that decide (N = 200)
+### Stage 3: the cells that decide (N = 200 in the prompt; **N = 500**, section 7)
 
 `base`, `lf`, and the four or five cells the group will argue about (the largest gaps of
 stage 2, the cell with the headline phase-diagram contrast, the finance arm): about 7 cells,
@@ -257,3 +259,70 @@ the "Result" column of the factor table and the rows of `choices.md`.
 11. **Docs detail, not a conflict:** with `PLANT_SIZE = 20` the initial capacity is 760 and
     demand 674.7, not the 680 the overview and `choices.md` state (their 766 is the version 1
     capacity). Worth a one-line fix in step 5.
+
+## 7. Decisions for the 8-hour unattended run (7 November 2026)
+
+The grid runs in a separate session (Opus 5.5, medium effort) on this checkout, branch
+`feature/sensitivity`, with a budget of **8 hours wall time in all**, model time included.
+The machine does about 40 runs a second on 8 workers (0.2 s a run of core time, tables
+included), so computing is not the constraint: the design below needs about 45 minutes of
+8-worker time. The constraint is the time to write, test and document, hence the timeline.
+
+**Seeds and cells.**
+
+- Stage 1: the 36 cells of section 2 (the four additions included), **200 seeds**, both
+  controls: 36 × 3 × 200 = 21 600 runs, about 1.9 h of core time, **15 min on 8 workers**
+  (the 3 % growth cell is 1 800 s of that). 200 seeds give a Wilson interval of about ±7
+  points, so a 15-point gap is detected.
+- Stage 2: the factorial of section 2 with **three demand levels** (static, growing 0.01,
+  initially unmet): 2 × 2 × 3 × 3 × 4 = **144 cells, 100 seeds**, both controls: 43 200
+  runs, about 3 h of core time, **25 min on 8 workers**. Apply the decision rule to stage 1
+  first: a factor of the five that did not move is dropped from the cross and held at its
+  default (fewer cells); a factor outside the five that moved beyond the controls is added
+  at its two most different levels, keeping the factorial at or under 150 cells. The 3 %
+  growth level never enters stage 2.
+- Stage 3: `base`, `lf`, and six cells chosen from stage 2 (the largest mixed-against-control
+  gaps for each pricing rule, the cell with the largest Shaikh share and the one with the
+  largest Okishio share, the finance arm at its most different level, one 3 % growth cell):
+  **8 cells, 500 seeds**, both controls: 12 000 runs, **6 min on 8 workers**.
+
+**Answers to section 6.**
+
+1. Diffusion and timing: run around the innovation-set cell (marx 1.5), as planned.
+2. The extra cells `anchor_r05`, `is_frontier`, `hurdle_no_floor`, `excess_unserved` are in.
+3. The 3 % growth level is in stage 1 and in one stage 3 cell only.
+4. Seeds with no producing capacity at t = 199 are `undecided`: excluded from the share of
+   seeds won, counted in `n_undecided`; a cell with more than 10 % undecided seeds says so in
+   the report. The neutral-control script is left as it is (it is not part of the analysis).
+5. Both windows, as planned (`_50` suffix for the price and the profit rate).
+6. The definitions of section 3 stand.
+7. The strictness of `beyond_drift` is noted in the report; `beyond_base` is reported next
+   to it.
+8. No second stop: stage 2 follows stage 1 by the decision rule above.
+9. Seeds 200 / 100 / 500 as above.
+10. `--jobs` (default the number of cores), `--resume` and `progress.log` are in the script.
+11. The 680 / 674.7 discrepancy is noted in the report for step 5, not fixed.
+
+**Timeline** (wall time from the start of the session; the clock is the only budget).
+
+| By | Done |
+|---|---|
+| 0:15 | Read `CLAUDE.md`, `sensitivity-prompt.md`, this plan, `parameters.py`, `run.py`, `experiments/neutral_control.py`, `analysis/indicators.py`; tests pass; `run.py` runs |
+| 1:30 | `run.py --set`, `experiments/sensitivity.py` (`grid`, `summarise`, `rerun`, `figures`), `tests/test_sensitivity.py`; `compare_runs` proof; commit |
+| 2:00 | Stage 1 run (`grid --stage 1 --seeds 200`), `summarise`; commit |
+| 3:00 | Stage 2 cells chosen by the rule, run (`--seeds 100`), `summarise`; commit |
+| 3:30 | Stage 3 run (`--seeds 500`), `summarise`; the rerun reproduction check; commit |
+| 5:00 | Figures; the three `debug.report` PDFs |
+| 7:00 | `docs/design/sensitivity-results.md`; `choices.md` (factor table "Result" column, the rows for every choice made in the script); commit |
+| 7:30 | Tests pass; the summary for Ugo (code changes, run time, what could not be done) |
+
+If a stage overruns, the next stage runs with half its seeds and the report says so; the
+figures, the report and the summary start by 5:00 whatever is missing. Everything is
+appended as it completes, so a stop loses nothing.
+
+**Rules that bind the session** (from `CLAUDE.md` and the prompt): no change in any file of
+the model (`model/`, `equations/`, `markets/`, `parameters.py`): only `run.py --set`, the
+experiment script, its tests, and the documents; no default moves; `firm.type` is a label
+and every winner is reported next to its controls; seeds 1..N in every cell; tests run before
+each commit; commits on `feature/sensitivity` only; **never push**; every choice recorded in
+`choices.md`.
