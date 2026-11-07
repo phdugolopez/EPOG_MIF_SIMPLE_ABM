@@ -4,6 +4,35 @@ Paste everything below the line into a session (Cowork, Claude for science or Cl
 started at the root of a checkout of branch `v2-collector` of
 `phdugolopez/EPOG_MIF_SIMPLE_ABM`. Written 7 November 2026.
 
+## Running it unattended (a first 12-hour run)
+
+The prompt below stops after the plan and waits for an answer. For a run nobody watches,
+paste this header first, then the prompt; the header answers the plan's questions in
+advance and sets the budget.
+
+> **Unattended run, 12 hours.** Do not stop after the plan: write it to
+> `docs/design/sensitivity-plan.md`, commit it, and proceed with these decisions. (1) Run
+> stage 1 with 200 seeds per cell and both controls, stage 2 with 100 seeds, stage 3 with
+> 500 seeds; if the measured time per run makes that exceed 9 hours in all, scale the seeds
+> down in that order (stage 3, then 2, then 1) and say so in the report. (2) Run seeds in
+> parallel with `multiprocessing` (a `--jobs` option, default the number of cores); one
+> `Industry` per process, the seed as the only difference, results gathered in seed
+> order so that the tables do not depend on scheduling. (3) Append every finished cell to
+> `outputs/sensitivity/runs.csv` as it completes and write a progress line to
+> `outputs/sensitivity/progress.log` (cell, runs done, elapsed, estimated remaining), so
+> that a crash or a stop loses nothing and the run can resume (`grid --resume` skips
+> finished cells). (4) Commit on `feature/sensitivity` after each stage and after the
+> figures and the report; never push. (5) Where a choice of mine conflicts with the code,
+> follow the code, record the conflict in `choices.md` and go on. (6) Keep the last three
+> hours for the summaries, the figures, the report and the `debug.report` PDFs: start them
+> even if stage 3 is incomplete, and say what is missing. (7) Every stage ends with the
+> tests passing.
+
+A laptop does about 9 runs a second on one core (0.11 s per `Industry.run()`), so the
+budget above is comfortable: stage 1 (about 40 cells × 3 populations × 200 seeds, 24 000
+runs) takes under an hour on four cores, stage 2 (100 cells × 3 × 100) about the same, and
+stage 3 minutes. If the machine is slower, decision (1) scales the seeds.
+
 ---
 
 You are working in the group's real-competition ABM (Shaikh against Okishio), a Python model
