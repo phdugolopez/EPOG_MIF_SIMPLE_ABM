@@ -560,7 +560,12 @@ def observable_names(runs: pd.DataFrame) -> list[str]:
 
 
 def summarise_cell(rows: pd.DataFrame, names: list[str]) -> dict:
-    ok = rows[rows["error"].isna()]
+    ok = rows[rows["error"].isna()].copy()
+    # macro writes unit_cost_{label} = 0 when the label has no producing capacity: no value
+    if "uc_end_shaikh" in ok:
+        share = pd.to_numeric(ok["cap_share_shaikh_end"], errors="coerce")
+        ok.loc[~(share > 0), "uc_end_shaikh"] = math.nan
+        ok.loc[~(share < 1), "uc_end_okishio"] = math.nan
     decided = ok[~ok["undecided"].astype(bool)]
     won = int(decided["shaikh_wins"].astype(bool).sum())
     low, high = wilson(won, len(decided))
