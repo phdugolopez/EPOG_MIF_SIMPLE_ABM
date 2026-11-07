@@ -4,6 +4,7 @@ import random
 import unittest
 
 from equations.anchor_price import leader_anchor
+from equations.leader_follow_price import leader_follow_price, markup_floor
 from equations.posted_price import posted_price
 from equations.real_competition_price import real_competition_price
 from helpers import history_without_labels, make_config, swapped_config
@@ -134,6 +135,57 @@ class TestRealCompetitionPrice(unittest.TestCase):
             a.run(60)
             b.run(60)
             self.assertEqual(history_without_labels(a), history_without_labels(b))
+
+
+class TestLeaderFollowPrice(unittest.TestCase):
+    """PRICING_RULE = "leader_follow": the group notebook's rule."""
+
+    LEADER_FOLLOW = {"PRICING_RULE": "leader_follow"}
+
+    @staticmethod
+    def price(previous=100.0, leader=100.0, floor=90.0, excess=0.0, only=False):
+        return leader_follow_price(previous, leader, floor, excess, only, 0.02, 0.03, 3.0)
+
+    def test_markup_floor_on_average_unit_cost(self):
+        self.assertAlmostEqual(markup_floor([78.0, 75.0], [20.0, 60.0], 0.2), 1.2 * 75.75)
+
+    def test_undercut_the_leader_without_shortage(self):
+        self.assertEqual(self.price(), (98.0, True))
+
+    def test_never_below_the_floor(self):
+        self.assertEqual(self.price(leader=91.0), (90.0, False))
+
+    def test_shortage_posts_above_the_leader(self):
+        price, cut = self.price(previous=110.0, leader=100.0, excess=0.1)
+        self.assertAlmostEqual(price, 103.0)
+        self.assertFalse(cut)
+
+    def test_lone_firm_raises_up_to_the_cap(self):
+        self.assertAlmostEqual(self.price(previous=100.0, only=True)[0], 103.0)
+        self.assertAlmostEqual(self.price(previous=269.0, only=True)[0], 270.0)
+
+    def test_prices_fall_to_the_floors_without_shortage(self):
+        """Capacity fixed and demand below it: every firm cuts each period until its floor
+        binds, 1.2 x uc; the lowest-cost firm ends as the leader."""
+        industry = Industry(make_config(INITIAL_FIRMS=TEST_INDUSTRY, **self.LEADER_FOLLOW))
+        prices = run_without_capacity_change(industry, 30)
+        for path in zip(*prices):
+            self.assertTrue(all(b <= a + 1e-9 for a, b in zip(path, path[1:])))
+        for settled, uc in zip(prices[-1], UC):
+            self.assertAlmostEqual(settled, 1.2 * uc)
+
+    def test_identical_firms_post_identical_prices(self):
+        industry = Industry(make_config(**self.LEADER_FOLLOW))
+        for row in run_without_capacity_change(industry, 30):
+            for a, b in zip(row[0::2], row[1::2]):  # the pairs of the initial population
+                self.assertEqual(a, b)
+
+    def test_label_swap_changes_nothing(self):
+        a = Industry(make_config(**self.LEADER_FOLLOW))
+        b = Industry(swapped_config(**self.LEADER_FOLLOW))
+        a.run(100)
+        b.run(100)
+        self.assertEqual(history_without_labels(a), history_without_labels(b))
 
 
 class TestAnchorPricing(unittest.TestCase):

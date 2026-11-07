@@ -57,6 +57,8 @@ class TestModel(unittest.TestCase):
         for overrides in ({"PRICING_RULE": "anchor"},
                           {"PRICING_RULE": "anchor", "PRICING_ANCHOR": "markup"},
                           {"PRICING_RULE": "anchor", "PRICING_ANCHOR": "leader"},
+                          {"PRICING_RULE": "leader_follow"},
+                          {"PRICING_RULE": "leader_follow", "EXCESS_DEMAND": "unserved"},
                           {"PRICE_FLOOR": "operating_cost"}, {"EXCESS_DEMAND": "unserved"},
                           {"DEMAND_FORM": "logit"},
                           {"HURDLE_FLOOR_AT_ZERO": False}, {"REPLACEMENT": False},

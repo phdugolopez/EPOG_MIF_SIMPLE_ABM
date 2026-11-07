@@ -14,6 +14,7 @@ from equations.hurdle import hurdle
 from equations.inherited_rule import inherited_type
 from equations.lifetime_profit_rate import lifetime_profit_rate
 from equations.interest_payment import interest_payment
+from equations.leader_follow_price import leader_follow_price, markup_floor
 from equations.investment import investment
 from equations.merit_order import dispatch
 from equations.operating_cost import operating_cost
@@ -92,10 +93,29 @@ def set_prices(industry) -> None:
     """Firms post p_i from last period's prices, costs, utilisation and excess demand."""
     if industry.parameters.PRICING_RULE == "anchor":
         _anchor_prices(industry)
+    elif industry.parameters.PRICING_RULE == "leader_follow":
+        _leader_follow_prices(industry)
     else:
         _real_competition_prices(industry)
     # The leader for next period: this period's lowest posted price.
     industry.leader_price = min(f.price for f in industry.firms)
+
+
+def _excess_share(industry, config) -> float:
+    """Last period's excess demand as a share of its demand (EXCESS_DEMAND: demand beyond
+    normal capacity, or demand left unserved)."""
+    # Last period: demand = sales + unserved; normal capacity = sales / utilisation.
+    last_demand = sum(f.previous_sales for f in industry.firms) + industry.unserved
+    if config.EXCESS_DEMAND == "unserved":
+        excess = industry.unserved  # demand beyond all output, overtime included
+    else:
+        last_capacity = sum(
+            f.previous_sales / f.util_history[-1]
+            if f.util_history and f.util_history[-1] > 0.0 else f.capacity
+            for f in industry.firms
+        )
+        excess = max(0.0, last_demand - last_capacity)  # demand beyond normal capacity
+    return excess / last_demand if last_demand > 0.0 else 0.0
 
 
 def _real_competition_prices(industry) -> None:
@@ -108,18 +128,7 @@ def _real_competition_prices(industry) -> None:
         f.firm_id: min(unit_cost(p.ucs, p.kappa, config.DELTA) for p in f.plants)
         for f in active
     }
-    # Last period: demand = sales + unserved; normal capacity = sales / utilisation.
-    last_demand = sum(f.previous_sales for f in industry.firms) + industry.unserved
-    if config.EXCESS_DEMAND == "unserved":
-        excess = industry.unserved  # demand beyond all output, overtime included
-    else:
-        last_capacity = sum(
-            f.previous_sales / f.util_history[-1]
-            if f.util_history and f.util_history[-1] > 0.0 else f.capacity
-            for f in industry.firms
-        )
-        excess = max(0.0, last_demand - last_capacity)  # demand beyond normal capacity
-    excess_share = excess / last_demand if last_demand > 0.0 else 0.0
+    excess_share = _excess_share(industry, config)
     for firm in active:
         rivals = [f.firm_id for f in active if f.firm_id != firm.firm_id]
         if config.PRICE_FLOOR == "operating_cost":
@@ -144,6 +153,26 @@ def _real_competition_prices(industry) -> None:
             excess_share,
             config.PRICE_CUT,
             config.SHORTAGE_RESPONSE,
+        )
+
+
+def _leader_follow_prices(industry) -> None:
+    """The group notebook's rule (PRICING_RULE = "leader_follow"): undercut the lowest price
+    whenever capacity is not short, down to a markup floor on average unit cost; post above
+    it after excess demand; a lone firm raises its price up to a cap."""
+    config = industry.parameters
+    active = [f for f in industry.firms if f.plants]
+    leader = industry.leader_price  # lowest price posted last period
+    excess_share = _excess_share(industry, config)
+    for firm in active:
+        floor = markup_floor(
+            [unit_cost(p.ucs, p.kappa, config.DELTA) for p in firm.plants],
+            [p.capacity for p in firm.plants],
+            config.FLOOR_MARKUP,
+        )
+        firm.price, firm.at_war = leader_follow_price(
+            firm.price, leader, floor, excess_share, len(active) == 1,
+            config.PRICE_CUT, config.LEADER_RISE, config.MONOPOLY_CAP,
         )
 
 

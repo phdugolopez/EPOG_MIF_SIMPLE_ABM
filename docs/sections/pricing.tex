@@ -66,6 +66,26 @@ target-return price of last period's leader. Over seeds 1--10 the final share of
 firms is 0.12 under each firm's own target return, 0.82 under the markup and 0.51 under the
 leader's anchor: the anchor decides the winner.
 
+\paragraph{Alternative: follow and undercut the leader} (\code{PRICING\_RULE =
+"leader\_follow"}, proposed from the group's notebook). With $p^{lead}_{t-1}$ the lowest price
+posted last period and a floor at a markup on average unit cost,
+\begin{gather*}
+\underline p_{i} = (1+m)\,\overline{uc}_i \quad\text{(capacity-weighted over the firm's plants)}, \\
+p_{i,t} =
+\begin{cases}
+\min\{(1+z)\,p_{i,t-1},\ \bar m\,\underline p_{i}\} & \text{if } i \text{ is the only firm}, \\
+(1+z)\,p^{lead}_{t-1} & \text{after excess demand}, \\
+\max\{\underline p_{i},\ (1-c)\,p^{lead}_{t-1}\} & \text{otherwise},
+\end{cases}
+\end{gather*}
+with $c = 0.02$, $m = 0.20$, $z = 0.03$, $\bar m = 3$ (\code{PRICE\_CUT}, \code{FLOOR\_MARKUP},
+\code{LEADER\_RISE}, \code{MONOPOLY\_CAP}) and excess demand measured as in the default rule.
+Every firm cuts whenever capacity is not short, so prices fall each period to the floors, and
+the firm with the lowest floor sets the price. Unlike the notebook, $c$, $m$ and $z$ are the
+same for every firm rather than drawn at random for each, so identical firms stay identical
+and the label swap holds. Over seeds 1--10 the leader is the lowest-cost firm in 195 of 200
+periods (58 under the default rule) and the final share of Shaikh firms is 0.55 (0.81).
+
 \paragraph{Tests} (\code{tests/test\_pricing.py}): the rule's branches one by one (cut with an
 edge and spare capacity; no cut without either, nor against an identical twin; a cut never
 raises a price; the leader does not undercut itself; follow down to the floor and no further;
@@ -73,12 +93,15 @@ excess demand moves prices up); no price below the floor and no rise without exc
 over 2\,000 random cases; identical firms with spare capacity never start a war; on the test
 industry D2 cuts first, the others follow to their unit costs, and excess demand raises every
 price; with the operating-cost floor the war ends on one price; the label swap holds under each
-switch. Version 1 keeps its tests (1)--(4) and the leader-anchor tests.
+switch. Version 1 keeps its tests (1)--(4) and the leader-anchor tests. The leader-follow
+rule: its branches one by one, prices falling to $1.2\,uc$ on the test industry, identical
+firms posting identical prices, and the label swap.
 
 \subsection*{Code}
 \eqfile{anchor_price.py}
 \eqfile{price_floor.py}
 \eqfile{price_war.py}
 \eqfile{real_competition_price.py}
+\eqfile{leader_follow_price.py}
 \eqfile{posted_price.py}
 \schedulerpart{pricing}{\code{model/scheduler.py}: step 1}

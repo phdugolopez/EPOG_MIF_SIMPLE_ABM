@@ -54,12 +54,16 @@ TAU: float = 0.0  # share of a period's operating cost counted as capital advanc
 # "real_competition": no anchor and no war trigger. Firms follow the lowest price, cut below
 # it only with spare capacity and a cost edge, and raise prices when demand went unserved.
 # "anchor": the version 1 rule (anchor, band and utilisation-triggered price wars).
-PRICING_RULE: str = "real_competition"  # or "anchor"
+PRICING_RULE: str = "real_competition"  # or "anchor", or "leader_follow"
 PRICE_CUT: float = 0.02  # c: size of an undercut (both rules; per period in an "anchor" war)
 U_FULL: float = 1.0  # utilisation at or above which a firm has no spare capacity
 SHORTAGE_RESPONSE: float = 0.5  # rise of the highest price per unit of excess-demand share
 EXCESS_DEMAND: str = "normal_capacity"  # shortage: demand above normal capacity, or "unserved"
 PRICE_FLOOR: str = "unit_cost"  # floor when following: uc of the best plant, or "operating_cost"
+# "leader_follow" rule only (the group notebook's rule; PRICE_CUT is its epsilon):
+FLOOR_MARKUP: float = 0.20  # m: floor = (1 + m) x capacity-weighted average uc
+LEADER_RISE: float = 0.03  # after excess demand: (1 + rise) x leader; a lone firm's rise
+MONOPOLY_CAP: float = 3.0  # a lone firm's price stops at MONOPOLY_CAP x floor
 # Anchor rule only:
 PRICING_ANCHOR: str = "target_return"  # or "markup", or "leader" (one anchor for all)
 MARKUP: float = 0.282  # mu, for PRICING_ANCHOR = "markup"
