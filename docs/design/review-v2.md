@@ -588,7 +588,13 @@ describes the rule. `TECH_CHANGE = "categories"` stays the default.
   analysis.
 
 **Step 4. First full sensitivity analysis** (after steps 0 to 3; Ugo with each owner reading
-their mechanism's cells; computing time set by the wall time measured in step 0).
+their mechanism's cells; computing time set by the wall time measured in step 0). The
+prompt for the session that runs it is `docs/design/sensitivity-prompt.md` (7 November):
+it widens the factor table below with the demand conditions (static, growing, initially
+unmet), the demand form, scrapping speed, plant size and capital advanced, lists the
+observables (who dominates and through which channel, demand met, entry and exit, the
+price and profit signatures, Marx bias as an outcome), and asks for a results table that
+holds every parameter of every run so that any run can be rerun for a closer look.
 
 Design: one factor at a time around the version 2 defaults first (about 20 cells, 50 seeds
 each, enough to detect a 20-point gap in the share of seeds won, critique §6), then a
