@@ -139,23 +139,53 @@ def stage2_cells() -> dict:
     return cells
 
 
-# Stage 3: base, lf and the cells chosen from stage 2 (filled after stage 2; plan section 7).
-STAGE3_EXTRA: dict = {}
+# Stage 3: base, lf and six cells chosen from stage 2 by the rule of the plan (section 7),
+# written by choose_stage3 to OUT/stage3_cells.json so that the choice is on file.
+def choose_stage3(cells: pd.DataFrame, out: Path = OUT) -> dict:
+    """The largest |gap| (mixed against the mean of the controls) for each pricing rule,
+    the largest and the smallest share won, the finance arm where it changes the share won
+    most (the accelerator + borrowing cell against its retained-earnings twin), and one
+    3 % growth cell (the version 2 defaults with DEMAND_GROWTH = 0.03)."""
+    s2 = cells[(cells["stage"] == "2") & (cells["population"] == "mixed")].copy()
+    s2 = s2.set_index("cell")
+    chosen = {}
+
+    def add(name, why):
+        if name not in chosen:
+            chosen[name] = {"overrides": json.loads(s2.loc[name, "overrides"]), "why": why}
+
+    for pricing in ("rc", "lf"):
+        part = s2[s2.index.str.startswith(pricing + "-")]
+        add(part["gap"].abs().idxmax(), f"largest |gap| under {pricing}")
+    add(s2["share_won"].idxmax(), "largest share won by the unit-cost rule")
+    add(s2["share_won"].idxmin(), "smallest share won by the unit-cost rule")
+    acd = [c for c in s2.index if "-acd-" in c and c.replace("-acd-", "-re-") in s2.index]
+    diff = {c: abs(s2.loc[c, "share_won"] - s2.loc[c.replace("-acd-", "-re-"), "share_won"])
+            for c in acd}
+    if diff:
+        add(max(diff, key=diff.get), "finance arm: largest change from retained earnings")
+    chosen["grow_03"] = {"overrides": {"DEMAND_GROWTH": 0.03}, "why": "one 3 % growth cell"}
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "stage3_cells.json").write_text(json.dumps(chosen, indent=2, sort_keys=True))
+    return chosen
 
 
-def stage3_cells() -> dict:
+def stage3_cells(out: Path = OUT) -> dict:
     cells = {"base": STAGE1["base"], "lf": STAGE1["lf"]}
-    cells.update(STAGE3_EXTRA)
+    path = out / "stage3_cells.json"
+    if path.exists():
+        for name, spec in json.loads(path.read_text()).items():
+            cells[name] = ("decisive", spec["overrides"])
     return cells
 
 
-def stage_cells(stage: str) -> dict:
+def stage_cells(stage: str, out: Path = OUT) -> dict:
     if stage == "1":
         return dict(STAGE1)
     if stage == "2":
         return stage2_cells()
     if stage == "3":
-        return stage3_cells()
+        return stage3_cells(out)
     if stage == "smoke":
         return {"base": STAGE1["base"], "lf": STAGE1["lf"]}
     raise SystemExit(f"unknown stage {stage}")
@@ -234,17 +264,24 @@ def observables(frames: dict, config) -> dict:
     o["n_shaikh_end"] = int(last["n_shaikh"])
     o["n_okishio_end"] = int(last["n_okishio"])
     one = g.drop(columns=["run_id"], errors="ignore")  # one run: decompose by group only
-    sales_terms = cumulate(sales_share_terms(one), start=WINDOW[0])
-    cap_terms = cumulate(capacity_share_terms(one), start=WINDOW[0])
-    st = sales_terms.loc["shaikh"] if "shaikh" in sales_terms.index else None
-    ct = cap_terms.loc["shaikh"] if "shaikh" in cap_terms.index else None
-    o["d_share_price"] = float(st["term_price"]) if st is not None else math.nan
-    o["d_share_rationing"] = float(st["term_rationing"]) if st is not None else math.nan
-    o["d_share_entry_exit"] = float(st["term_entry_exit"]) if st is not None else math.nan
-    o["d_share_accum"] = (float(ct["term_ordered"] + ct["term_retired"] + ct["term_cancelled"])
-                          if ct is not None else math.nan)
-    o["d_share_entry"] = float(ct["term_entry"]) if ct is not None else math.nan
-    o["d_share_exit"] = float(ct["term_exit"]) if ct is not None else math.nan
+    sales_t = sales_share_terms(one)
+    cap_t = capacity_share_terms(one)
+    # window t = 100-199 (no suffix) and the whole run t = 0-199 (suffix _all): most
+    # takeovers happen before or around t = 100, so the window alone misses them
+    for start, suffix in ((WINDOW[0], ""), (0, "_all")):
+        sales_terms = cumulate(sales_t, start=start)
+        cap_terms = cumulate(cap_t, start=start)
+        st = sales_terms.loc["shaikh"] if "shaikh" in sales_terms.index else None
+        ct = cap_terms.loc["shaikh"] if "shaikh" in cap_terms.index else None
+        nan = math.nan
+        o["d_share_price" + suffix] = float(st["term_price"]) if st is not None else nan
+        o["d_share_rationing" + suffix] = float(st["term_rationing"]) if st is not None else nan
+        o["d_share_entry_exit" + suffix] = float(st["term_entry_exit"]) if st is not None else nan
+        o["d_share_accum" + suffix] = (
+            float(ct["term_ordered"] + ct["term_retired"] + ct["term_cancelled"])
+            if ct is not None else nan)
+        o["d_share_entry" + suffix] = float(ct["term_entry"]) if ct is not None else nan
+        o["d_share_exit" + suffix] = float(ct["term_exit"]) if ct is not None else nan
     gw = _window(g)
     for label in LABELS:
         o[f"hurdle_mean_{label}"] = _mean(gw.loc[gw["group"] == label, "hurdle_mean"])
@@ -472,7 +509,7 @@ def log(out: Path, line: str) -> None:
 def grid(stage: str, seeds: int, jobs: int, out: Path = OUT, resume: bool = False,
          only: list[str] | None = None, cells: dict | None = None) -> None:
     out.mkdir(parents=True, exist_ok=True)
-    cells = cells if cells is not None else stage_cells(stage)
+    cells = cells if cells is not None else stage_cells(stage, out)
     if only:
         cells = {k: v for k, v in cells.items() if k in only}
     done = finished_cells(out)
@@ -707,17 +744,18 @@ def fig_tornado(cells: pd.DataFrame, path: Path) -> None:
                          color="#d9d8d4", lw=0)
         r = mixed.loc[cell]
         filled = bool(r["beyond_drift"])
+        colour = TYPE_STYLE["shaikh" if r["share_won"] >= 0.5 else "okishio"]["color"]
         ax.errorbar(r["share_won"], yi, xerr=[[r["share_won"] - r["won_low"]],
                                               [r["won_high"] - r["share_won"]]],
-                    fmt="o", ms=6, color=TYPE_STYLE["shaikh"]["color"],
-                    mfc=TYPE_STYLE["shaikh"]["color"] if filled else "white", lw=1.2, capsize=0)
+                    fmt="o", ms=6, color=colour, mfc=colour if filled else "white",
+                    lw=1.2, capsize=0)
     ax.axvline(mixed.loc["base", "share_won"], color=MUTED, ls="--", lw=1)
     ax.axvline(0.5, color=MUTED, lw=0.6)
     labels = [f"{c}  [{f}]" for c, f in zip(order, factors)]
     ax.set_yticks(y, labels, fontsize=7)
     ax.set_xlim(0, 1)
-    ax.set_xlabel("share of seeds in which the label \"shaikh\" holds > 1/2 of capacity at t = 199 "
-                  "(95 % Wilson interval)")
+    ax.set_xlabel("share of seeds won by the label \"shaikh\" (> 1/2 of capacity at t = 199),\n"
+                  "95 % Wilson interval; orange: the profit-rate rule wins most seeds")
     ax.set_title("Stage 1: which factor levels move the share of seeds won by the unit-cost rule?\n"
                  "grey: the two neutral controls' intervals; filled: beyond drift; dashed: base",
                  fontsize=9, loc="left")
@@ -783,12 +821,12 @@ def fig_channels(cells: pd.DataFrame, path: Path) -> None:
     colours = {"real_competition": "#2a78d6", "leader_follow": "#eb6834", "anchor": "#52514e"}
     fig, ax = plt.subplots(figsize=(6.5, 5))
     for pr, part in mixed.groupby("pricing_rule"):
-        ax.scatter(part["d_share_price_mean"], part["d_share_accum_mean"], s=22, alpha=0.8,
+        ax.scatter(part["d_share_price_all_mean"], part["d_share_accum_all_mean"], s=22, alpha=0.8,
                    color=colours.get(pr, MUTED), label=PRICING_NAMES.get(pr, pr),
                    edgecolors="white", linewidths=0.5)
     ax.axhline(0, color=MUTED, lw=0.6)
     ax.axvline(0, color=MUTED, lw=0.6)
-    ax.set_xlabel("price channel: cumulated price-driven change in Shaikh's sales share, t = 100-199")
+    ax.set_xlabel("price channel: cumulated price-driven change in Shaikh's sales share, t = 0-199")
     ax.set_ylabel("accumulation channel: cumulated order/retire/cancel\nchange in Shaikh's capacity share")
     ax.legend(title="pricing rule (colour, not a label)", fontsize=7, title_fontsize=7)
     ax.set_title("Does the unit-cost rule win through prices or through accumulation?\n"
@@ -891,7 +929,7 @@ def fig_marx(cells: pd.DataFrame, path: Path) -> None:
     ax.axvline(0, color=MUTED, lw=0.6)
     ax.set_xlabel("χ: realised rise of capital per unit (kappa_mean), % per period, t = 100-199")
     ax.set_ylabel("γ: realised fall of operating cost (ucs_mean), % per period")
-    ax.legend(fontsize=6, ncol=1, loc="best")
+    ax.legend(fontsize=6, ncol=1, loc="upper left", bbox_to_anchor=(1.01, 1.0))
     ax.set_title("Is realised technical change Marx-biased (γ > 0, χ > 0), and for which rule?\n"
                  "one point per cell and label (mixed population, mean over seeds)",
                  fontsize=9, loc="left")
@@ -931,6 +969,8 @@ def main(argv=None) -> None:
     r.add_argument("run_id")
     r.add_argument("--out", type=Path, default=None)
     r.add_argument("--runs", type=Path, default=None, help="runs.csv to read (default OUT)")
+    ch = sub.add_parser("choose3", help="choose the stage 3 cells from cells.csv")
+    ch.add_argument("--out", type=Path, default=OUT)
     fg = sub.add_parser("figures")
     fg.add_argument("--out", type=Path, default=OUT)
     args = parser.parse_args(argv)
@@ -946,6 +986,10 @@ def main(argv=None) -> None:
     elif args.command == "rerun":
         _, diff = rerun(args.run_id, args.out, args.runs)
         sys.exit(1 if diff else 0)
+    elif args.command == "choose3":
+        cells = pd.read_csv(args.out / "cells.csv", dtype={"stage": str}, low_memory=False)
+        for name, spec in choose_stage3(cells, args.out).items():
+            print(f"{name}: {spec['why']} {spec['overrides']}")
     elif args.command == "figures":
         figures(args.out)
 
