@@ -72,6 +72,7 @@ Parameters stored in `runs` (`{parameter}` and the aliases above):
 | `initial_price` | `INITIAL_PRICE` |  |
 | `investment_rule` | `INVESTMENT_RULE` | buy what retained earnings pay for, no debt; version 1: "accelerator" |
 | `investment_sales_lag` | `INVESTMENT_SALES_LAG` | 1: x_{t-1} as in the brief; 0: this period's sales |
+| `leader_follow_floor` | `LEADER_FOLLOW_FLOOR` | Floor of the leader-follow rule: "markup" (the notebook's, above), "unit_cost" (the best plant's uc, as the default rule) or "operating_cost" (ucs of the marginal plant, version 1). |
 | `leader_rise` | `LEADER_RISE` | after excess demand: (1 + rise) x leader; a lone firm's rise |
 | `markup` | `MARKUP` | mu, for PRICING_ANCHOR = "markup" |
 | `menu` (alias) | `MENU` | techniques on offer for new plants |
@@ -99,6 +100,7 @@ Parameters stored in `runs` (`{parameter}` and the aliases above):
 | `seed` (alias) | `SEED` |  |
 | `shaikh_plants` | `SHAIKH_PLANTS` | name -> (normal output, capital stock, unit cost uc at delta = 10 %) |
 | `shortage_response` | `SHORTAGE_RESPONSE` | rise of the highest price per unit of excess-demand share |
+| `shortage_rule` | `SHORTAGE_RULE` | After excess demand: "leader", every firm posts (1 + LEADER_RISE) x leader (the notebook's, a firm priced above that lowers its price); "no_cut", never below the firm's own price. |
 | `tau` | `TAU` | share of a period's operating cost counted as capital advanced |
 | `tech_conflict` | `TECH_CONFLICT` | share of designs in the conflict zone (only the unit-cost rule adopts) |
 | `tech_draws` | `TECH_DRAWS` | version 1: False, the menu stays fixed |
@@ -219,6 +221,7 @@ One row per period and label, empty groups included. Members: the firms that pro
 | `cap_exit` | capacity still in operation at firms that leave | units/period | 6 | Entry and exit | v1 |
 | `cap_cancelled` | part of cap_ordered placed by firms that leave, written off | units/period | 6 | Entry and exit | v1 |
 | `cap_resid` | capacity identity of the group (see macro.cap_resid) | units/period | 7 | collector | v1 |
+| `n_replace` | working plants replaced by the hurdle inequality at step 4 (retire events with cause replacement) | count | 4 | Scrapping | v1 |
 | `n_entry` | entrants | count | 6 | Entry and exit | v1 |
 | `n_exit` | leavers | count | 6 | Entry and exit | v1 |
 | `n_exit_bankruptcy` | leavers on negative net worth | count | 6 | Entry and exit | v1 |

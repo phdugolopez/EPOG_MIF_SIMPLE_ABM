@@ -535,12 +535,19 @@ merge into `v2`.
   recorded (it sizes step 4); `docs/design/collector.md` is regenerated from the schema.
 
 **Step 1. Small fixes, trajectory-neutral unless stated** (by file owner; two hours in all).
+**Done on 7 November on `v2-collector`**: `war_price.py` deleted; adopted and built logged
+apart (design, adopt and order events, from the merge); `LEADER_FOLLOW_FLOOR` and
+`SHORTAGE_RULE` as switches with the notebook's values as defaults, tested and in
+`test_switches_run`; hurdle replacements by group (`n_replace` in `groups`);
+`experiments/neutral_control.py` with its smoke test. First result (seeds 1–20, version 2
+defaults): the mixed population's 16 of 20 is not beyond the neutral controls' intervals
+(12 and 9 of 20); recorded in `choices.md`.
 
 | Fix | File | Owner | Effect on trajectories |
 |---|---|---|---|
 | Delete `equations/war_price.py`; add `.idea/` to `.gitignore` | shared | Ugo | none |
 | Log "adopted" and "built" separately in `_technique_to_build` | `model/scheduler.py` (step 5) | Ugo | none (log only) |
-| Leader-follow floor behind the existing switch: `PRICE_FLOOR = "markup"` (1.2 × average uc, the notebook's, stays the rule's default) / `"unit_cost"` / `"operating_cost"` | `equations/leader_follow_price.py`, `_leader_follow_prices` | Jake | none at defaults |
+| Leader-follow floor behind its own switch, `LEADER_FOLLOW_FLOOR = "markup"` (1.2 × average uc, the notebook's, stays the rule's default) / `"unit_cost"` / `"operating_cost"` (a separate switch, so that `PRICE_FLOOR`'s default for the other rule is untouched) | `_leader_follow_prices` | Jake | none at defaults |
 | Leader-follow shortage branch behind a switch: `SHORTAGE_RULE = "leader"` ((1 + z) L for every firm, the notebook's) / `"no_cut"` (max{p_{t−1}, (1 + z) L}) | same files | Jake | none at defaults |
 | Neutral-control script: two groups on the same hurdle rule under different labels over N seeds, compared with `compare_runs.py`; its result reported next to every mixed-population result | `experiments/neutral_control.py` (new folder) | Ugo | none |
 | Tests for each switch, added to `test_switches_run`; `choices.md` rows | `tests/`, `docs/design/choices.md` | each owner | none |

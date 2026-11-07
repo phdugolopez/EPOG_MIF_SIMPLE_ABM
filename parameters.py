@@ -64,6 +64,12 @@ PRICE_FLOOR: str = "unit_cost"  # floor when following: uc of the best plant, or
 FLOOR_MARKUP: float = 0.20  # m: floor = (1 + m) x capacity-weighted average uc
 LEADER_RISE: float = 0.03  # after excess demand: (1 + rise) x leader; a lone firm's rise
 MONOPOLY_CAP: float = 3.0  # a lone firm's price stops at MONOPOLY_CAP x floor
+# Floor of the leader-follow rule: "markup" (the notebook's, above), "unit_cost" (the best
+# plant's uc, as the default rule) or "operating_cost" (ucs of the marginal plant, version 1).
+LEADER_FOLLOW_FLOOR: str = "markup"
+# After excess demand: "leader", every firm posts (1 + LEADER_RISE) x leader (the notebook's,
+# a firm priced above that lowers its price); "no_cut", never below the firm's own price.
+SHORTAGE_RULE: str = "leader"
 # Anchor rule only:
 PRICING_ANCHOR: str = "target_return"  # or "markup", or "leader" (one anchor for all)
 MARKUP: float = 0.282  # mu, for PRICING_ANCHOR = "markup"

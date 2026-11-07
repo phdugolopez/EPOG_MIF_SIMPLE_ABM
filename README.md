@@ -34,6 +34,7 @@ Windows: replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
 parameters.py            all parameters and switches
 run.py                   runs the model, writes outputs/{runs,macro,groups,firms,plants,events,flows}.csv
 analysis/                indicators computed from the tables; schema_doc generates docs/design/collector.md
+experiments/             experiment scripts over seeds (neutral_control), outputs in outputs/experiments/
 plot_outputs.py          draws outputs/*.png
 style.py                 colours and rcParams shared by plot_outputs.py and debug/
 debug/                   debugging plots, one script per question, from a run folder's tables

@@ -15,11 +15,15 @@ def leader_follow_price(
     cut: float,
     rise: float,
     monopoly_cap: float,
+    shortage_rule: str = "leader",
 ) -> tuple[float, bool]:
     """PRICING_RULE = "leader_follow" (the group notebook's rule), with L = the lowest price
     posted last period:
     1. Only firm in the industry: raise the own price by `rise`, up to monopoly_cap x floor.
-    2. Shortage (last period's excess-demand share > 0): post (1 + rise) L.
+    2. Shortage (last period's excess-demand share > 0): post (1 + rise) L (SHORTAGE_RULE =
+       "leader", the notebook's: a firm priced above that lowers its price); with
+       SHORTAGE_RULE = "no_cut", max{previous price, (1 + rise) L}, so a shortage never
+       lowers a price.
     3. Otherwise: undercut the leader, max{floor, (1 - cut) L}. Every firm cuts whenever
        capacity is not short, so prices fall until they reach the floors.
     Returns (price, undercut).
@@ -27,7 +31,10 @@ def leader_follow_price(
     if only_firm:
         return min(previous_price * (1.0 + rise), monopoly_cap * floor), False
     if excess_share > 0.0:
-        return (1.0 + rise) * leader_price, False
+        target = (1.0 + rise) * leader_price
+        if shortage_rule == "no_cut":
+            target = max(previous_price, target)
+        return target, False
     cut_price = (1.0 - cut) * leader_price
     if cut_price >= floor:
         return cut_price, True

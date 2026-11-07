@@ -96,7 +96,10 @@ the floor, a 20\,\% markup on the firm's average unit cost under which no plant 
 below its unit cost and the Okishio hurdle never reaches zero (the version 2 default stops
 cuts at the best plant's unit cost, version 1 at operating cost); and the shortage branch,
 under which every firm posts $(1+z)\,p^{lead}_{t-1}$, so that a firm priced above that
-lowers its price in a shortage.
+lowers its price in a shortage. Both are switches (\code{LEADER\_FOLLOW\_FLOOR}: \code{"markup"},
+\code{"unit\_cost"}, \code{"operating\_cost"}; \code{SHORTAGE\_RULE}: \code{"leader"},
+\code{"no\_cut"}, never below the firm's own price), the notebook's values staying the
+defaults.
 
 \paragraph{Tests} (\code{tests/test\_pricing.py}): the rule's branches one by one (cut with an
 edge and spare capacity; no cut without either, nor against an identical twin; a cut never

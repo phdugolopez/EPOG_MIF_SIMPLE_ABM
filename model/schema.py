@@ -217,6 +217,8 @@ SCHEMA: dict[str, list[Column]] = {
                "off", Q, 6, EE),
         Column("cap_resid", "capacity identity of the group (see macro.cap_resid)", Q, 7,
                CO),
+        Column("n_replace", "working plants replaced by the hurdle inequality at step 4 "
+               "(retire events with cause replacement)", "count", 4, SC),
         Column("n_entry", "entrants", "count", 6, EE),
         Column("n_exit", "leavers", "count", 6, EE),
         Column("n_exit_bankruptcy", "leavers on negative net worth", "count", 6, EE),

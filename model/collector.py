@@ -594,6 +594,10 @@ def group_rows(industry) -> list[dict]:
     producers = _by_label(industry, industry.producers)
     entrants = _by_label(industry, industry.entries)
     remaining = _by_label(industry, industry.firms)
+    replaced = {}  # firm_id -> hurdle replacements this period, from the retire events
+    for e in industry.events[industry.record.get("events_start", 0):]:
+        if e["event"] == "retire" and e["cause"] == "replacement":
+            replaced[e["firm_id"]] = replaced.get(e["firm_id"], 0) + 1
     industry.record["group_flows"] = {}  # read by residuals (cap_resid_group)
     rows = []
     for label, firms in producers.items():
@@ -618,6 +622,7 @@ def group_rows(industry) -> list[dict]:
             "cap_exit": flows["exit"],
             "cap_cancelled": flows["cancelled"],
             "cap_resid": _identity_resid(flows),
+            "n_replace": sum(replaced.get(f.firm_id, 0) for f in firms),
             "n_entry": len(new),
             "n_exit": len(left),
         }

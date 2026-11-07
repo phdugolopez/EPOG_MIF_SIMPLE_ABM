@@ -49,8 +49,8 @@ No anchor and no war trigger: price cuts come only from cost differences.
 | Floor when following: the firm's own best-plant unit cost (`PRICE_FLOOR = "unit_cost"`) | Default (Jake) | `"operating_cost"`: the version 1 floor (ucs, Shaikh 2016, p. 316). Followers then match the leader all the way and a war ends on one price; same baseline |
 | c = `PRICE_CUT` = 0.02, `SHORTAGE_RESPONSE` = 0.5 | Default | |
 | **The other arm of the price-war treatment:** `PRICING_RULE = "leader_follow"`, the group notebook's rule (`equations/leader_follow_price.py`). L = lowest price last period. (1) A lone firm raises its price by `LEADER_RISE` up to `MONOPOLY_CAP` = 3 × floor; (2) after excess demand (same signal as the default, `EXCESS_DEMAND`), every firm posts (1 + `LEADER_RISE`) L; (3) otherwise every firm posts max{floor, (1 − c) L}, so prices fall each period until floors bind: a price war whenever capacity is not short. Floor = (1 + `FLOOR_MARKUP`) × capacity-weighted average uc. Differences from the notebook, for neutrality: ε, the floor markup m and the shortage rise z are common parameters (c = 0.02, m = 0.20, z = 0.03, the notebook's means) instead of random draws per firm, and shares come from the replicator, not a price queue. Seeds 1–10, current defaults otherwise: final Shaikh share 0.55 (real competition: 0.81), leader is the lowest-cost firm in 195 of 200 periods (58), mean price over t ≥ 50 69.0 (75.7), profit rate S/O 7.0 / 6.4 % (8.9 / 6.4 %), 6.4 firms at t = 199 (18.1) | Committed (cc1dd0c), a switch; fixed or treatment after the sensitivity analysis | Random ε, m, z per firm, as in the notebook |
-| Leader-follow floor: (1 + 0.20) × the capacity-weighted average uc of all the firm's plants, idle ones included. No plant then sells below its unit cost unless it is more than 20 % dearer than the firm's average, so obsolescence scrapping almost never fires and the Okishio hurdle never reaches zero: price wars never close the conflict zone | Open (step 1 of the plan: `PRICE_FLOOR` reused as a switch on the rule, `"markup"` staying its default) | `"unit_cost"` (the version 2 default's floor), `"operating_cost"` (version 1, Shaikh 2016, p. 316); all three in the sensitivity analysis |
-| Leader-follow shortage branch: after excess demand every firm posts (1 + z) L, so a firm priced above that lowers its price in a shortage and the price distribution collapses to one level 3 % above the leader | Open (step 1: `SHORTAGE_RULE = "leader"` as the default, the notebook's) | `"no_cut"`: max{p_{t−1}, (1 + z) L} |
+| Leader-follow floor: (1 + 0.20) × the capacity-weighted average uc of all the firm's plants, idle ones included. No plant then sells below its unit cost unless it is more than 20 % dearer than the firm's average, so obsolescence scrapping almost never fires and the Okishio hurdle never reaches zero: price wars never close the conflict zone | Default of the rule, now a switch: `LEADER_FOLLOW_FLOOR = "markup"` (step 1 of the plan, done 7 November) | `"unit_cost"` (the best plant's uc, the default rule's floor), `"operating_cost"` (ucs of the marginal plant, version 1, Shaikh 2016, p. 316); all three in the sensitivity analysis |
+| Leader-follow shortage branch: after excess demand every firm posts (1 + z) L, so a firm priced above that lowers its price in a shortage and the price distribution collapses to one level 3 % above the leader | Default of the rule, now a switch: `SHORTAGE_RULE = "leader"` (step 1, done 7 November) | `"no_cut"`: max{p_{t−1}, (1 + z) L}, a shortage never lowers a price |
 
 Version 1 rule (`PRICING_RULE = "anchor"`):
 
@@ -61,7 +61,7 @@ Version 1 rule (`PRICING_RULE = "anchor"`):
 | Floor = ucs of the most expensive plant needed to produce last period's sales in merit order; the cheapest plant's ucs when last sales were zero | Fixed by Ugo (rule); default (zero sales) | Floor including the overtime premium |
 | u_war = 0.95, `WAR_PERIODS` = 2, c = 0.02, b = 0.025, λ = 0.25 | Default (brief's ranges where given) | |
 | No war before a firm has `WAR_PERIODS` periods of history (entrants start at peace) | Default | |
-| War rule: every firm at war cuts its own price by c a period | Default | (`PRICE_WAR = "cost_gated"` removed in version 2: the real-competition rule replaces it; its file `equations/war_price.py` is dead code, deleted in step 1 of the plan) |
+| War rule: every firm at war cuts its own price by c a period | Default | (`PRICE_WAR = "cost_gated"` removed in version 2: the real-competition rule replaces it; its file `equations/war_price.py` was deleted on 7 November) |
 
 ## Demand (Pierre-Loup)
 
@@ -183,7 +183,7 @@ fixed at the level the group argues for from theory, with the sensitivity record
 | Factor | Levels | Mechanism | Result |
 |---|---|---|---|
 | `PRICING_RULE` | `real_competition`, `leader_follow` | Pricing | |
-| Floor (`PRICE_FLOOR`) | `operating_cost` (ucs), `unit_cost`, `markup` (leader-follow only) | Pricing | |
+| Floor: `PRICE_FLOOR` (default rule), `LEADER_FOLLOW_FLOOR` (leader-follow) | `operating_cost` (ucs), `unit_cost`; `markup` (leader-follow only) | Pricing | |
 | `SHORTAGE_RULE` (leader-follow) | `leader`, `no_cut` | Pricing | |
 | `CHI` (selection intensity) | 0.5, 1, 2 | Demand | |
 | Technical change | `categories` with q ∈ {0, 0.5}; `innovation_set` marx with m ∈ {0.5, 1.5, 3}; `innovation_set` neutral | Investment | |
@@ -202,6 +202,27 @@ rates over t ≥ 50; entries, exits and firms at the end; hurdle replacements by
 neutral control's share of seeds won. Computing time: `Industry.run()` takes 0.11 s on the
 version 2 defaults, so 20 cells × 50 seeds take about two minutes and a 200-seed cell
 about half a minute.
+
+## Neutral control (seeds 1–20, version 2 defaults), for the record
+
+`python -m experiments.neutral_control --seeds 20` (7 November 2026): share of seeds in which
+the label "shaikh" holds more than half of the producing capacity at t = 199, with the 95 %
+Wilson interval, and its mean final capacity share.
+
+| Population | Seeds won by "shaikh" | Interval | Mean capacity share |
+|---|---|---|---|
+| Mixed (shaikh = unit_cost, okishio = profit_rate) | 16 of 20 | 0.58–0.92 | 0.80 |
+| Both labels on the unit-cost rule | 12 of 20 | 0.39–0.78 | 0.57 |
+| Both labels on the profit-rate rule | 9 of 20 | 0.26–0.66 | 0.45 |
+
+Under neutral drift a label should win about half the seeds; the controls do, within their
+intervals. The mixed population's 16 of 20 lies above both controls' point estimates, but
+its interval overlaps theirs at 20 seeds: the "Shaikh firms win 16 of 20" of the baseline
+record is not yet a result beyond drift, which is what the 50- and 200-seed cells of the
+sensitivity analysis are for. The two controls differ (12 against 9) because the random
+draws are consumed in firm order, so the label listed first in `INITIAL_FIRMS` gets
+different designs and entry draws: a label effect of the single random stream, not of the
+rules, and an argument for the per-mechanism streams proposed in the collector table.
 
 ## What the baseline shows (seed 42), for the record
 

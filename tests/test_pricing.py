@@ -180,12 +180,38 @@ class TestLeaderFollowPrice(unittest.TestCase):
             for a, b in zip(row[0::2], row[1::2]):  # the pairs of the initial population
                 self.assertEqual(a, b)
 
+    def test_shortage_never_lowers_a_price_with_no_cut(self):
+        """SHORTAGE_RULE = "no_cut": max{previous, (1 + z) L}; "leader" posts (1 + z) L."""
+        high = leader_follow_price(110.0, 100.0, 90.0, 0.1, False, 0.02, 0.03, 3.0, "no_cut")
+        self.assertEqual(high, (110.0, False))
+        low = leader_follow_price(95.0, 100.0, 90.0, 0.1, False, 0.02, 0.03, 3.0, "no_cut")
+        self.assertAlmostEqual(low[0], 103.0)
+        self.assertAlmostEqual(self.price(previous=110.0, excess=0.1)[0], 103.0)
+
+    def test_floor_switch_sets_where_the_cuts_stop(self):
+        """LEADER_FOLLOW_FLOOR: cuts stop at 1.2 uc (markup), at uc, or at ucs (the marginal
+        plant's operating cost; one technique per firm here, so its ucs)."""
+        ucs = [78.0 - 13.75, 76.0 - 18_500.0 / 130.0 * 0.1, 75.0 - 21_000.0 / 133.0 * 0.1]
+        for floor, expected in (("markup", [1.2 * c for c in UC]), ("unit_cost", UC),
+                                ("operating_cost", ucs)):
+            with self.subTest(floor=floor):
+                industry = Industry(make_config(
+                    INITIAL_FIRMS=TEST_INDUSTRY, LEADER_FOLLOW_FLOOR=floor,
+                    **self.LEADER_FOLLOW,
+                ))
+                prices = run_without_capacity_change(industry, 40)
+                for settled, value in zip(prices[-1], expected):
+                    self.assertAlmostEqual(settled, value)
+
     def test_label_swap_changes_nothing(self):
-        a = Industry(make_config(**self.LEADER_FOLLOW))
-        b = Industry(swapped_config(**self.LEADER_FOLLOW))
-        a.run(100)
-        b.run(100)
-        self.assertEqual(history_without_labels(a), history_without_labels(b))
+        for overrides in ({}, {"LEADER_FOLLOW_FLOOR": "unit_cost"},
+                          {"LEADER_FOLLOW_FLOOR": "operating_cost"}, {"SHORTAGE_RULE": "no_cut"}):
+            with self.subTest(**overrides):
+                a = Industry(make_config(**self.LEADER_FOLLOW, **overrides))
+                b = Industry(swapped_config(**self.LEADER_FOLLOW, **overrides))
+                a.run(100)
+                b.run(100)
+                self.assertEqual(history_without_labels(a), history_without_labels(b))
 
 
 class TestAnchorPricing(unittest.TestCase):

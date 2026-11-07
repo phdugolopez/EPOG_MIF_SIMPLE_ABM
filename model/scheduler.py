@@ -165,22 +165,30 @@ def _real_competition_prices(industry) -> None:
 
 def _leader_follow_prices(industry) -> None:
     """The group notebook's rule (PRICING_RULE = "leader_follow"): undercut the lowest price
-    whenever capacity is not short, down to a markup floor on average unit cost; post above
-    it after excess demand; a lone firm raises its price up to a cap."""
+    whenever capacity is not short, down to a floor (LEADER_FOLLOW_FLOOR: a markup on
+    average unit cost, the best plant's unit cost, or the operating cost of the marginal
+    plant); post above it after excess demand (SHORTAGE_RULE); a lone firm raises its price
+    up to a cap."""
     config = industry.parameters
     active = [f for f in industry.firms if f.plants]
     leader = industry.leader_price  # lowest price posted last period
     excess_share = _excess_share(industry, config)
     for firm in active:
-        floor = markup_floor(
-            [unit_cost(p.ucs, p.kappa, config.DELTA) for p in firm.plants],
-            [p.capacity for p in firm.plants],
-            config.FLOOR_MARKUP,
-        )
+        unit_costs = [unit_cost(p.ucs, p.kappa, config.DELTA) for p in firm.plants]
+        capacities = [p.capacity for p in firm.plants]
+        if config.LEADER_FOLLOW_FLOOR == "unit_cost":
+            floor = min(unit_costs)
+        elif config.LEADER_FOLLOW_FLOOR == "operating_cost":
+            floor = price_floor(
+                [p.ucs for p in firm.plants], capacities, firm.previous_sales,
+                config.U_MAX, config.OVERTIME_PREMIUM,
+            )
+        else:
+            floor = markup_floor(unit_costs, capacities, config.FLOOR_MARKUP)
         firm.p_normal, firm.p_floor = None, floor  # no anchor; recorded by the collector
         firm.price, firm.at_war = leader_follow_price(
             firm.price, leader, floor, excess_share, len(active) == 1,
-            config.PRICE_CUT, config.LEADER_RISE, config.MONOPOLY_CAP,
+            config.PRICE_CUT, config.LEADER_RISE, config.MONOPOLY_CAP, config.SHORTAGE_RULE,
         )
 
 
