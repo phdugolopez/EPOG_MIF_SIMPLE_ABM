@@ -136,3 +136,12 @@ swap holds with draws.
 \eqfile{borrowing_capacity.py}
 \marketfile{plant_market.py}
 \schedulerpart{investment}{\code{model/scheduler.py}: step 5}
+
+\paragraph{Candidate hurdle rules (analysis of 8 November 2026).} Two switches, off by default,
+change only the hurdle of the profit-rate rule. With \texttt{HURDLE\_PRICE = "regulating"} the
+rule evaluates the best profit rate on offer at the price of production of the regulating
+capital, $p^* = uc^* + \bar r\,\kappa^*$, where $^*$ is the technique in operation with the lowest
+unit cost, instead of at the firm's own price. With \texttt{HURDLE\_TARGET = "rbar"} the hurdle is
+the general rate, $h = \bar r$, so that the rule minimises $uc + \bar r\,\kappa$, the price of
+production at the ruling rate. Both are readings of Okishio's criterion at prices of production;
+the unit-cost rule keeps $h = 0$. Results: \texttt{docs/design/sensitivity-discussion.md}, Part B3.

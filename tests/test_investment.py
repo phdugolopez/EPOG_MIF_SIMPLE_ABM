@@ -4,7 +4,8 @@ import random
 import unittest
 from unittest import mock
 
-from equations.hurdle import best_profit_rate, hurdle
+from equations.hurdle import best_profit_rate, hurdle, hurdle_at_general_rate
+from equations.regulating_price import regulating_price
 from equations.new_technique import CATEGORIES, design_category, draw_design
 from equations.plant_number import plant_number
 from equations.profit_rate_at_price import profit_rate_at_price
@@ -284,6 +285,65 @@ class TestNoBorrowing(unittest.TestCase):
         a.run(120)
         b.run(120)
         self.assertEqual(history_without_labels(a), history_without_labels(b))
+
+
+class TestHurdleAlternatives(unittest.TestCase):
+    """Candidate rules of the analysis (HURDLE_PRICE, HURDLE_TARGET; Part B3 of
+    docs/design/sensitivity-discussion.md). Defaults: "own" and "best"."""
+
+    def test_regulating_price_is_the_price_of_production_of_the_lowest_unit_cost(self):
+        c, d1, d2 = MENU["C"], MENU["D1"], MENU["D2"]
+        p = regulating_price([c.ucs, d1.ucs, d2.ucs], [c.kappa, d1.kappa, d2.kappa], DELTA, 0.16)
+        self.assertAlmostEqual(p, 75.0 + 0.16 * 21_000.0 / 133.0)  # D2: uc 75
+        self.assertIsNone(regulating_price([], [], DELTA, 0.16))
+        # Ties in unit cost go to the lower kappa, whatever the order of the plants.
+        a = regulating_price([70.0, 60.0], [100.0, 200.0], 0.1, 0.05)
+        b = regulating_price([60.0, 70.0], [200.0, 100.0], 0.1, 0.05)
+        self.assertEqual(a, b)
+        self.assertAlmostEqual(a, 80.0 + 0.05 * 100.0)
+
+    def test_profit_rate_rule_at_the_regulating_price_on_shaikh_menu(self):
+        # At p* = 100.26 (D2 at rbar 0.16) D1 has the best rate: the profit-rate rule picks D1.
+        p = 75.0 + 0.16 * 21_000.0 / 133.0
+        self.assertEqual(pick(["C", "D1", "D2"], "profit_rate", price=p), "D1")
+        self.assertEqual(pick(["C", "D1", "D2"], "unit_cost", price=p), "D2")
+
+    def test_general_rate_hurdle(self):
+        self.assertEqual(hurdle_at_general_rate("unit_cost", 0.16), 0.0)
+        self.assertEqual(hurdle_at_general_rate("profit_rate", 0.16), 0.16)
+        with self.assertRaises(ValueError):
+            hurdle_at_general_rate("other", 0.16)
+        # h = rbar minimises the price of production at rbar: D1 at 0.16, D2 at 0.05.
+        menu = [MENU[n] for n in ("C", "D1", "D2")]
+        self.assertEqual(choose_technique(menu, 0.16, DELTA, 0.0).name, "D1")
+        self.assertEqual(choose_technique(menu, 0.05, DELTA, 0.0).name, "D2")
+
+    def test_defaults_leave_the_hurdle_at_the_firms_price(self):
+        industry = Industry(make_config(PERIODS=30))
+        industry.run(30)
+        config = industry.parameters
+        for firm in industry.firms:
+            expected = hurdle(config.HURDLE_RULES[firm.type], firm.price,
+                              firm.known or industry.menu, config.DELTA,
+                              config.HURDLE_FLOOR_AT_ZERO)
+            self.assertEqual(firm.hurdle, expected)
+
+    def test_general_rate_sets_every_profit_rate_firm_at_rbar(self):
+        industry = Industry(make_config(HURDLE_TARGET="rbar", PERIODS=30))
+        industry.run(30)
+        for firm in industry.firms:
+            rule = industry.parameters.HURDLE_RULES[firm.type]
+            self.assertEqual(firm.hurdle, 0.0 if rule == "unit_cost" else industry.parameters.RBAR)
+
+    def test_label_swap_under_each_candidate(self):
+        for overrides in ({"HURDLE_PRICE": "regulating"}, {"HURDLE_TARGET": "rbar"},
+                          {"HURDLE_PRICE": "regulating", "TECH_CHANGE": "innovation_set"},
+                          {"HURDLE_TARGET": "rbar", "PRICING_RULE": "leader_follow"}):
+            a = Industry(make_config(**overrides))
+            b = Industry(swapped_config(**overrides))
+            a.run(80)
+            b.run(80)
+            self.assertEqual(history_without_labels(a), history_without_labels(b), overrides)
 
 
 if __name__ == "__main__":

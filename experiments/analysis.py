@@ -87,8 +87,35 @@ STAGE4 = {
     # the markup on the average unit cost of all plants (old vintages included).
     "lf-re-g01-cat-r16-flooruc": ("lf_floor", dict(LF, LEADER_FOLLOW_FLOOR="unit_cost",
                                                    DEMAND_GROWTH=0.01, RBAR=0.16)),
+    # B2: the finance twin without borrowing (the accelerator alone): no firm borrows in
+    # lf-acd-g01-cat-r16 (debt / sales 0 in all 500 seeds), so the flip should be the
+    # investment rule's.
+    "lf-acc-g01-cat-r16": ("finance", dict(LF, INVESTMENT_RULE="accelerator",
+                                           BORROWING=False, DEMAND_GROWTH=0.01, RBAR=0.16)),
     # B2: the anchor reversal with one anchor for all firms (the leader's target return).
     "anchor_r16-leader": ("anchor_kind", dict(ANCHOR, RBAR=0.16, PRICING_ANCHOR="leader")),
+    # B2: the anchor reversal with the markup anchor (no rbar in the price; it favours the
+    # lowest unit cost by construction, mechanism-briefs.md) and with the accelerator.
+    "anchor_r16-markup": ("anchor_kind", dict(ANCHOR, RBAR=0.16, PRICING_ANCHOR="markup")),
+    "anchor_r16-acc": ("anchor_finance", dict(ANCHOR, RBAR=0.16,
+                                              INVESTMENT_RULE="accelerator")),
+    # B2: lumpiness of investment in the reversal cells (plants of 10 instead of 20).
+    "anchor_r16-ps10": ("plant_size", dict(ANCHOR, RBAR=0.16, PLANT_SIZE=10.0)),
+    "lf-re-g01-cat-r16-ps10": ("plant_size", dict(LF, DEMAND_GROWTH=0.01, RBAR=0.16,
+                                                  PLANT_SIZE=10.0)),
+    # B2: scrapping on operating cost (version 1, Salter's margin) instead of unit cost
+    # (version 2: ucs + delta kappa, which retires capital-heavy plants first in a war).
+    "scrap_ucs": ("scrap_cost", {"SCRAP_COST": "operating_cost"}),
+    "lf-scrapucs": ("scrap_cost", dict(LF, SCRAP_COST="operating_cost")),
+    "lf-flooruc-scrapucs": ("scrap_cost", dict(LF, LEADER_FOLLOW_FLOOR="unit_cost",
+                                               SCRAP_COST="operating_cost")),
+    "is15-scrapucs": ("scrap_cost", dict(IS, TECH_BIAS=1.5, SCRAP_COST="operating_cost")),
+    "anchor_r16-scrapucs": ("scrap_cost", dict(ANCHOR, RBAR=0.16, SCRAP_COST="operating_cost")),
+    "lf-re-g01-cat-r16-scrapucs": ("scrap_cost", dict(LF, DEMAND_GROWTH=0.01, RBAR=0.16,
+                                                      SCRAP_COST="operating_cost")),
+    "lf-re-g01-cat-r16-flooruc-scrapucs": ("scrap_cost", dict(
+        LF, LEADER_FOLLOW_FLOOR="unit_cost", DEMAND_GROWTH=0.01, RBAR=0.16,
+        SCRAP_COST="operating_cost")),
     # B2: the exit floor in the reversal cells (MIN_FIRMS = 2 is the default).
     "lf-re-g01-cat-r16-minf1": ("min_firms", dict(LF, DEMAND_GROWTH=0.01, RBAR=0.16,
                                                   MIN_FIRMS=1)),
@@ -105,6 +132,23 @@ STAGE4 = {
     "is15-tau_010": ("tau", dict(IS, TECH_BIAS=1.5, TAU=0.10)),
     "is15-tau_025": ("tau", dict(IS, TECH_BIAS=1.5, TAU=0.25)),
 }
+
+# Track B3: the candidate rules behind the switches HURDLE_TARGET and HURDLE_PRICE
+# (parameters.py; defaults "best" and "own"), at the base and leader-follow defaults and
+# under the innovation set. Stage "b3"; rows in outputs/analysis/b3/runs.csv, summarised in
+# outputs/analysis/b3/cells.csv (not appended to the sensitivity tables: runs written with
+# the two new parameters have two more columns).
+B3 = {
+    "b3-rbar-base": ("candidate", {"HURDLE_TARGET": "rbar"}),
+    "b3-rbar-lf": ("candidate", dict(LF, HURDLE_TARGET="rbar")),
+    "b3-reg-base": ("candidate", {"HURDLE_PRICE": "regulating"}),
+    "b3-reg-lf": ("candidate", dict(LF, HURDLE_PRICE="regulating")),
+    "b3-rbar-is15": ("candidate", dict(IS, TECH_BIAS=1.5, HURDLE_TARGET="rbar")),
+    "b3-reg-is15": ("candidate", dict(IS, TECH_BIAS=1.5, HURDLE_PRICE="regulating")),
+    "b3-rbar-r16": ("candidate", {"HURDLE_TARGET": "rbar", "RBAR": 0.16}),
+    "b3-reg-r16": ("candidate", {"HURDLE_PRICE": "regulating", "RBAR": 0.16}),
+}
+B3_DIR = OUT / "b3"
 
 POPULATION_ORDER = list(POPULATIONS)  # mixed, then the two controls
 
@@ -288,7 +332,7 @@ def fig_attribution(table: pd.DataFrame, path: Path) -> None:
         ax.scatter(total, y, color="#0b0b0b", s=14, zorder=3, label="sum")
         ax.axvline(0, color="#52514e", linewidth=0.8)
         ax.set_title(f"change in the {title}, t = 0-199", fontsize=9)
-        ax.legend(loc="lower right", fontsize=8)
+        ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.07), ncol=4, fontsize=8)
     axes[0].set_yticks(y)
     axes[0].set_yticklabels([f"{l}  [{s}; {w:.2f}]" for l, s, w in
                              zip(table["label"], table["stage"], table["share_won"])],
@@ -545,6 +589,42 @@ def fig_controls_profit_rate(cells: pd.DataFrame, path: Path) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def fig_finance_twin(dir_re: Path, dir_acd: Path, path: Path, title: str) -> None:
+    """The same seed under retained earnings and under the accelerator with borrowing, side
+    by side: capacity share of the unit-cost label, average price, spending on plants and
+    debt of each label (groups table)."""
+    plt = sens._style()
+    from style import TYPE_STYLE
+    fig, axes = plt.subplots(4, 2, figsize=(11, 9), sharex=True)
+    for col, (folder, name) in enumerate(((dir_re, "retained earnings"),
+                                          (dir_acd, "accelerator with borrowing"))):
+        macro = pd.read_csv(Path(folder) / "macro.csv")
+        groups = pd.read_csv(Path(folder) / "groups.csv")
+        t = macro["t"]
+        cap = macro["capacity_total"].replace(0, np.nan)
+        axes[0, col].plot(t, macro["capacity_shaikh"] / cap, color=TYPE_STYLE["shaikh"]["color"])
+        axes[0, col].set_ylim(-0.02, 1.02)
+        axes[0, col].set_title(name, fontsize=9)
+        axes[1, col].plot(t, macro["price_avg"], color="#52514e")
+        for label in ("shaikh", "okishio"):
+            g = groups[groups["group"] == label].set_index("t")
+            st = TYPE_STYLE[label]
+            axes[2, col].plot(g.index, g["invest_spend"].rolling(5, min_periods=1).mean(),
+                              color=st["color"], linestyle=st["linestyle"], label=label)
+            axes[3, col].plot(g.index, g["debt"], color=st["color"], linestyle=st["linestyle"],
+                              label=label)
+        axes[3, col].set_xlabel("period t")
+    axes[0, 0].set_ylabel("capacity share,\nunit-cost label")
+    axes[1, 0].set_ylabel("average price")
+    axes[2, 0].set_ylabel("spending on plants\n(5-period mean)")
+    axes[3, 0].set_ylabel("debt")
+    axes[2, 0].legend(fontsize=8)
+    fig.suptitle(title, fontsize=9)
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
 def part_a_figures() -> None:
     FIG.mkdir(parents=True, exist_ok=True)
     for name, run_id, title in STORIES:
@@ -560,15 +640,17 @@ def part_a_figures() -> None:
 STAGE4_RUNS = OUT / "stage4_runs.csv"
 
 
-def stage4_tasks(cells: list[str], seeds: int) -> list[tuple]:
+def stage4_tasks(cells: list[str], seeds: int, table: dict | None = None,
+                 stage: str = "4") -> list[tuple]:
+    table = STAGE4 if table is None else table
     tasks = []
     for cell in cells:
-        if cell not in STAGE4:
-            raise SystemExit(f"unknown stage 4 cell {cell}")
-        overrides = STAGE4[cell][1]
+        if cell not in table:
+            raise SystemExit(f"unknown stage {stage} cell {cell}")
+        overrides = table[cell][1]
         for population in POPULATION_ORDER:
             for seed in range(1, seeds + 1):
-                tasks.append(("4", cell, overrides, population, seed))
+                tasks.append((stage, cell, overrides, population, seed))
     return tasks
 
 
@@ -589,13 +671,18 @@ def append_rows(rows: list[dict], path: Path = STAGE4_RUNS) -> None:
 
 
 def grid4(cells: list[str], seeds: int, jobs: int, budget: float, batch: int = 48,
-          path: Path | None = None) -> int:
-    """Run what is missing of the named stage 4 cells, batch by batch, until the budget is
-    spent. Returns the number of runs still missing."""
-    path = path or STAGE4_RUNS
+          path: Path | None = None, b3: bool = False) -> int:
+    """Run what is missing of the named stage 4 cells (with b3, the candidate cells of B3,
+    stage "b3", into B3_DIR/runs.csv), batch by batch, until the budget is spent. Returns
+    the number of runs still missing."""
+    if b3:
+        path = path or B3_DIR / "runs.csv"
+        all_tasks = stage4_tasks(cells, seeds, B3, "b3")
+    else:
+        path = path or STAGE4_RUNS
+        all_tasks = stage4_tasks(cells, seeds)
     done = done_ids(path)
-    tasks = [t for t in stage4_tasks(cells, seeds)
-             if run.make_run_id(t[0], t[1], t[3], t[4]) not in done]
+    tasks = [t for t in all_tasks if run.make_run_id(t[0], t[1], t[3], t[4]) not in done]
     start = time.perf_counter()
     version = run.code_version()
     pool = Pool(jobs, initializer=sens._init_worker, initargs=(version,)) if jobs > 1 else None
@@ -620,7 +707,10 @@ def merge4(path: Path | None = None, sens_out: Path | None = None) -> None:
     runs.parquet and cells.csv. Refuses if runs.csv already has stage 4 rows."""
     path = path or STAGE4_RUNS
     sens_out = sens_out or SENS
-    new = pd.read_csv(path, dtype={"stage": str, "plant_life": object}, low_memory=False)
+    # round_trip: the default float parser is not exact on every platform (x86_64 loses
+    # the last digit of some values), and the rows must survive the copy bit for bit.
+    new = pd.read_csv(path, dtype={"stage": str, "plant_life": object}, low_memory=False,
+                      float_precision="round_trip")
     done = sens.finished_cells(sens_out)
     if any(s == "4" for s, _ in done):
         raise SystemExit("runs.csv already has stage 4 rows")
@@ -670,7 +760,9 @@ def main(argv=None) -> None:
     p.add_argument("--seeds", type=int, required=True)
     p.add_argument("--jobs", type=int, default=4)
     p.add_argument("--budget", type=float, default=150.0)
+    p.add_argument("--b3", action="store_true", help="the candidate cells of B3")
     sub.add_parser("merge")
+    sub.add_parser("b3summary")
     sub.add_parser("figures")
     args = parser.parse_args(argv)
     if args.command == "b1":
@@ -680,24 +772,96 @@ def main(argv=None) -> None:
     elif args.command == "story":
         print(story(Path(args.run_dir), args.name))
     elif args.command == "grid":
-        missing = grid4(args.cells, args.seeds, args.jobs, args.budget)
+        missing = grid4(args.cells, args.seeds, args.jobs, args.budget, b3=args.b3)
         print(f"missing {missing}")
     elif args.command == "merge":
         merge4()
+    elif args.command == "b3summary":
+        runs = sens.load_runs(B3_DIR)
+        print(sens.summarise(B3_DIR, runs)[["cell", "population", "n_seeds", "share_won",
+                                             "won_low", "won_high"]].to_string(index=False))
     elif args.command == "figures":
         figures()
 
 
+STAGE4_LABELS = [
+    ("2", "rc-re-g01-cat-r16", "rc-re-g01-cat-r16 [stage 2, 100 seeds]"),
+    ("4", "rc-re-g01-cat-r16", "rc-re-g01-cat-r16 [stage 4, 500 seeds]"),
+    ("1", "anchor_r16", "anchor, rbar 0.16 (own anchors)"),
+    ("4", "anchor_r16-leader", "anchor, rbar 0.16, one common anchor"),
+    ("4", "anchor_r16-markup", "anchor, rbar 0.16, markup anchor"),
+    ("4", "anchor_r16-acc", "anchor, rbar 0.16, accelerator"),
+    ("4", "anchor_r16-minf1", "anchor, rbar 0.16, MIN_FIRMS = 1"),
+    ("4", "anchor_r16-ps10", "anchor, rbar 0.16, plants of 10"),
+    ("4", "anchor_r16-scrapucs", "anchor, rbar 0.16, scrapping on operating cost"),
+    ("3", "lf-re-g01-cat-r16", "lf-re-g01-cat-r16 (markup floor)"),
+    ("4", "lf-re-g01-cat-r16-flooruc", "lf-re-g01-cat-r16, unit-cost floor"),
+    ("4", "lf-re-g01-cat-r16-flooruc-scrapucs", "  same, scrapping on operating cost"),
+    ("4", "lf-re-g01-cat-r16-scrapucs", "lf-re-g01-cat-r16, scrapping on operating cost"),
+    ("4", "lf-re-g01-cat-r16-ps10", "lf-re-g01-cat-r16, plants of 10"),
+    ("4", "lf-re-g01-cat-r16-minf1", "lf-re-g01-cat-r16, MIN_FIRMS = 1"),
+    ("3", "base", "base (scrapping on unit cost)"),
+    ("4", "scrap_ucs", "base, scrapping on operating cost"),
+    ("3", "lf", "lf (scrapping on unit cost)"),
+    ("4", "lf-scrapucs", "lf, scrapping on operating cost"),
+    ("1", "lf_floor_uc", "lf, unit-cost floor (scrapping on unit cost)"),
+    ("4", "lf-flooruc-scrapucs", "lf, unit-cost floor, scrapping on operating cost"),
+    ("1", "is_marx_15", "marx 1.5 (scrapping on unit cost)"),
+    ("4", "is15-scrapucs", "marx 1.5, scrapping on operating cost"),
+    ("4", "lf-acc-g01-cat-r16", "lf, accelerator without borrowing"),
+    ("3", "lf-acd-g01-cat-r16", "lf, accelerator with borrowing"),
+    ("4", "rc-acd-chi025", "rc, accelerator + borrowing, CHI 0.25"),
+    ("4", "rc-acd-chi05", "rc, accelerator + borrowing, CHI 0.5"),
+    ("4", "lf-acd-chi025", "lf, accelerator + borrowing, CHI 0.25"),
+    ("4", "lf-acd-chi05", "lf, accelerator + borrowing, CHI 0.5"),
+    ("4", "tau_005", "tau 0.05 (categories)"),
+    ("4", "tau_010", "tau 0.10 (categories)"),
+    ("4", "tau_015", "tau 0.15 (categories)"),
+    ("1", "tau_025", "tau 0.25 (categories)"),
+    ("4", "is15-tau_010", "tau 0.10 (marx 1.5)"),
+    ("4", "is15-tau_025", "tau 0.25 (marx 1.5)"),
+]
+B3_LABELS = [
+    ("3", "base", "base: current rule"), ("b3", "b3-rbar-base", "base: h = rbar"),
+    ("b3", "b3-reg-base", "base: regulating price"),
+    ("3", "lf", "lf: current rule"), ("b3", "b3-rbar-lf", "lf: h = rbar"),
+    ("b3", "b3-reg-lf", "lf: regulating price"),
+    ("1", "is_marx_15", "marx 1.5: current rule"), ("b3", "b3-rbar-is15", "marx 1.5: h = rbar"),
+    ("b3", "b3-reg-is15", "marx 1.5: regulating price"),
+    ("1", "rbar_16", "rbar 0.16: current rule"), ("b3", "b3-rbar-r16", "rbar 0.16: h = rbar"),
+    ("b3", "b3-reg-r16", "rbar 0.16: regulating price"),
+]
+
+
 def figures() -> None:
-    """Figures that read cells.csv after the stage 4 merge."""
+    """Figures of Part B that read cells.csv after the stage 4 merge (and the B3 cells)."""
     cells = load_cells()
-    anchors = [("1", "anchor_r05", "rbar 0.05")] + [
-        ("4", f"anchor_r{r}", f"rbar 0.{r}") for r in ("08", "10", "12", "14")
-    ] + [("1", "anchor_r16", "rbar 0.16")]
+    if (B3_DIR / "cells.csv").exists():
+        cells = pd.concat([cells, pd.read_csv(B3_DIR / "cells.csv", dtype={"stage": str},
+                                              low_memory=False)], ignore_index=True)
+    anchors = [("1", "anchor_r05", "rbar 0.05 [stage 1]")] + [
+        ("4", f"anchor_r{r}", f"rbar 0.{r} [stage 4]") for r in ("08", "10", "12", "14")
+    ] + [("1", "anchor_r16", "rbar 0.16 [stage 1]")]
     fig_summary(cells, anchors, FIG / "B2_1_anchor_threshold.png",
                 "Figure B2.1. Anchor pricing (version 1): share won by the unit-cost label "
-                "against rbar\nmixed population, seeds 1-200; grey band: the controls' "
-                "intervals")
+                "against rbar\nmixed population, seeds 1-200 (rbar 0.10 and 0.12: 1-500); grey "
+                "band: the controls' intervals")
+    fig_summary(cells, STAGE4_LABELS, FIG / "B2_2_stage4_cells.png",
+                "Figure B2.2. Stage 4 cells next to their references: share won by the "
+                "unit-cost label\nmixed population; grey band: the controls' intervals; "
+                "grey dot: not beyond drift")
+    fig_summary(cells, B3_LABELS, FIG / "B3_1_candidates.png",
+                "Figure B3.1. Candidate rules for the profit-rate hurdle (B3) next to the "
+                "current rule\nmixed population, seeds 1-200 (references: stage 3, 1-500, or "
+                "stage 1, 1-200); grey band: the controls' intervals")
+    att = attribution_table(cells)
+    fig_attribution(att, FIG / "B1_2_attribution.png")
+    re_dir = SENS / "reruns" / "3_lf-re-g01-cat-r16_mixed_s1"
+    acd_dir = SENS / "reruns" / "3_lf-acd-g01-cat-r16_mixed_s1"
+    if (re_dir / "groups.csv").exists() and (acd_dir / "groups.csv").exists():
+        fig_finance_twin(re_dir, acd_dir, FIG / "B1_7_finance_twin_s1.png",
+                         "Figure B1.7. Finance twin, seed 1: lf-re-g01-cat-r16 (left) against "
+                         "lf-acd-g01-cat-r16 (right), mixed population")
 
 
 if __name__ == "__main__":

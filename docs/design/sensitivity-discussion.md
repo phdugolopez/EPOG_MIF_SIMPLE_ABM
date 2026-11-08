@@ -23,10 +23,20 @@ the appendix; a claim about a text I could not open is marked *(from memory, not
 floats to compensated summation, so on Python 3.10 a rerun of `1_base_mixed_s4` diverges
 in 36 observables (checked on 8 November; on 3.13 it reproduces the row exactly). CI runs
 3.11; `requirements.txt` should pin `python_requires >= 3.12` or the README should say so
-(proposed row in section 4). The stage 4 rows of this session were computed on Linux
+(proposed row in section 4). A second, smaller trap: pandas' default CSV float parser is not exact on
+every platform (on x86_64 it loses the last digit of some values, on the Mac it does not),
+so `experiments.sensitivity.load_runs` now reads with `float_precision="round_trip"`. The stage 4 rows of this session were computed on Linux
 (Python 3.13.18); of five stage 1–3 rows checked on that machine, four reproduce exactly
 and one (`1_is_neutral_mixed_s7`) differs by 2.2e-16 in one summary observable
 (`ucs_spread_mean`), the trajectory being identical.
+
+**Session note.** The connection to the Mac dropped at about 01:30 UTC, after the Part A
+commit and after the B3 candidate runs had been written on the Mac, and came back at 04:40
+UTC. In between, stage 4 (B2) was computed in the session's container (Linux, x86_64) on the
+model code of `55a8d9e`, which the candidate switches do not change at their defaults, and
+the B3 cells were run a second time there. Back on the Mac's VM, four stage 4 rows
+(`4_anchor_r10_mixed_s3`, `4_lf-acc-g01-cat-r16_mixed_s5`, `4_is15-tau_010_mixed_s2`) and
+`1_base_mixed_s4` were rerun after the merge: all reproduce their rows exactly.
 
 ---
 
@@ -41,13 +51,13 @@ meet or fail. Observables are those of `sensitivity-plan.md`, section 3.
 
 | # | Claim | Who, where | Observable(s) | What the results say | Verdict |
 |---|---|---|---|---|---|
-| 1 | In real competition the lowest-cost capitals are the price leaders; followers' margins are residuals; the lowest-cost condition has the highest *sustainable* profit rate under price cutting, so the lowest-unit-cost technique displaces a rival even when it earns less at the going price (D2 against C at $100) | Shaikh 2016, Table 7.3 rows 1–5 (p. 271); pp. 313–317 (Tables 7.10–7.12, eq. 7.11, fig. 7.22) | share won; `leader_lowest_cost_share`; `d_share_price_all`; `price_to_pp` | `base` [3, mixed, 1–500] 0.81 (0.77–0.84) against 0.48 / 0.50; the leader is the lowest-cost firm in 0.94 of periods; price term of the sales share +0.25; 86 of 120 factorial cells beyond drift, all for the unit-cost rule | **Met**, except in two corners (A.7) |
+| 1 | In real competition the lowest-cost capitals are the price leaders; followers' margins are residuals; the lowest-cost condition has the highest *sustainable* profit rate under price cutting, so the lowest-unit-cost technique displaces a rival even when it earns less at the going price (D2 against C at $100) | Shaikh 2016, Table 7.3 rows 1–5 (p. 271); pp. 313–317 (Tables 7.10–7.12, eq. 7.11, fig. 7.22) | share won; `leader_lowest_cost_share`; `d_share_price_all`; `price_to_pp` | `base` [3, mixed, 1–500] 0.81 (0.77–0.84) against 0.48 / 0.50; the leader is the lowest-cost firm in 0.94 of periods; price term of the sales share +0.25; 86 of 120 factorial cells beyond drift, all for the unit-cost rule | **Met**, except in two corners (A.7); but with the version 1 scrapping test (operating cost) the base advantage vanishes (0.55, B2) |
 | 2 | Under real competition a capital-using, cost-reducing technique spreads by price cutting and the rate of profit falls even at a given real wage; under the profit-rate criterion it falls only at high wage shares | Shaikh 2016, p. 261; pp. 317–321 (Alternative 2: general rate 16 % → 15.2 %); Michl 2023, pp. 47–48 | `marx_biased_*`; `profit_rate_total` of the two controls | Spreads: realised change is Marx-biased for the unit-cost label in 0.84 of `base` seeds. Rate: an industry where every firm uses the unit-cost rule realises a lower profit rate than one where every firm uses the profit-rate rule (`is_marx_15` [1, controls, 1–200]: 8.5 % against 10.9 %), at similar prices (A.6) | **Met at industry level**; the economy-wide claim is **not testable** (rbar exogenous) |
 | 3 | After a cost-cutter takes over, the price first falls, then rises to the new regulating price of production (D2: back up to $101.30) | Shaikh 2016, p. 316 | `price_rise_after_adoption`; `price_to_pp`; figure 5 | Real competition: the price at t = 199 exceeds that at t = 100 in 0.17–0.31 of seeds (innovation set, marx 0.5 to 3) and ends 10–20 % above the price of production; leader-follow: at most 0.06, ending below it (0.85–0.93) | **Met under real competition only** |
 | 4 | A technique that raises the profit rate at current prices cannot lower the general rate once new prices of production settle, at a constant real wage (Okishio's theorem) | Okishio 1961 *(not in the library)*, as stated in Shaikh 2016, p. 320; Shaikh 1978, pp. 241–242; Roemer 1979, p. 379; Duménil & Lévy 2005, p. 209 | `profit_rate_okishio` against `profit_rate_shaikh`; controls' `profit_rate_total` | The theorem is about the general rate: **not testable here**, since rbar is a parameter and the money wage is the numéraire (the constant real wage holds by construction, the general rate does not respond). Its micro premise, that the adopter earns the higher rate, fails: `base` 4.5 % (profit-rate label) against 8.4 % | **Not testable**; premise **failed** |
 | 5 | A technique that does not pass the profit-rate test is never adopted by a rational capitalist; a higher-cost method can dominate if it has the lower price of production (Sraffa's criterion) | Shaikh 2016, p. 320 n. 36 and p. 322 (stating the standard view); Roemer 1979, p. 379 | `conflict_adopted_shaikh`; `okishio_dearer`; share won | The unit-cost firms adopt every conflict-zone design (`conflict_adopted_shaikh` 1.0) and they are the ones selected; the profit-rate firms' refusals and dearer orders go with losing (`okishio_dearer` 0.49 in seeds the unit-cost rule wins, 0.17 where it loses, stage 2) | **Failed** as a statement about who survives |
 | 6 | The two criteria conflict only when technical change is Marx-biased (capital-using, labour-saving) and when the rule is evaluated at prices that the adoption will change; the profit-rate criterion is the right one if prices do not fall after adoption | Duménil & Lévy 2005, p. 209; Michl 2023, pp. 47–48; Shaikh 2016, pp. 323–324 | zone shares; `marx_biased_*`, `gamma_*`, `chi_*`; `no_tech`; the neutral set; anchor cells | Fixed menu: drift (0.51). Neutral set: conflict share 0.04, share won 0.78. Anchor pricing (prices held at each firm's target return) at rbar 0.16: the profit-rate rule wins (0.26) | **Met** |
-| 7 | Selection on realised profitability drives accumulation, selection on price drives market share; the balance depends on finance and on the intensity of selection | Nelson & Winter 1982, pp. 17, 19; Duménil & Lévy 1995, p. 217; Metcalfe 1998 *(not in the library)* | `d_share_accum_all` against `d_share_price_all`; the finance arm; CHI | The price term is the larger in 93 % of cells; accumulation decides only with self-finance, growing demand and no entry, where finance flips the winner (`lf-re-g01-cat-r16` 0.32 → 0.85 with the accelerator and borrowing [3, mixed, 1–500]); CHI 0.25–4 moves nothing (0.71–0.79) | **Met for finance; not for selection intensity** (A.8) |
+| 7 | Selection on realised profitability drives accumulation, selection on price drives market share; the balance depends on finance and on the intensity of selection | Nelson & Winter 1982, pp. 17, 19; Duménil & Lévy 1995, p. 217; Metcalfe 1998 *(not in the library)* | `d_share_accum_all` against `d_share_price_all`; the finance arm; CHI | The price term is the larger in 93 % of cells; accumulation decides only with self-finance, growing demand and no entry, where the investment rule flips the winner (`lf-re-g01-cat-r16` 0.32 → 0.85 with the accelerator [3, mixed, 1–500]; no seed borrows); CHI 0.25–4 moves nothing (0.71–0.79) | **Met for the investment rule; not for selection intensity** (A.8) |
 | 8 | Selection is weak in the data: relative productivity explains little of firm growth, and survival turns on profitability and demand more than on physical productivity | Dosi et al. 2015 (abstract, introduction); Foster, Haltiwanger & Syverson 2008, pp. 394, 397 | CHI 0.25 cells | χ = 0.25 delays takeovers (mean `takeover_t` 174 against 117) without changing the winner (0.71 [1, mixed, 1–200]) | Not a test of the data; **the briefs' χ trap does not spring** |
 | 9 | Vintages coexist; old plants run until their operating cost reaches the total cost of best practice (normal return included), so the vintage spread and the replacement margin set the pace of diffusion | Salter 1966, pp. 56–57, 64–65, 84–85 | `ucs_spread_mean`; `capital_age_*`; `replacements_*` | Spread: 1.23 (`base`); replacements ≈ 0 everywhere at the defaults; capital ages equal in `base` (14.0 / 13.9) but 32.6 against 22.7 for the losing unit-cost label in `lf-re-g01-cat-r16` | **Partly met**; the replacement margin is never reached |
 | 10 | Entry equalises the profit rate on new investment in the regulating capitals across industries, and is how the winning practice spreads | Shaikh 2016, pp. 265, 296 (citing Botwinick 1993, ch. 5, *not in the library*) | `entries`, `d_share_entry_all`, `r_new_mean`, `periods_above_rbar`; rbar 0.16 cells | rbar 0.05: `r_new_mean` 0.054 against rbar 0.05, the industry rate above rbar in 95 of 100 periods, entrants inherit the majority rule; rbar 0.16: the rate is above rbar in 0.3–2.3 of 100 periods, entry stops, and both reversals live there | **Met at rbar 0.05**; at 0.16 the carrier is shut |
@@ -293,14 +303,24 @@ ruling rate, Shaikh 2016, p. 320 n. 36), and it is the profit-rate rule's criter
 = r̄. In other words the anchor rule builds the Okishio criterion into the price, which is
 the situation Duménil and Lévy (2005, p. 209) and Okishio's theorem presuppose: prices of
 production prevail. Shaikh's answer to that situation (p. 321) is that actual choices are
-made at actual and projected market prices, which differ from prices of production. **The
-reversal is the briefs' trap sprung, not a refutation of Shaikh.** The model adds the
-mechanism by which it works (B1): with every firm anchored on its own uc + 0.16 κ, the
-capital-heavy unit-cost firm posts the higher normal price, loses share, earns little
-(2.2 % in `1_anchor_r16_mixed_s3` over t = 100–199, against 8.7 %), cannot finance new
-plants out of retained earnings, keeps old plants, and its capacity is retired when a war
-drives the price below their unit cost; no entrant comes in at rbar 0.16 to carry the
-unit-cost rule, and the minimum of two firms keeps a duopoly.
+made at actual and projected market prices, which differ from prices of production. That
+was the first reading, written before Part B. **Part B refutes it: the trap is not what
+reverses the outcome.** With one anchor for all firms (the leader's target-return price)
+the profit-rate rule still wins (0.32), with the *markup* anchor, which favours the lowest
+unit cost by construction, it still wins (0.27), and with the accelerator instead of
+retained earnings the reversal disappears (0.47, at drift); the reversal sets in between
+rbar 0.08 and 0.10, as entry closes (B2). What the anchor runs show (B1) is a closed industry in which
+growth is financed out of profits: no entrant arrives (the realised rate on new plants,
+5–7 %, never reaches 16 %), the unit-cost firm piles up capital-intensive designs
+(capital per unit 160 → 233 → 359 over t = 1–25, 26–75, 76–125 in `1_anchor_r16_mixed_s3`,
+against 149 → 167 → 204), so that each unit of retained profit buys it ever less capacity
+(capacity added = retained profit / κ of the new plant), its old plants are retired in a
+war, and the minimum of two firms keeps a duopoly. Smaller plants make the reversal
+stronger, not weaker (0.08 with plants of 10, B2): it is capital per unit, not the
+indivisibility of plants, that slows the unit-cost firm. And the retirement in wars is the
+decisive step: with the version 1 scrapping test (operating cost, Salter's margin) the same
+cell gives the unit-cost rule 0.90 (B2). **The first reversal is a property of the version 2
+scrapping test in a closed industry, not of real competition against Okishio.**
 
 *Example: `1_anchor_r16_mixed_s3` (figure A5).* First dearer order at t = 1 (17 in all);
 the unit-cost label holds 0.54 of capacity at t = 50 and 0.42 at t = 100; four exits, all
@@ -323,15 +343,17 @@ growth, in the one corner where it can work: demand grows, so capacity rather th
 is the constraint; investment is self-financed, so capacity grows with retained profits,
 and at a common price the technique with the higher profit rate yields more capacity per
 unit of profit (units = retained earnings / κ); no entrant arrives at rbar 0.16 to carry the
-other rule; and the leader-follow floor (1.2 × the average unit cost of *all* the firm's
-plants) lets a firm with older plants post a higher price, so the firm that stops
-investing also loses on price. Under the accelerator with borrowing, investment follows
-sales instead of profits, and sales follow price: the price channel drives accumulation and
-the unit-cost rule wins. **The finance rule decides the contest here, which is the second
-half of the research question.** It does not contradict Shaikh, whose price-cutting
-argument needs a firm that can expand capacity to take the market (p. 314: the
-cost-cutter "makes room for itself"); with retained earnings and low margins the unit-cost
-firm cannot.
+other rule; and under the categories rule the unit-cost firms build every conflict-zone
+design, whose unit-cost saving is small and whose extra capital is large, while leader-follow
+pricing does not reward a small cost edge (every firm cuts to its floor whenever capacity
+is not short). Under the accelerator, investment follows sales instead of profits, and
+sales follow price: the price channel drives accumulation and the unit-cost rule wins.
+**The investment rule decides the contest here, which is the second half of the research
+question; Part B adds that borrowing plays no part in it** (not one of the 500 seeds of the
+twin carries debt: the accelerator is financed out of cash). It does not contradict
+Shaikh, whose price-cutting argument needs a firm that can expand capacity to take the
+market (p. 314: the cost-cutter "makes room for itself"); with retained earnings, thin
+margins and capital-heavy plants the unit-cost firm cannot.
 
 *Example: `3_lf-re-g01-cat-r16_mixed_s1` against `3_lf-acd-g01-cat-r16_mixed_s1`
 (figures A6, A7; same seed).* Retained earnings: 5 dearer orders, all before t = 13; the
@@ -468,10 +490,412 @@ technical-change rule as the model's core assumption, with `no_tech` as the null
 
 ## 3. Part B: going further
 
-*(Part B is written in the second commit.)*
+What was run, in one table (all with both neutral controls over the same seeds; tables in
+`outputs/analysis/`, stage 4 rows appended to `runs.csv` and `cells.csv` with stage = 4,
+candidate rows in `outputs/analysis/b3/`):
+
+| Track | Item | Seeds | Done |
+|---|---|---|---|
+| B1 | Regression of the realised gap and of `shaikh_wins` (stage 2, 17 585 seeds) | existing | yes |
+| B1 | Whole-run attribution for the cells of section 6 (figure B1.2) | existing | yes |
+| B1 | Anchor reversal: reruns of seeds 3, 4, 5 of `anchor_r16` and seed 3 of `anchor_r05` | reruns | yes |
+| B1 | Finance twin side by side, seed 1 (figure B1.7) | reruns | yes |
+| B1 | Takeover timing (figure B1.3, `b1_takeover.csv`) | existing | yes |
+| B2 | `rc-re-g01-cat-r16` | 1–500 | yes |
+| B2 | Anchor threshold: rbar 0.08, 0.10, 0.12, 0.14 (0.05 and 0.16 from stage 1) | 1–200 (0.10, 0.12: 1–500) | yes |
+| B2 | Added by Part A: the leader-follow reversal with the best plant's unit cost as floor; with `MIN_FIRMS` = 1; with the accelerator without borrowing. The anchor reversal with one common anchor, with the markup anchor, with the accelerator, with `MIN_FIRMS` = 1 | 1–200 | yes |
+| B2 | Finance × CHI: accelerator with borrowing, CHI 0.25 and 0.5, both pricing rules | 1–200 | yes |
+| B2 | TAU sweep: 0.05, 0.10, 0.15 (categories), 0.10, 0.25 (marx 1.5) | 1–200 | yes |
+| B2 | Added after the first B2 results: plant size 10 and scrapping on operating cost in the reversal cells; scrapping on operating cost at the defaults | 1–200 | yes |
+| B3 | Two candidate rules behind new switches, at the base, leader-follow, rbar 0.16 and marx 1.5 cells | 1–200 | yes |
+
+Seeds were cut from the prompt's 500 to 200 for the B2 cells other than the real-competition
+twin (later also `anchor_r10`, `anchor_r12` and `scrap_ucs` were taken to 500), as section 6 of the prompt allows: the machine had 4 + 2 cores, not 10 (measured: 17
+runs a second on the 4-core machine, 6 on the 2-core one).
+
+### B1. The mechanism, on existing data
+
+**The realised profit-rate gap (open question 2).** OLS over the 17 585 decided mixed seeds
+of stage 2 with cell fixed effects, standard errors clustered by the 176 cells
+(`b1_regression.csv`):
+
+| Outcome | Specification | `okishio_dearer` | `price_to_pp` | `hhi_mean` | `n_firms_mean` | `war_episodes` | `shaikh_wins` | within R² |
+|---|---|---|---|---|---|---|---|---|
+| gap | mechanism | **0.075** (0.060, 0.091) | 0.010 (0.003, 0.017) | 0.013 (−0.005, 0.031) | 0.000 (−0.001, 0.001) | 0.0011 (0.0006, 0.0016) | | 0.08 |
+| gap | + winner | **0.051** (0.038, 0.065) | 0.011 (0.004, 0.017) | 0.017 (0.002, 0.032) | 0.000 | 0.0011 (0.0007, 0.0016) | **0.038** (0.029, 0.047) | 0.15 |
+| gap | prompt's list (+ decomposition) | 0.016 (0.004, 0.029) | 0.011 (0.005, 0.018) | 0.007 (−0.007, 0.020) | 0.000 | 0.0009 (0.0004, 0.0014) | | 0.24 |
+| `shaikh_wins` | mechanism | **0.635** (0.558, 0.713) | −0.013 (−0.023, −0.004) | −0.098 (−0.237, 0.041) | −0.001 | −0.0006 | | 0.09 |
+
+(gap = realised profit rate of the unit-cost label minus that of the profit-rate label over
+t = 100–199; in the prompt's list `d_share_price_all` and `d_share_accum_all` enter with
+0.068 and 0.057: they are parts of the outcome, which is why the second line is the one to
+read.) Figure B1.1 plots the gap against `okishio_dearer` with a pooled line for each pricing
+rule.
+
+Reading. Among seeds of the same cell *and with the same winner*, every 0.1 more of dearer
+orders by the profit-rate firms widens the gap by half a point of profit rate: **Shaikh's
+hypothesis holds within cells**. The winner has its own premium of 3.8 points, and
+concentration adds a little (HHI coefficient 0.017): **the market-structure hypothesis
+holds too, as a separate premium**. The number of firms adds nothing once HHI is in. The
+share of dearer orders is also the strongest within-cell predictor of who wins (a 0.18
+standard deviation raises the unit-cost rule's chance by 0.11).
+
+**Whole-run attribution** (figure B1.2, `b1_attribution.csv`). The cells of section 6 split
+into three groups. *Price, then exits*: `base`, `is_marx_15` (capacity +0.28 and +0.32 through
+the exits of profit-rate firms; sales +0.25 and +0.27 through prices). *Accumulation for the
+unit-cost rule*: `lf` (+0.09), the leader-follow twin with the accelerator (+0.31), the
+operating-cost floor (+0.32) and `anchor_r05` (+0.20). *Accumulation against it*:
+`anchor_r16` (−0.21), `lf-re-g01-cat-r16` (−0.18), `rc-re-g01-cat-r16` (−0.20 at 100 seeds).
+Entry terms are small everywhere (−0.06 to +0.03): entrants copy the majority, so they move
+little share between labels.
+
+**The anchor reversal** (figures A5, B1.4–B1.6; reruns of `1_anchor_r16_mixed_s3`, `_s4`,
+`_s5` and `1_anchor_r05_mixed_s3`).
+
+- *When the anchor sets the price.* Wars cover 114, 171 and 131 of the 200 periods in the
+  three rbar 0.16 seeds; between wars a firm moves toward its own target-return price within
+  2.5 % of the leader. Posted prices are nearly equal for the two labels (t = 1–25: 84.1
+  against 84.6 in seed 3), but the anchors part: the unit-cost firm's own uc + 0.16 κ rises
+  (100.5, 106.5, 122.2 over t = 1–25, 26–75, 76–125) while the profit-rate firm's falls
+  (99.3, 96.3, 95.8), so in every pause the unit-cost firm sits at the top of the band.
+- *Which technique each rule orders.* From t = 1–5 the profit-rate firms order D1 and the
+  designs drawn from it (seed 3: D1 at t = 1, T2, D1, T7); the unit-cost firms order every
+  design (T3, T5, T6, T9 ...), including the conflict-zone ones, whose capital per unit
+  climbs from 160 to 359. The two labels reach almost the same unit cost (74.8 against 75.5,
+  then 64.7 against 63.2): the extra capital buys the unit-cost firm almost no cost edge.
+- *The unit-cost firm's margin.* Its margin per unit is about the profit-rate firm's (9.2
+  against 9.1 over t = 1–25), but over a capital twice as large late in the run its rate
+  falls (7.3 % against 9.1 % over t = 76–125 in seed 3; −0.67 margin and 5.9 % in seed 5,
+  where the price falls below its average unit cost). With capital per unit rising faster
+  than its profit, each unit of retained profit buys it less capacity than its rival's;
+  obsolescence then retires its old plants in a war (126–128 in seed 3, 131–133 in seed 4,
+  77–79 in seed 5: 12, 9 and 6 plants retired with the price below their unit cost for two
+  periods).
+- *Why entry stops.* The realised rate on plants built in the last five periods averages
+  5.3 %, 7.2 % and 6.9 %, against rbar = 16 %: the entry probability is zero in 200, 199 and
+  197 of the 200 periods. At rbar 0.05 (seed 3, figure B1.6) the same rate (4.2 %) is above
+  rbar often enough for entry in 75 periods, 59 of 61 entrants inherit the unit-cost rule,
+  and the profit-rate label has no capacity left after t ≈ 26.
+
+**The finance twin** (figure B1.7, seed 1 under retained earnings and under the accelerator
+with borrowing). Under retained earnings the two labels spend alike until t ≈ 100, then the
+profit-rate label's spending grows without bound (it reinvests every profit into a growing
+market) while the unit-cost label's stops at t ≈ 145; the price falls every period (98 →
+48). Under the accelerator the profit-rate label spends almost nothing (10 orders in 200
+periods: it loses sales, so it needs no capacity), the unit-cost label spends in bursts
+after shortages, and the price climbs back to 103–118. **Debt is zero in both** (at most
+6e-11): not one of the 500 seeds of `lf-acd-g01-cat-r16` has a debt-to-sales ratio above
+1e-6, against 0.83–0.95 of seeds under real competition with borrowing, where about 1.9
+firms go bankrupt per run. What changes for the profit-rate firms is therefore not
+borrowing but the volume rule: under the accelerator they stop investing when they stop
+selling. The B2 cell without borrowing confirms it: `lf-acc-g01-cat-r16` [4, mixed, 1–200]
+0.84 (0.79–0.89), controls 0.54 / 0.50, the same as the twin with borrowing.
+
+**Takeover timing** (figure B1.3, `b1_takeover.csv`). Share of seeds with a takeover, share
+of takeovers before t = 100, median `takeover_t`: `base` [3, 1–500] 0.88, 0.44, 107; `lf`
+[3, 1–500] 0.92, 0.30, 114; `is_marx_15` [1, 1–200] 0.53, 0.18, 139; `anchor_r16` 0.94, 0.21,
+127; `lf-re-g01-cat-r16` [3, 1–500] 0.99, **0.75**, 82; `lf-acd-g01-cat-r16` 0.84, **0.85**,
+78; `rc-acd-g01-cat-r16` [2, 1–100] 0.25, 0.80, 70. In the cells that decide the finance
+question most takeovers are over before the window opens, so the window statistics (prices,
+profit rates, `d_share_*` without `_all`) describe the industry *after* selection, not the
+selection itself. Use the `_all` terms for attribution, and read window profit rates as the
+winners' and losers' rates in the industry the takeover left behind.
+
+### B2. More cells
+
+| Cell [4, mixed, seeds] | Share won (95 %) | Controls (uc / pr) | Beyond drift | Reading |
+|---|---|---|---|---|
+| `rc-re-g01-cat-r16` (1–500) | 0.43 (0.39–0.47) | 0.49 / 0.49 | **no** | the real-competition twin is *not* a reversal: 0.32 at 100 seeds was a draw from the tail |
+| `anchor_r08` (1–200) | 0.55 (0.47–0.62) | 0.53 / 0.51 | no | |
+| `anchor_r10` (1–500) | **0.31** (0.27–0.35) | 0.49 / 0.53 | yes, profit-rate rule | 0.33 at 200 seeds |
+| `anchor_r12` (1–500) | 0.46 (0.41–0.51) | 0.50 / 0.48 | no | the dip is confirmed at 500 seeds |
+| `anchor_r14` | **0.30** (0.24–0.36) | 0.50 / 0.52 | yes, profit-rate rule | |
+| `anchor_r16-leader` (one anchor for all) | **0.32** (0.26–0.39) | 0.49 / 0.54 | yes, profit-rate rule | the reversal does not need each firm's own anchor |
+| `anchor_r16-markup` (markup anchor) | **0.27** (0.21–0.34), 17 undecided | 0.52 / 0.52 | yes, profit-rate rule | an anchor that favours the lowest unit cost by construction does not undo it |
+| `anchor_r16-acc` (accelerator) | 0.47 (0.40–0.54) | 0.54 / 0.55 | no | the accelerator removes the reversal |
+| `anchor_r16-minf1` (`MIN_FIRMS` = 1) | 0.25 (0.20–0.32) | 0.55 / 0.51 | yes, profit-rate rule | the floor of two firms is not the cause |
+| `lf-re-g01-cat-r16-flooruc` (unit-cost floor) | **0.045** (0.02–0.08) | 0.50 / 0.54 | yes, profit-rate rule | the strongest profit-rate result of all |
+| `lf-re-g01-cat-r16-minf1` | 0.31 (0.25–0.38) | 0.54 / 0.47 | yes, profit-rate rule | as the default (0.32) |
+| `anchor_r16-ps10` (plants of 10) | **0.08** (0.05–0.13), 8 undecided | 0.47 / 0.50 | yes, profit-rate rule | finer plants strengthen the reversal |
+| `lf-re-g01-cat-r16-ps10` (plants of 10) | **0.13** (0.09–0.18) | 0.55 / 0.52 | yes, profit-rate rule | idem |
+| `lf-acc-g01-cat-r16` (accelerator, no borrowing) | **0.84** (0.79–0.89) | 0.54 / 0.50 | yes, unit-cost rule | the twin's flip is the accelerator's |
+| `scrap_ucs` (defaults, scrapping on operating cost; 1–500) | 0.55 (0.50–0.59) | 0.44 / 0.49 | **no** (disjoint from one control only) | the base advantage needs the version 2 scrapping test |
+| `lf-scrapucs` (leader-follow, scrapping on operating cost) | 0.66 (0.59–0.72) | 0.47 / 0.44 | yes, unit-cost rule | no move (`lf` 0.66 [1, 1–200]): the markup floor keeps prices above unit cost |
+| `lf-flooruc-scrapucs` (leader-follow, unit-cost floor, scrapping on operating cost) | 0.70 (0.63–0.76) | 0.48 / 0.50 | yes, unit-cost rule | down from 0.83 (`lf_floor_uc` [1, 1–200]) |
+| `is15-scrapucs` (marx 1.5, scrapping on operating cost) | 0.75 (0.68–0.80) | 0.47 / 0.50 | yes, unit-cost rule | down from 0.94, still beyond drift |
+| `anchor_r16-scrapucs` | **0.90** (0.84–0.93) | 0.45 / 0.51 | yes, **unit-cost rule** | the anchor reversal is a scrapping effect |
+| `lf-re-g01-cat-r16-scrapucs` | **0.31** (0.25–0.38) | 0.54 / 0.47 | yes, profit-rate rule | the leader-follow reversal is not |
+| `lf-re-g01-cat-r16-flooruc-scrapucs` | 0.43 (0.36–0.50) | 0.51 / 0.50 | no | the unit-cost floor's amplification is |
+| `rc-acd-chi025` / `rc-acd-chi05` (static, rbar 0.05) | 0.65 (0.58–0.71) / 0.65 (0.58–0.71) | 0.43 / 0.46; 0.41 / 0.50 | yes / yes, unit-cost rule | CHI 1: 0.64 [2, 1–100] |
+| `lf-acd-chi025` / `lf-acd-chi05` | 0.73 (0.66–0.79) / 0.84 (0.78–0.88) | 0.44 / 0.44; 0.45 / 0.47 | yes / yes, unit-cost rule | |
+| `tau_005` / `tau_010` / `tau_015` | 0.77 (0.70–0.82) / 0.79 (0.73–0.84) / 0.81 (0.75–0.86) | 0.48 / 0.47; 0.48 / 0.49; 0.48 / 0.48 | yes, unit-cost rule | no move (`base` 0.81, `tau_025` 0.78) |
+| `is15-tau_010` / `is15-tau_025` | 0.98 (0.95–0.99) / 0.96 (0.92–0.98) | 0.53 / 0.48; 0.53 / 0.47 | yes, unit-cost rule | no move (`is_marx_15` 0.94) |
+
+**The anchor threshold** (figure B2.1). With rbar 0.05 (stage 1) 0.66 and 0.26 at 0.16, the
+share won falls as rbar rises, but not monotonically (0.55, 0.31, 0.46, 0.30 at 0.08, 0.10,
+0.12, 0.14; the cells at 0.10 and 0.12 were taken to 500 seeds and the dip at 0.12 stays), and
+it crosses below the controls between 0.08 and 0.10. Two things change with
+rbar under the anchor rule: the ranking of target-return prices (on the menu D1 undercuts D2
+above rbar ≈ 0.064, C undercuts D2 above ≈ 0.147) and entry (entrants in the window: 15.4 at
+0.05, 2.9 at 0.08, 1.1 at 0.10, 0.5 at 0.12, 0.1 at 0.14). The common-anchor cell (0.32)
+and the markup-anchor cell (0.27), where the first channel is shut, still reverse, and the
+accelerator cell (0.47) does not: **the reversal sets in as entry closes and needs
+investment out of retained profits**; it is gradual in rbar but quick between 0.05 and
+0.10. The briefs' anchor trap is real on the menu but plays no visible part here.
+
+**The scrapping test, a factor stage 1 did not vary.** Version 2 retires a plant after two
+periods with the price below its *unit* cost ucs + δκ (`SCRAP_COST = "unit_cost"`;
+version 1 used the operating cost ucs, the margin of Salter, pp. 64–65, and of Shaikh's
+Table 7.3, row 1). Stage 1 varied only the number of periods (4 / 4: no move). With the
+operating-cost test the defaults lose their result: `scrap_ucs` 0.55 at 500 seeds, at drift, because old
+plants stay, prices fall to operating costs (the profit-rate label's hurdle averages 0.004),
+the industry rate falls below 5 %, entry stops (0.1 entrants in the window, 2.3 firms at the
+end) and the two rules choose alike. Under the innovation set (marx 1.5) the advantage
+shrinks (0.94 → 0.75) but survives; under leader-follow nothing moves (0.66), because its
+markup floor keeps prices above every plant's unit cost and the test seldom binds. The
+anchor reversal becomes a unit-cost win (0.90). So
+the base advantage of the unit-cost rule and the anchor reversal both run through the same
+mechanism: the unit-cost test retires plants with a large capital charge first, and in a
+war those are the unit-cost label's older plants when they are not the newest best
+practice (anchor), or the rivals' (base, where the unit-cost label holds the newest
+plants and the exits fall on the profit-rate firms).
+
+**What the reversals have in common, and what they do not.** Both live where (1) entry is
+closed (rbar 0.16: the industry's rate is above rbar in fewer than 3 of 100 periods),
+(2) investment is financed out of retained profits, so that capacity grows by retained
+profit over capital per unit of the new plant, which the unit-cost rule keeps raising
+(both disappear with the accelerator: 0.47 and 0.85), and (3) the technical-change rule is
+the categories rule, under which the profit-rate rule seldom orders a dearer technique
+(`okishio_dearer` 0.06–0.10) while the unit-cost rule takes every conflict design, gaining
+little cost and much capital. They part on the scrapping test: the anchor reversal needs
+it (wars push the price below the unit cost of the unit-cost label's capital-heavy plants,
+which obsolescence then retires: 0.90 for the unit-cost rule with operating-cost
+scrapping), the leader-follow reversal does not (0.31 either way). Stage 2
+says each condition is needed in the leader-follow corner (100 seeds): open entry
+(`lf-re-g01-cat-r05`) 0.64; static demand (`lf-re-static-cat-r16`) 0.51; the accelerator
+(`lf-acd-g01-cat-r16`) 0.83; the innovation set (`lf-re-g01-is15-r16`) **0.98**. The unit-cost
+floor makes it stronger (0.045), not weaker. A rerun of its seed 1 shows how: the
+unit-cost label holds 0.55–0.63 of capacity until t = 150, with margins and profit rates
+close to the profit-rate label's (6.8 against 7.0 per unit, 8.0 % against 8.6 % over
+t = 100–149) but plants far more capital-intensive (402 against 236 per unit); a war of ten
+periods then takes the price from 58 to 49 at t = 163, down to the leader's best unit cost,
+and 97 plants of the unit-cost label (none of the profit-rate label's) are retired by
+obsolescence within 15 periods, because the version 2 scrapping test compares the price with
+the plant's *unit* cost ucs + δκ, depreciation included: the capital-heavy vintages fail it
+first. Its capacity share falls to 0.02 by t = 199. Shaikh (Table 7.3 row 1, p. 271: price
+cutting is limited by operating costs) and Salter (pp. 64–65: old plants run until their
+operating cost reaches the total cost of best practice) put the margin at operating cost;
+the cells `*-scrapucs` of B2 test whether the reversals depend on this choice. They split
+the two reversals: with scrapping on operating cost the anchor reversal turns into a clear
+win for the unit-cost rule (0.90), the unit-cost floor's amplification disappears (0.43, at
+drift), but the leader-follow reversal stays (0.31). **The anchor reversal is a scrapping
+effect; the leader-follow reversal is an accumulation effect.**
+This is Nelson and Winter's selection through profitability-keyed investment (pp. 17, 19) in
+the one corner where the price channel is silent; it is also the condition Shaikh's
+mechanism needs and does not get, a cost-cutter able to expand (p. 314).
+
+**Finance × CHI.** The briefs' second version of the χ trap: with borrowing, weak selection
+should let the higher-rate firms out-accumulate the cheaper ones. It does not: with the
+accelerator and borrowing the unit-cost rule wins 0.65 at CHI 0.25 and 0.5 under real
+competition (0.64 at CHI 1) and 0.73 and 0.84 under leader-follow, all beyond drift. Under
+real competition with borrowing the profit-rate firms' hurdle is almost zero (mean 0.013 at
+CHI 0.25): prices sit close to costs, so the two rules nearly agree, and what remains is the
+unit-cost rule's edge. The accumulation channel does not need weak selection; it needs
+self-finance, growth and a closed industry (above).
+
+**TAU.** As the paper argument of A.8 predicts, τ from 0 to 0.25 moves nothing under either technical-change rule (categories 0.77–0.81, marx 1.5 0.96–0.98): drawn designs keep a conflict zone whatever τ.
+
+### B3. Rules under which the profit-rate rule can dominate
+
+**On paper first.** The research question asks *under which conditions* each rule wins, so a
+map of where the profit-rate rule dominates belongs to the answer, as long as the condition
+is a feature of the economy and not a construction that hands it the win.
+
+1. *The price at which the hurdle is evaluated* (`choices.md`: "own"). Okishio's theorem
+   compares techniques at prices of production (Shaikh 2016, p. 320; Shaikh 1978,
+   pp. 241–242; Duménil and Lévy 2005, p. 209: prices of production are assumed to
+   prevail); Shaikh insists that actual choices are made at actual and projected market
+   prices (p. 321), and Duménil and Lévy's test evaluates next period's technology at the
+   current wage (2005, pp. 210–211), i.e. at going prices. Shaikh's own argument says where
+   evaluation at a lower price leads: there is a range of prices at which the lower-cost
+   technique also has the higher rate (pp. 315–317, fig. 7.22), so any rule evaluated at a
+   price low enough converges on the unit-cost rule. **Trap it is near**: none (it changes
+   what the rule sees, not what it is). Implemented as `HURDLE_PRICE = "regulating"`: the
+   profit-rate rule evaluates its hurdle at the price of production uc* + r̄ κ* of the
+   lowest-unit-cost technique in operation (the regulating capital, Shaikh 2016,
+   pp. 265–266). The leader's price was considered and set aside: under both pricing rules
+   followers post the leader's price in most periods, so it would hardly differ from "own".
+2. *A hurdle at the general rate* (h = r̄). It is Sraffa's criterion of choice (the lower
+   price of production at the ruling rate, Shaikh 2016, p. 320 n. 36), Salter's replacement
+   margin with a normal return (1966, pp. 56–57, 84–85), and the K+S payback rule (min p +
+   b c, Dosi and Roventini 2025, pp. 37–38) read as δ + h = 1/b. It stops being "the best
+   rate at the current price": it is the profit-rate rule evaluated at prices of production
+   of its own best technique (at p = min_j (uc_j + r̄ κ_j) the best rate on offer is exactly
+   r̄). **Trap it is near**: the anchor trap, if combined with target-return pricing (the
+   same criterion in the price and in the choice). Implemented as `HURDLE_TARGET = "rbar"`.
+3. *Weak selection with borrowing* is a condition, covered by B2's finance × CHI block.
+4. *Demand where capacity is the constraint.* Stage 1: initially unmet demand 0.76 (beyond
+   drift, for the unit-cost rule), unmet and growing 2 % 0.46, growing 3 % 0.43 (at drift,
+   500 seeds), never a reversal. Growth dilutes rather than reverses because at rbar 0.05 it
+   opens entry wide (63.7 entrants in the window and 44 firms at the end under 3 % growth):
+   entrants copy the rule of an incumbent drawn by market share, plus 2 % mutation, so heavy
+   entry is a neutral copying process that pulls the population toward drift. Only when
+   entry is closed does growth turn into the accumulation channel and reverse the outcome
+   (B2 above).
+5. *An evolving hurdle* (firms move h toward the realised rate of their recent plants): on
+   paper only. Since the profit-rate firms realise less than they expect (4.7 % against a
+   mean hurdle of 9.4 % in `base`), such a rule would lower their hurdle toward the
+   realised rate, i.e. toward the unit-cost rule, as candidates 1 and 2 do; it would be a
+   learning version of candidate 2 with the realised industry rate in place of r̄.
+   Prediction: drift at the defaults, no dominance. Not implemented.
+
+**Implementation** (following the six steps of `CLAUDE.md`): `equations/regulating_price.py`
+(new) and `hurdle_at_general_rate` in `equations/hurdle.py`; the switches `HURDLE_PRICE`
+("own" by default) and `HURDLE_TARGET` ("best" by default) in `parameters.py`; one helper in
+`model/scheduler.py` (`_hurdle`, `_regulating_price`) called where the hurdle was computed
+before (step 4 for incumbents, step 6 for entrants), the regulating price taken once per
+period before any plant retires, so that no firm's order matters; tests in
+`tests/test_investment.py` (`TestHurdleAlternatives`: the regulating price on Shaikh's menu,
+ties by kappa not by order, the general-rate hurdle, the defaults unchanged, the label swap
+under each candidate) and both switches in `test_switches_run`. `firm.type` is read only
+where it was (the `HURDLE_RULES` lookup and the entrant's inheritance).
+**`python -m debug.compare_runs`**: `run.py` at the defaults, before and after the change,
+"identical: every shared column of every table within 1e-12", and the same for
+leader-follow with the innovation set. Since the two switches add two columns to the
+`runs` table, `experiments.sensitivity.rerun` now compares parameters one by one instead of
+`param_hash` when the stored row predates a parameter (rows of stages 1–3 still reproduce
+exactly: `1_base_mixed_s4`, `3_lf-re-g01-cat-r16_mixed_s7` checked).
+
+**Neutrality check.** Both candidates change only the hurdle of the profit-rate rule: the
+unit-cost rule keeps h = 0; the regulating price is an industry price, the same for every
+firm, computed from all plants in operation in an order that does not depend on firms; h =
+r̄ is a parameter. Neither reads `firm.type` and neither hands one label an advantage by
+construction (the label-swap tests pass). Candidate 2 combined with the anchor rule would
+put the same criterion in the price and in the choice: not run.
+
+**Results** (stage "b3", seeds 1–200, both controls; `outputs/analysis/b3/cells.csv`,
+figure B3.1):
+
+| Cell | Current rule (reference) | h = r̄ (`HURDLE_TARGET`) | regulating price (`HURDLE_PRICE`) |
+|---|---|---|---|
+| `base` (rc, re, cat, r̄ 0.05) | 0.81 (0.77–0.84) [3, 1–500] | **0.48** (0.41–0.55), controls 0.48 / 0.45 | **0.53** (0.46–0.59), 0.48 / 0.49 |
+| `lf` | 0.71 (0.67–0.75) [3, 1–500] | **0.56** (0.49–0.63), 0.47 / 0.49 | **0.48** (0.41–0.55), 0.47 / 0.45 |
+| marx 1.5 (`is_marx_15`) | 0.94 (0.90–0.97) [1, 1–200] | 0.76 (0.70–0.81), 0.53 / 0.53 | 0.78 (0.71–0.83), 0.53 / 0.53 |
+| r̄ 0.16 (`rbar_16`) | 0.64 (0.57–0.70) [1, 1–200] | 0.63 (0.56–0.69), 0.49 / 0.49 | 0.715 (0.65–0.77), 0.49 / 0.46 |
+
+The eight candidate cells were run twice, on the Mac's VM (Linux, aarch64) before the
+connection dropped and in the session's container (Linux, x86_64): the shares won and both
+controls' shares agree cell for cell.
+
+Mean hurdle of the profit-rate label: 0.094 (current rule, `base`), 0.050 (both candidates,
+`base`), 0.160 and 0.276 at r̄ 0.16; dearer orders 0.51 → 0.08–0.10 at r̄ 0.05.
+
+Reading. **Neither candidate lets the profit-rate rule dominate anywhere.** Evaluated at
+prices of production with r̄ = 0.05, the profit-rate rule's hurdle falls from 0.094 to 0.05,
+it stops ordering dearer techniques, and it becomes almost the unit-cost rule: the contest
+goes to drift under the categories rule and the unit-cost advantage shrinks under marx 1.5
+(0.94 → 0.76–0.78, still beyond drift, because the Marx-biased designs keep a conflict zone
+at h = 0.05). At r̄ = 0.16 the regulating price is *above* the market price (prices end at
+0.57 of the price of production in that cell), the hurdle rises (0.276), the profit-rate
+firms order more dearer techniques (0.24) and lose more (0.715). This is the clearest result
+of Part B for the presentation: **the unit-cost rule's advantage is the profit-rate rule's
+evaluation price**. Okishio's criterion applied at the prices of production of a low
+general rate is nearly Shaikh's criterion; applied at the inflated current price of a
+growing price war, or at the price of production of a high general rate the market never
+reaches, it chooses techniques that the falling price punishes. The industry profit rates of
+the controls tell the same story: under the candidates, an industry entirely on the
+profit-rate rule realises 8.7–9.4 % against 8.7 % on the unit-cost rule at r̄ 0.05.
+
+---
+
+## 4. What this means for step 5 (proposed rows for `choices.md`, not decisions)
+
+| Proposed row | Proposed status | Why (section) |
+|---|---|---|
+| Technical change: the marx innovation set (TECH_BIAS 1.5) is the main specification; TECH_BIAS 0.5 and 3 and the neutral set are treatments; the categories rule is the version 1 robustness check; `TECH_DRAWS = False` is reported as the null (no contest) | Treatment (as the results proposed), with the reason now argued from the literature | A.2, A.3, (b) |
+| Pricing: real competition and leader-follow are the price-war treatment; the anchor rule is not a treatment but is reported as a closed-entry, self-financed reversal (it reverses from rbar ≈ 0.10, with a common or a markup anchor too, not with the accelerator), not as the briefs' anchor trap | Treatment / reported | A.7, B2 |
+| `LEADER_FOLLOW_FLOOR`: the results recommended `unit_cost` for the leader-follow arm (0.83 against 0.66 in stage 1). Before deciding, note that in the closed growing corner the unit-cost floor *strengthens* the profit-rate rule (0.045 against 0.32) | Group decision, with this side effect recorded | B2 |
+| Finance: name the arm "investment rule" (retained earnings against the accelerator). Borrowing is inert under leader-follow (no debt in 500 seeds) and matters under real competition (bankruptcies); keep accelerator with and without borrowing as two levels if the group wants to speak of finance proper | Treatment, renamed | B1 (finance twin), B2 |
+| rbar: present 0.05 against 0.16 as *open against closed entry*, since that is what it does in the model (industry rate above rbar in 95 against fewer than 3 of 100 periods); both reversals need the closed industry | Treatment (relabelled) | A.9, B2 |
+| CHI: fixed at 1; the briefs' trap does not spring because the profit-rate firms do not realise the rate they maximise | Fixed (confirmed) | A.8 |
+| `MIN_FIRMS` = 2: no effect on either reversal | Fixed (confirmed) | B2 |
+| `SCRAP_COST`: not varied in stages 1–3, yet with the operating-cost test (version 1; Salter's and Shaikh's margin) the defaults go to drift (0.55 at 500 seeds), marx 1.5 falls to 0.75, leader-follow does not move (0.66; 0.70 with the unit-cost floor, against 0.83), and the anchor reversal flips to 0.90. Make it a factor of the next sensitivity run and argue the choice from the texts before fixing it | **Treatment to examine before step 5** | B2 |
+| `PLANT_SIZE` = 20: no move at the defaults (stage 1), but plants of 10 strengthen both reversals (0.08, 0.13) | Fixed, with the closed-industry sensitivity recorded | B2 |
+| `HURDLE_PRICE` ("own", "regulating") and `HURDLE_TARGET` ("best", "rbar") | **Candidate (analysis, 8 November 2026)**; defaults unchanged; proposed as one robustness treatment, "Okishio at prices of production", since it shows that the contest is about the evaluation price | B3 |
+| Reproducibility: Python 3.12 or later to reproduce `runs.csv` rows; CI on 3.13 | Proposed | header |
+| Window: report attribution over the whole run (`_all`), not the window, wherever takeovers come before t = 100 | Proposed | B1 |
+
+## 5. Open questions left
+
+1. **The anchor threshold is not monotone** (0.31 at rbar 0.10, 0.46 at 0.12, 0.30 at 0.14;
+   the first two at 500 seeds): the dip at 0.12 is not noise. A candidate explanation, not
+   tested: on the menu the target-return ranking of C and D2 switches at rbar ≈ 0.147 and that
+   of D1 and D2 at ≈ 0.064, so the anchors' ordering of the initial techniques changes inside
+   the range. What differs at 0.12 is that the profit-rate firms order dearer techniques more
+   often (0.22, against 0.12 at 0.10 and 0.14) and the accumulation term is neutral (+0.01,
+   against −0.15 and −0.17); reruns of a few rbar 0.12 seeds against their rbar 0.10 twins
+   would tell why.
+2. **Plant size in the closed corner.** Plants of 10 make both reversals stronger (0.08 and
+   0.13): finer investment lets self-financed accumulation work more smoothly. The default
+   of 20 (stage 1: 40 moved nothing at the defaults) is therefore not neutral in the closed
+   industry; worth a sentence in the presentation.
+3. **The scrapping test.** B2 found that `SCRAP_COST` decides the size of the base result
+   (0.81 → 0.55 with the operating-cost test) and the anchor reversal (0.26 → 0.90), and it
+   was never varied in stages 1–3. It needs its own stage 1 cell at 200 seeds under both
+   pricing rules and the innovation set before step 5, and an argument from the texts: the
+   operating-cost margin is Salter's and Shaikh's, the unit-cost test counts a sunk capital
+   charge.
+4. **The window.** Should the headline statistics move to t = 50–199 or to the whole run?
+   In the cells that decide the finance question most takeovers come before t = 100.
+5. **Per-mechanism random streams** (results §8.6): still open; the controls depart from 0.5 by
+   up to 0.12.
+6. **An evolving hurdle** (B3, item 5): not implemented; the prediction (drift) is cheap to
+   test once implemented.
+7. **The economy-wide Okishio question** (row 4 of section 1) cannot be answered in a
+   one-industry model with an exogenous rbar; the controls' industry profit rates (A.6)
+   are the nearest the model gets.
+8. Documentation details: the dangling "Under the categories rule:" at the end of the
+   20-seed neutral-control record in `choices.md`; the 680 / 674.7 demand figure (results
+   §8.5).
 
 ---
 
 ## Appendix: texts opened, with the pages used
 
-*(Completed with Part B.)*
+Library: Zotero (`tools/zotero.py`, libraries perso and hivemind) and the Calibre library.
+Pages are the printed page numbers of the PDF opened (the PDF's own page index in brackets
+when it differs).
+
+| Text | Library item | Pages used | For |
+|---|---|---|---|
+| Shaikh, A. (2016). *Capitalism: Competition, Conflict, Crises*. OUP | Zotero perso BMKVYW2U (PDF in storage 4GGIGFR6) | 260–261, 265–267 (regulating capitals, figs 7.1–7.3), 271–272 (Table 7.3), 296 (turbulent equalisation of rates on new investment), 313–317 (VII.1, Tables 7.10–7.12, eq. 7.11, fig. 7.22), 318–324 (Okishio theorem, Tables 7.16–7.20, n. 36, Park 2001, figs 7.23–7.24), 328 (ch. 8 opening) | rows 1–3, 5, 6, 10; A.1–A.7, A.10, A.11, (b), B3 |
+| Shaikh, A. (1978). Political economy and capitalism: notes on Dobb's theory of crisis. *CJE* 2(2) | perso J9AEUKMD | 241–242 | row 4; B3 |
+| Shaikh, A. (1980). Marxian competition versus perfect competition. *CJE* 4 | perso EECWZJXJ | 81 | row 1 |
+| Roemer, J. (1979). Continuing controversy on the falling rate of profit. *CJE* 3 | perso TX2DFFI7 | 379–380, 382, 385, 388 | rows 4–5 |
+| Duménil, G. & Lévy, D. (2005). Testing for the Marxian-classical criterion of technical choice. *Research in Political Economy* 22 | perso LWGHAJ9B (the PDF attached is the whole volume) | 209–213 | rows 4, 6; A.5, A.7; B3 |
+| Park, C.-S. (2005). Testing Okishio's criterion of technical choice. *RPE* 22 | same volume | 199 (abstract only) | appendix only |
+| Duménil, G. & Lévy, D. (1995). A stochastic model of technical change. *Metroeconomica* 46(3) | perso 48U7VRQQ | 213–214, 217 | rows 7; A.10, (b) |
+| Michl, T. (2023). The falling rate of profit as a research program. *New School Economic Review* | perso FX3M6W5I | 36 (abstract), 37, 40–41 (Marx-biased technical change), 46 (prisoner's dilemma, Foley 1986b), 47–48 (conflict of the two viability criteria, switchpoints R and M) | rows 2, 6; A.3, A.6, A.10, (b) |
+| Salter, W. E. G. (1966). *Productivity and Technical Change*. CUP | perso FCUBTW7P | 56–57, 64–65, 84–85 (scan, two pages per sheet) | row 9; B3 |
+| Nelson, R. & Winter, S. (1982). *An Evolutionary Theory of Economic Change* | hivemind VATF967M | 17, 19, 262 | row 7; A.4, A.7, B2 |
+| Foster, L., Haltiwanger, J. & Syverson, C. (2008). Reallocation, firm turnover, and efficiency. *AER* 98(1) | perso QX5VTYKC | 394–395, 397 | row 8; A.8 |
+| Dosi, G., Moschella, D., Pugliese, E. & Tamagni, F. (2015). Productivity, market selection, and corporate growth. *Small Business Economics* | perso TVXQ9DA7 | abstract and introduction (online-first PDF, pp. 1–2; no journal pagination) | row 8 |
+| Dosi, G. & Roventini, A. (2025). *Agent-based Macroeconomics* | perso TUR32YLD | 37–38 (machine choice and payback rule), 41 (entry) | B3 |
+| Silverberg, G., Dosi, G. & Orsenigo, L. (1988). Innovation, diversity and diffusion. *EJ* 98 | perso EBVLD2YA | 1032 | row 11 |
+| Seppecher, P., Salle, I. & Lavoie, M. (2018). What drives markups? *ICC* | perso L976DQGR | HAL version, pp. 1, 6 (only the framing; not used for a claim) | appendix only |
+
+**Not available or not opened**, and so not cited for any claim except as reported by the
+texts above: Okishio (1961), *Kobe University Economic Review* (Zotero item 3ZDE32J4 has no
+file); Marx, *Capital* III, chs 13–15 (only vol. I is in the library; cited through
+Duménil and Lévy 2005, p. 209, and Shaikh 2016, p. 265); Metcalfe (1998) (not in the
+library); Botwinick (1993) (not in the library; cited through Shaikh 2016, pp. 265, 296);
+Tsoulfidis & Tsaliki (2019) (item C69II6XZ, no file; Shaikh 2016, p. 313 reports
+Tsoulfidis and Tsaliki 2005, 2011); Baldani & Michl (2000) (scanned PDF without a text layer,
+not read; cited through Michl 2023, p. 46); Foley, Michl & Tavani (2019) (the file could not
+be opened); Foley (1986, 1999, 2003) (not opened); Okishio (2001) and Park & Zarembka (2005)
+(no file); Basu (2021) and Cogliano (2022, in Calibre) are in the library and bear on the
+contest (Okishio's theorem; computational classical-Marxian models) but were not opened in
+this session. The prompt's list misses two texts the library has and that bear directly on
+the contest: **Shaikh (1980)**, the reply on the choice of technique, and **Baldani & Michl
+(2000)**, the prisoner's-dilemma formalisation of forced adoption; and Duménil & Lévy (1995),
+the stochastic profitability-selection model the DLF framework comes from.

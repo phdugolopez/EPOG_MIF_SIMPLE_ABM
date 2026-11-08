@@ -495,7 +495,8 @@ def write_parquet(out: Path) -> None:
 
 def load_runs(out: Path = OUT, path: Path | None = None) -> pd.DataFrame:
     return pd.read_csv(path or out / "runs.csv",
-                       dtype={"stage": str, "plant_life": object}, low_memory=False)
+                       dtype={"stage": str, "plant_life": object}, low_memory=False,
+                       float_precision="round_trip")
 
 
 def log(out: Path, line: str) -> None:
@@ -680,6 +681,11 @@ def rerun(run_id: str, out_dir: Path | None = None, runs_path: Path | None = Non
     config = configuration(json.loads(row["overrides"]), row["population"], int(row["seed"]))
     new.update(observables(frames, config))
     skip = {"wall_seconds", "code_version", "python_version"}
+    # A row written before a parameter existed has no column for it, and its param_hash
+    # covers fewer parameters: the parameters it has are compared one by one instead
+    # (the switches added since are at their defaults, the behaviour of the time).
+    if any(c not in row.index for c in new):
+        skip.add("param_hash")
     diff = [c for c in new if c in row.index and c not in skip and not same(new[c], row[c])]
     if not quiet:
         print(f"\nrun.py {' '.join(args)}")

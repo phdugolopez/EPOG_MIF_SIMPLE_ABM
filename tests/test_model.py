@@ -75,7 +75,10 @@ class TestModel(unittest.TestCase):
                           {"TECH_CHANGE": "innovation_set", "TECH_SET": "neutral"},
                           {"TECH_CHANGE": "innovation_set", "TECH_REFERENCE": "frontier"},
                           {"TECH_CHANGE": "innovation_set", "TECH_DRAW_TIMING": "investment"},
-                          {"TECH_CHANGE": "innovation_set", "TECH_DIFFUSION": "private"}):
+                          {"TECH_CHANGE": "innovation_set", "TECH_DIFFUSION": "private"},
+                          {"HURDLE_PRICE": "regulating"}, {"HURDLE_TARGET": "rbar"},
+                          {"HURDLE_PRICE": "regulating", "PRICING_RULE": "leader_follow",
+                           "TECH_CHANGE": "innovation_set"}):
             Industry(make_config(PERIODS=60, **overrides)).run()
 
 

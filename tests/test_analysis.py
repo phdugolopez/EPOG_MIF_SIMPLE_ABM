@@ -52,9 +52,11 @@ class TestTakeover(unittest.TestCase):
 class TestStage4(unittest.TestCase):
     def test_stage4_overrides_name_parameters_of_parameters_py(self):
         names = {k for k in vars(parameters) if k.isupper()}
-        for cell, (_, overrides) in an.STAGE4.items():
+        for cell, (_, overrides) in {**an.STAGE4, **an.B3}.items():
             for key in overrides:
                 self.assertIn(key, names, cell)
+        self.assertEqual(an.stage4_tasks(["b3-rbar-base"], 1, an.B3, "b3")[0][:2],
+                         ("b3", "b3-rbar-base"))
         tasks = an.stage4_tasks(["anchor_r08", "tau_005"], 3)
         self.assertEqual(len(tasks), 2 * 3 * 3)
         self.assertEqual(tasks[0][:2], ("4", "anchor_r08"))

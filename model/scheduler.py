@@ -10,7 +10,7 @@ from equations.entrant_price import entrant_price
 from equations.entry_probability import entry_probability
 from equations.exit_conditions import exit_reason
 from equations.firm_profit import firm_profit
-from equations.hurdle import hurdle
+from equations.hurdle import hurdle, hurdle_at_general_rate
 from equations.inherited_rule import inherit
 from equations.lifetime_profit_rate import lifetime_profit_rate
 from equations.interest_payment import interest_payment
@@ -23,6 +23,7 @@ from equations.posted_price import posted_price
 from equations.price_floor import price_floor
 from equations.price_war import price_war
 from equations.real_competition_price import real_competition_price
+from equations.regulating_price import regulating_price
 from equations.profit_rate import profit_rate
 from equations.replacement import replacement_pays
 from equations.retirement import periods_below_cost, retirement_reason, scrap_cost
@@ -348,10 +349,11 @@ def account(industry, firm, config) -> None:
 def scrap_plants(industry) -> None:
     """Retire by age or obsolescence (both types alike), then replace with the hurdle."""
     config = industry.parameters
+    p_reg = _regulating_price(industry)  # once, before any plant retires this period
     for firm in industry.firms:
-        firm.hurdle = hurdle(
-            config.HURDLE_RULES[firm.type], firm.price, firm.known or industry.menu,
-            config.DELTA, config.HURDLE_FLOOR_AT_ZERO,
+        firm.hurdle = _hurdle(
+            industry, config.HURDLE_RULES[firm.type], firm.price, firm.known or industry.menu,
+            p_reg,
         )
         retired = retire_plants(industry, firm, config)
         if config.REPLACEMENT:
@@ -420,6 +422,29 @@ def remove_plant(industry, firm, plant, cause: str = "") -> None:
     plant.book_value = 0.0
     firm.plants.remove(plant)
     industry.retired.append(plant)
+
+
+def _regulating_price(industry) -> float | None:
+    """HURDLE_PRICE = "regulating": the price of production of the lowest-unit-cost
+    technique in operation (None under the default, which does not need it)."""
+    config = industry.parameters
+    if config.HURDLE_PRICE != "regulating" or config.HURDLE_TARGET == "rbar":
+        return None
+    plants = [p for f in industry.firms for p in f.plants]
+    return regulating_price([p.ucs for p in plants], [p.kappa for p in plants],
+                            config.DELTA, config.RBAR)
+
+
+def _hurdle(industry, rule: str, price: float, known, p_reg: float | None) -> float:
+    """h for a technique rule: equations/hurdle.py at the firm's price (the default); at
+    the regulating price of production (HURDLE_PRICE = "regulating"); or the general rate
+    (HURDLE_TARGET = "rbar"). The same for incumbents (step 4) and entrants (step 6)."""
+    config = industry.parameters
+    if config.HURDLE_TARGET == "rbar":
+        return hurdle_at_general_rate(rule, config.RBAR)
+    if config.HURDLE_PRICE == "regulating" and p_reg is not None:
+        price = p_reg
+    return hurdle(rule, price, known, config.DELTA, config.HURDLE_FLOOR_AT_ZERO)
 
 
 def fails_renewal(retired, rbar: float) -> bool:
@@ -677,8 +702,8 @@ def admit_entrant(industry) -> None:
                     known.append(Technique(name=p.technique, ucs=p.ucs, kappa=p.kappa))
         for name in sorted(industry.public - names):
             known.append(industry.designs[name])
-    h = hurdle(config.HURDLE_RULES[firm_type], price, known, config.DELTA,
-               config.HURDLE_FLOOR_AT_ZERO)
+    h = _hurdle(industry, config.HURDLE_RULES[firm_type], price, known,
+                _regulating_price(industry))
     technique = choose_technique(known, h, config.DELTA, config.TAU)
     capacities = [f.capacity for f in industry.firms if f.capacity > 0.0]
     if not capacities:

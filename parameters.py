@@ -49,6 +49,13 @@ DEMAND_TO_CAPACITY: float = 340.0 / 383.0  # brief: demand 340 against capacity 
 HURDLE_RULES: dict[str, str] = {"shaikh": "unit_cost", "okishio": "profit_rate"}
 HURDLE_FLOOR_AT_ZERO: bool = True  # Okishio h = max(0, best rate on the menu)
 TAU: float = 0.0  # share of a period's operating cost counted as capital advanced
+# Candidate rules of the analysis (8 November 2026; docs/design/sensitivity-discussion.md,
+# Part B3), current behaviour by default. The price at which the profit-rate rule evaluates
+# its hurdle: "own" (the firm's posted price) or "regulating" (the price of production
+# uc* + RBAR kappa* of the lowest-unit-cost technique in operation).
+HURDLE_PRICE: str = "own"
+# "best": h = the best profit rate on offer at that price; "rbar": h = RBAR (the general rate).
+HURDLE_TARGET: str = "best"
 
 # --- Pricing (Jake) ----------------------------------------------------------------
 # "real_competition": no anchor and no war trigger. Firms follow the lowest price, cut below
