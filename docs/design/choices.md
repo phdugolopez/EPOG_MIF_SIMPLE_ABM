@@ -169,7 +169,10 @@ plan in `collector-plan.md`). Choices made while implementing phases 1–6:
 ## Sensitivity analysis (planned, 7 November 2026)
 
 The prompt for the session that runs it, with the full factor list, the observables, the
-results table and the figures: `sensitivity-prompt.md`.
+results table and the figures: `sensitivity-prompt.md`. The prompt for the session that
+reads the results against the literature and goes further (more cells, mechanism, candidate
+rules behind switches; 6 hours unattended, 8 November 2026): `analysis-prompt.md`; its
+output is `sensitivity-discussion.md` on a branch `feature/analysis`.
 
 Decided on 7 November: the pricing rule and the technical-change rule are the model's two
 sensitive parts; no default changes until a first full sensitivity analysis, run after the
