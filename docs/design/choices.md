@@ -236,6 +236,21 @@ The decided plan is `sensitivity-plan.md` (section 7 binding); the results are i
 | `runs.csv` is committed for stage 1 only (41 MB). With stages 2 and 3 it grows to about 160 MB, above GitHub's 100 MB limit per file, which would make the branch impossible to push, so from stage 2 on the commit holds `outputs/sensitivity/runs.csv.gz` (the same table, gzip) and `runs.csv` leaves the index; `runs.csv` and `runs.parquet` stay in the working tree, as the deliverable | Default (sensitivity), deviates from "commit runs.csv" | Git LFS; one CSV per stage |
 | `uc_end_{label}` is the macro column `unit_cost_{label}` at t = 199 as written, which is 0 when the label has no producing capacity; `summarise` treats those zeros as missing (capacity share 0 for "shaikh", 1 for "okishio", or undecided) so that the cell means are means over the seeds where the label still produces | Default (sensitivity) | NaN in the run rows (would make rows written before the fix differ from a rerun) |
 
+### Choices made reading it (8 November 2026, branch `feature/analysis`)
+
+The discussion is `sensitivity-discussion.md`; the code is `experiments/analysis.py`
+(`b1`, `parta`, `story`, `grid`, `merge`, `figures`), its tests `tests/test_analysis.py`;
+tables and figures in `outputs/analysis/`.
+
+| Choice | Status | Alternatives |
+|---|---|---|
+| Rows of `runs.csv` reproduce exactly only on Python 3.12 or later (3.12 made `sum()` on floats compensated): on 3.10 the rerun of `1_base_mixed_s4` differs in 36 observables, on 3.13 it reproduces the row. This session ran Python 3.13.18 | Observed (analysis); proposed: say "Python >= 3.12" in the README and run CI on 3.13 | CI on 3.11 as now (tests pass, rows do not reproduce across versions) |
+| B1 regression: OLS of the realised gap `profit_rate_shaikh - profit_rate_okishio` and of `shaikh_wins` (linear probability) over the decided mixed seeds of stage 2, with cell fixed effects (within transformation) and standard errors clustered by cell (CR1); three specifications: the prompt's seven regressors; without the two decomposition terms (they are parts of the outcome); with the winner added (separates Shaikh's mechanism from a leader's premium) | Default (analysis) | Factor levels as controls instead of cell effects; logit for `shaikh_wins` |
+| Seed stories (`story`): a *dearer order* is an `order` event of a profit-rate firm whose technique differs from `other_tech` (the unit-cost pick), the definition of `okishio_dearer`; the takeover mark is recomputed from the macro capacity shares (> 0.9 or < 0.1 to the end), as `takeover_t` | Default (analysis) | |
+| Stage 4: rows made by `experiments.sensitivity.run_one` with stage "4", written in batches to `outputs/analysis/stage4_runs.csv` (resumable by run id), then appended to `runs.csv` in (cell, population, seed) order and summarised with `experiments.sensitivity.summarise`; the anchor cells at rbar 0.05 and 0.16 are not rerun (stage 1 has them on the same seeds, and the model is deterministic per seed) | Default (analysis) | Stage 4 cells in `experiments/sensitivity.py` (left untouched) |
+| Stage 4 computed on Linux, partly in the session's container (x86_64, 2 workers) because processes on the device's VM die with each 3-minute call; `code_version` of those rows set to the checkout's HEAD (`55a8d9e`), whose model code they ran. Five stage 1-3 rows rerun in the container: four identical, one (`1_is_neutral_mixed_s7`) 2.2e-16 off in `ucs_spread_mean` only | Default (analysis) | |
+| Seeds in stage 4: 200 per cell (500 for `rc-re-g01-cat-r16`, the twin the results did not run at 500), as the prompt's budget allows on 4 + 2 cores | Default (analysis) | 500 everywhere (about 2.5 times the time) |
+
 ## Neutral control (seeds 1–20, version 2 defaults), for the record
 
 `python -m experiments.neutral_control --seeds 20` (7 November 2026): share of seeds in which
