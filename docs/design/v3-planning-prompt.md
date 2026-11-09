@@ -2,20 +2,24 @@
 
 Paste everything below the line into a Claude Code session started at the root of the `v3`
 worktree (`Projets/ABM-v3`, branch `v3` of `phdugolopez/EPOG_MIF_SIMPLE_ABM`), with the v2
-checkout left beside it in `../ABM-sources` as a read-only reference. Written 9 November 2026.
+checkout left beside it in `../ABM-sources` as a read-only reference. Written 9 November 2026;
+revised the same day after the review of the proposal (E7 dropped, E3 crossed with r̄,
+depreciation reserve in A7, open points in A13).
 
 The prompt asks for a plan only and stops. The addendum (section 4) holds proposed defaults for
 everything the proposal leaves open: the group confirms or changes them before the plan is
-accepted. Then build in the stages the plan defines, one session or one prompt per stage.
+accepted. Do not paste the prompt before the v2 pilot of the proposal (section "Pilot in v2") has
+been read and the specification confirmed. Then build in the stages the plan defines, one session
+or one prompt per stage.
 
 ---
 
 You are working on the group's agent-based model of one industry in which firms that choose
 techniques by the lowest unit cost (Shaikh, hurdle h = 0) compete with firms that choose by the
-highest profit rate at an evaluation price (Okishio). Group project, M2 EPOG, course MIP1
-(Funalot and Bassi), Python, built on the course template `pierrefunalot/EPOG_MIF_SIMPLE_ABM`.
-Version 2 (folder `../ABM-sources`, about 5,100 lines, 25 switches) was analysed with a full
-sensitivity analysis; version 3 is a rebuild from a clean tree, about 700 lines of model, that
+highest profit rate at an evaluation price (Okishio). Group project, M2 EPOG, course MIP1 (Funalot
+and Bassi), Python, built on the course template `pierrefunalot/EPOG_MIF_SIMPLE_ABM`. Version 2
+(folder `../ABM-sources`, about 5,100 lines, 25 switches) was analysed with a full sensitivity
+analysis; version 3 is a rebuild from a clean tree, about 600 lines of model (700 at most), that
 keeps only what moved the results. Deadlines: code by 16 November, first experiments 17–19
 November, seminar 20 November, report 1 December.
 
@@ -25,7 +29,8 @@ Your task now is **a plan, not code**. Write `docs/design/v3-plan.md`, commit it
 
 1. `docs/design/final-model-proposal.md`. Its sections "The simplified model", "What to drop",
    "Model analysis", "Sensitivity analysis" and "Decisions" are the specification. The other
-   sections are rationale: read them, do not implement anything from them.
+   sections are rationale: read them, do not implement anything from them. The section "Pilot in
+   v2" concerns version 2 only: nothing in it is built in v3.
 2. Section 4 of this prompt (addendum). Where it differs from the proposal, the addendum wins.
 3. In `../ABM-sources` (v2, read-only), only these files, to port their *logic* (pure functions)
    and not v2's architecture: `equations/innovation_set.py`, `equations/new_technique.py`,
@@ -34,9 +39,12 @@ Your task now is **a plan, not code**. Write `docs/design/v3-plan.md`, commit it
    `equations/competitiveness.py`, `markets/goods_market.py`, `equations/merit_order.py`,
    `equations/retirement.py`, `equations/idle_plants.py`, `equations/entry_probability.py`,
    `equations/new_plant_rate.py`, `equations/inherited_rule.py`, `create_entrant` in
-   `markets/entry_exit.py`, `analysis/indicators.py` (the share decomposition), and in
-   `experiments/sensitivity.py` the Wilson interval, the beyond-drift test and `takeover`.
-   Do not read v2's collector, schema, debug suite or the rest of its scheduler.
+   `markets/entry_exit.py`, `analysis/indicators.py` (the share decomposition), `wilson` in
+   `experiments/neutral_control.py`, and in `experiments/sensitivity.py` the beyond-drift test and
+   `takeover`. Do not read v2's collector, schema, debug suite or the rest of its scheduler.
+4. `docs/design/v3-choices.md`, the register of the decisions already taken. Nothing else: the
+   other files of `docs/design/` and the `README.md` describe version 2 (`choices.md` is its
+   frozen record) and are not the specification.
 
 ## 2. What `docs/design/v3-plan.md` must contain
 
@@ -54,20 +62,24 @@ Your task now is **a plan, not code**. Write `docs/design/v3-plan.md`, commit it
    v2 function it ports from (or "new").
 5. **`parameters.py`** as it will be: every parameter with its default, matching the proposal's
    parameter table and the addendum; every switch with its levels.
-6. **Output tables**: one row per period and label, one row per run. List the columns with
-   their formulas, including the share decomposition ported from `analysis/indicators.py`, the
-   mechanism observables of the proposal and the Marx-bias measures (growth of labour and of
-   capital per unit, by label).
-7. **Experiment harness**: cells × populations (mixed and the two controls) × seeds; parallel
-   runs with `multiprocessing`, one industry per process, results in seed order; `runs.csv` and
+6. **Output tables**: one row per period and label, one row per run. List the columns with their
+   formulas, including the share decomposition ported from `analysis/indicators.py`, the mechanism
+   observables of the proposal and the Marx-bias measures (growth of operating cost and of capital
+   per unit, by label).
+7. **Experiment harness**: cells × populations (mixed and the two controls) × seeds; parallel runs
+   with `multiprocessing`, one industry per process, results in seed order; `runs.csv` and
    `cells.csv` appended as cells finish, with resume; Wilson intervals and the beyond-drift test;
-   Morris screening with SALib; one script per report figure. Experiments E0–E7 of the proposal,
-   with priorities: E0–E4 first, then Morris and E5, then E6, E7 and the robustness checks.
+   Morris screening with SALib; one script per report figure. Experiments E0–E6 of the proposal,
+   with priorities: E0–E3 first (they are shown at the 20 November seminar), then E4, E5 and
+   Morris, then E6 and the robustness checks.
 8. **Tests**, each with what it asserts: one per mechanism; the label swap (labels swapped
    everywhere except the hurdle mapping give identical trajectories); money conservation every
-   period; reproducibility (same seed, same run); symmetric controls (per-firm streams).
+   period; the depreciation reserve (a firm with no profit still replaces a plant that retires at
+   age T; funds never exceed cash); reproducibility (same seed, same run); symmetric controls
+   (per-firm streams).
 9. **Stages**: an ordered build, each stage ending with the tests passing and a commit, with an
-   estimate of its time. Mark the stages the four mechanism owners can do in parallel once the
+   estimate of its time. Stage 1 also writes the new `CLAUDE.md` (section 3) and replaces the
+   version 2 `README.md`. Mark the stages the four mechanism owners can do in parallel once the
    data structures and the loop exist (pricing: Jake; demand, entry and exit: Pierre-Loup;
    scrapping, accounts and outputs: Vincent; hurdle, technical change and investment: Ugo).
 10. **Open questions**: anything still ambiguous after the addendum, each with your proposed
@@ -75,13 +87,18 @@ Your task now is **a plan, not code**. Write `docs/design/v3-plan.md`, commit it
 
 ## 3. Rules for the build (copy them into a new, short `CLAUDE.md` as stage 1)
 
+- Four documents are authoritative: `docs/design/final-model-proposal.md`,
+  `docs/design/v3-planning-prompt.md`, `docs/design/v3-plan.md` and `docs/design/v3-choices.md`.
+  Everything else in `docs/design/` describes version 2: take no rule, default or file layout from
+  it.
 - The specification is the source of truth. Any departure goes into `docs/design/v3-choices.md`
   (what, why, date) before the code changes; never diverge silently.
 - Neutrality: the type label is read only to look up the hurdle rule and in inheritance at
   entry. Ties are never broken by firm order or id. The label-swap test must always pass.
-- Build nothing outside the specification: no debt, interest or bankruptcy, no overtime, no
-  anchor pricing, no logit demand, no replacement of working plants, no capital advanced (τ), no
-  plants without a maximum age, no debug suite, no switch that the proposal does not list.
+- Build nothing outside the specification: no debt, interest or bankruptcy, no overtime, no anchor
+  pricing, no logit demand, no replacement of working plants, no capital advanced (τ), no wage
+  path or labour units (E7 is dropped), no plants without a maximum age, no debug suite, no switch
+  that the proposal does not list.
 - Equation files are named `equations/<step>_<equation>.py`, where `<step>` is the loop step
   that uses the equation: `setup` (initial population), `pricing`, `demand`, `accounts`
   (production and accounts), `scrapping`, `investment` (technical change included) and `entry`
@@ -101,10 +118,11 @@ Your task now is **a plan, not code**. Write `docs/design/v3-plan.md`, commit it
 
 ## 4. Addendum: proposed defaults for what the proposal leaves open
 
-A1 **Units.** A technique stores labour per unit `l` and capital per unit `kappa`. Operating cost
-   ucs = w_t·l with w_0 = 1 and w_t = (1 + g_w)^t, capital goods priced 1; g_w = 0 by default
-   (E7 only varies it), which is v2's setting. Initial techniques (Shaikh 2016, Tables
-   7.10–7.11): C l = 64.25, κ = 137.50; D1 l = 61.77, κ = 142.31; D2 l = 59.21, κ = 157.89.
+A1 **Units.** The money wage is the numéraire (w = 1) and capital goods are priced 1, as in v2. A
+   technique stores its operating cost per unit `ucs` and its capital per unit `kappa`; there is
+   no wage path (E7 was dropped on 9 November). Initial techniques (Shaikh 2016, Tables 7.10–7.11,
+   p. 315, with δ = 0.10): C ucs = 64.25, κ = 137.50; D1 ucs = 61.77, κ = 142.31; D2 ucs = 59.21,
+   κ = 157.89.
 
 A2 **Initial population.** k firms for each (technique, rule) pair, (C, D1, D2) × (unit-cost,
    profit-rate), identical within pairs: 6k firms, k = 1 by default (robustness: k = 2 and 5,
@@ -129,7 +147,7 @@ A5 **Pricing.** R = lowest price posted last period (own price included when fol
    0.5 × the excess-demand share. Otherwise: undercut to (1 − c)R if it has spare capacity (last
    period's utilisation below 1) and, under cost-edge cutting, a unit-cost edge over a firm
    posting R; else follow R. A price never rises except after a shortage. Floor in both regimes:
-   the unit cost (w_t·l + δκ) of the firm's lowest-unit-cost plant in operation.
+   the unit cost (ucs + δκ) of the firm's lowest-unit-cost plant in operation.
 
 A6 **Demand.** `share` is the notional replicator share, kept separate from the realised sales
    share. Notional demand = share × D_t. Sales = min(notional demand, offered capacity), where
@@ -137,15 +155,21 @@ A6 **Demand.** `share` is the notional replicator share, kept separate from the 
    price; unserved demand is re-allocated once, pro rata to spare offered capacity; the rest is
    lost and recorded.
 
-A7 **Investment.** Retained earnings: funds = min(cumulative profit after depreciation, minus
-   dividends, minus spending on plants; cash); buy floor(funds / (κ*·S)) plants of j*.
-   Accelerator: desired capacity = notional demand / u*; buy ceil((desired − capacity − on
-   order) / S) plants of j*, as far as cash pays.
+A7 **Investment.** Investible funds F accumulate profit after depreciation, minus dividends, plus
+   the depreciation reserve of every plant that leaves (retired at age T, scrapped or idle: its
+   purchase cost minus its book value; the remaining book value is a write-off, as v2's
+   `firm.write_offs`), minus spending on plants. Retained earnings: funds = min(F, cash); buy
+   floor(funds / (κ*·S)) plants of j*. Replacement is thus paid out of depreciation and net
+   expansion out of retained profit (decided 9 November: with profits alone, T = 10 and d = 0.5,
+   capacity holds only at a profit rate of 20 %). An initial plant releases its full purchase cost
+   although part of it was depreciated before t = 0; the cash cap covers that. Accelerator:
+   desired capacity = notional demand / u*; buy ceil((desired − capacity − on order) / S) plants
+   of j*, as far as cash pays.
 
 A8 **Hurdle timing.** h is computed at the investment step from the evaluation price p^e built
-   from the firm's price this period. The regulating technique R (lowest unit cost among plants
-   in operation, at this period's wage) is computed once per period before scrapping, the same
-   for every firm. An entrant computes h at its entry price.
+   from the firm's price this period. The regulating technique R (lowest unit cost among plants in
+   operation) is computed once per period before scrapping, the same for every firm. An entrant
+   computes h at its entry price.
 
 A9 **Technical change.** Each period each firm with plants draws one design with probability π,
    relative to its best known technique by its own rule, and keeps it if its rule prefers it
@@ -169,3 +193,26 @@ A11 **Winner.** A seed is decided if producing capacity is positive at t = 200; 
 A12 **Invasion (E6), to confirm.** Ten firms on D1 with equal capacity: 9 residents of one rule
    and 1 mutant of the other; the control puts the mutant on the residents' rule. The measure is
    the mutant label's capacity share at t = 200 against its initial 0.1.
+
+A13 **Open points from the review of 9 November.** Not decided: the plan must list each under
+   "Open questions" with a proposed default.
+   (a) Entrant's menu: the proposal says the public menu, A9 says every technique in use, which
+       lets entry bypass the lag L.
+   (b) Scrapping: which price is compared with ucs (proposed: the owner's posted price), whether
+       the 2 periods are consecutive, and what "idle" means (proposed: no output for 2 consecutive
+       periods).
+   (c) Entrant's funding: who pays for its plants (proposed: equity from the rest-of-economy
+       account, as v2's `equity_in`); money conservation needs it.
+   (d) E6: the demand for ten firms on D1, and μ = 0 during invasion runs so that entry adds no
+       mutant.
+   (e) Ties: equal technique costs, equal prices, and several firms meeting the exit test when
+       only some may leave (floor of 2 firms).
+   (f) Morris on T: δ = 1/T moves the unit costs of the initial menu, and below T ≈ 6.1 D1, not
+       D2, has the lowest unit cost (proposed: range 7–20).
+   (g) "Scrapping on unit cost (v2)" as a robustness check: with or without the maximum age.
+   (h) Names: R is both the lowest posted price (A5) and the regulating technique (A8); k is the
+       firms per pair (A2), a plant index (A3) and the bias draw in the proposal. Use distinct
+       names in the code.
+   (i) Constants outside the proposal's parameter table (0.5 × the excess-demand share in A5, the
+       1 % exit share, the 5-period entry window, the 2 scrapping periods, the entrant's size of
+       0.5): list them in `parameters.py`.

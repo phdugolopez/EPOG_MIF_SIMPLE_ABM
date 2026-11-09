@@ -1,5 +1,10 @@
 # Choices the brief leaves open (version 2 defaults; version 1 values kept for the record)
 
+> **Version 2 record, frozen on 9 November 2026.** This file documents the version 2 defaults and
+> the runs behind them, and is not updated for version 3. Decisions for version 3 are in
+> `v3-choices.md`; its specification is `final-model-proposal.md`.
+
+
 > **Defaults frozen on 7 November 2026 pending the sensitivity analysis** (section
 > "Sensitivity analysis (planned)" below, plan in `review-v2.md`). Pricing and technical
 > change are treatment arms until then.

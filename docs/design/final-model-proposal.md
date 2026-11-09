@@ -4,7 +4,10 @@ Proposal of 9 November 2026, for the group to discuss before the code is rebuilt
 shared doc (<https://claude.ai/artifact/2d7NxURvJpcK6YuXRm8s3b>), which holds the live version,
 the two figures and the decision tracker. Every number comes from the v2 sensitivity runs
 (`outputs/sensitivity/cells.csv`, stages 1–4) and from `sensitivity-discussion.md`. Nothing here
-is a decision until it is recorded in `choices.md`.
+is a decision until it is recorded in `v3-choices.md` (`choices.md` is the version 2 record,
+frozen on 9 November). Revised on 9 November after a review against the literature and the v2
+runs: four decisions (mechanism test, financing of replacement, status of the v2 numbers, E7) are
+in the last rows of the decision table, and the group still has to confirm them.
 
 ## At a glance
 
@@ -12,25 +15,32 @@ Rebuild the model around the one equation that separates the two rules, and writ
 "which rule wins, and where" (question A), explained by "the price at which profitability is
 judged" (question B).
 
-- **Answer to defend.** Under Marx-biased technical change (progrès technique biaisé à la Marx),
-  selection favours the unit-cost rule beyond drift: 0.81 of seeds at the v2 defaults (500
-  seeds), 0.94 under the innovation set (200 seeds), against 0.38–0.56 for the neutral controls.
+- **Prediction to retest.** Under Marx-biased technical change (progrès technique biaisé à la
+  Marx), v2 found that selection favours the unit-cost rule beyond drift: 0.81 of seeds at the v2
+  defaults (500 seeds), 0.94 under the innovation set (200 seeds), against 0.38–0.56 for the
+  neutral controls. Those runs scrap on unit cost with no maximum age; the v2 cell closest to the
+  rebuilt model (innovation set, scrapping on operating cost) gives 0.75, still beyond drift. A
+  pilot in v2 settles the reference numbers before the code starts.
 - **Mechanism.** The profit-rate rule judges techniques at the current market price. Above the
   price of production (prix de production) its hurdle is high (0.094 against r̄ = 0.05), so it
   refuses capital-using, cost-reducing designs and keeps dearer plants that price cutting then
-  punishes. Judged at prices of production, the two rules nearly coincide: 0.48–0.53, at drift.
-- **Where the profit-rate rule wins.** Only where accumulation selects instead of price: closed
-  entry (r̄ = 0.16), investment out of retained earnings, growing demand, and only under the
-  categories rule (0.32 at 500 seeds). The same corner gives 0.98 to the unit-cost rule under
-  the innovation set.
+  punishes. Judged at prices of production its hurdle falls to r̄, not to 0: at r̄ = 0.05 the
+  contest goes to drift under the categories rule (0.48–0.53) and the advantage shrinks but stays
+  under the innovation set (0.94 → 0.78); at r̄ = 0.16 it does not shrink (0.64 → 0.715).
+- **Where the profit-rate rule wins.** In v2, only where accumulation selects instead of price:
+  closed entry (r̄ = 0.16), investment out of retained earnings, growing demand, and only under
+  the categories rule (0.32 at 500 seeds). The same corner gives 0.98 to the unit-cost rule under
+  the innovation set. The reversal also rests on v2's markup floor and scrapping test: with the
+  unit-cost floor and scrapping on operating cost, as in the rebuilt model, the same cell is at
+  drift (0.43, 200 seeds).
 - **Model.** Core + entry/exit: one industry, Shaikh's three techniques, six firms in identical
   pairs. About 600 lines and five switches, against about 5,100 lines and 25 switches in v2.
 - **Treatments.** Bias of technical change, evaluation price, price-war regime, investment rule,
   open or closed entry, demand growth.
 - **Analysis.** Mixed population against two neutral controls, share of seeds won with Wilson
   intervals, whole-run decomposition into price, accumulation, entry and exit.
-- **Sensitivity.** Morris screening on 10 continuous parameters, plus five discrete robustness checks: plant life, categories rule, diffusion, homogeneous
-  start, number of firms.
+- **Sensitivity.** Morris screening on 10 continuous parameters, plus five discrete robustness
+  checks: plant life, categories rule, diffusion, homogeneous start, number of firms.
 - **Deliverables.** A 10-page report in seven sections and a 13-slide talk. The 20 November
   seminar shows the v2 results and the plan; 1 December shows the rebuilt model.
 
@@ -53,7 +63,8 @@ controls, and the categories rule as a labelled robustness check.
   an outcome of the draw and of the price (realised share 0.14–0.19 at β = 1.5–3).
 - Literature: Shaikh (2016, pp. 322–324) and Michl (2023, pp. 37–41) treat Marx-biased change as
   the empirical pattern. Duménil & Lévy (1995, p. 214) start from neutral change and get the bias
-  through rising wages, which a fixed wage rules out here.
+  through rising wages, which a fixed wage rules out here. Park (2001) simulates both criteria in
+  that framework (reported in Shaikh 2016, p. 322; not yet opened).
 - Consequence: both reversals exist only under categories. In the closed corner there,
   profit-rate firms seldom order a dearer technique (6–10 % of orders) while unit-cost firms take
   every conflict design, gaining little cost and much capital. Why the innovation set behaves
@@ -89,9 +100,16 @@ Three steps, each measured in v2:
    realises the lower one: 4.5 % against 8.4 %. The micro premise of Okishio's theorem fails out
    of equilibrium.
 
-The test that closes the loop: judge the profit-rate rule at the price of production of the
-regulating capital (capital régulateur) instead of its own price. The advantage disappears:
-0.81 → 0.53 under real competition, 0.71 → 0.48 under leader-follow. This is question B.
+The test that brackets the mechanism: judge the profit-rate rule at the price of production of the
+regulating capital (capital régulateur) instead of its own price. Its hurdle then falls to r̄, and
+the rule minimises uc + r̄κ, Sraffa's criterion (Shaikh 2016, p. 320 n. 36), not the unit cost. At
+r̄ = 0.05 the advantage disappears under the categories rule (0.81 → 0.53 under real competition,
+0.71 → 0.48 under leader-follow) and shrinks under the innovation set (0.94 → 0.78, still beyond
+drift). At r̄ = 0.16 (categories) it does not shrink (0.64 → 0.715): on Shaikh's menu D2 has the
+higher rate only below a price of about 85, and its price of production is 82.9 at r̄ = 0.05 but
+100.3 at r̄ = 0.16 (at D2's price of production the higher-cost technique C again has the higher
+rate, Shaikh 2016, p. 316). The advantage therefore has two parts: the market price standing above
+the price of production, and the r̄κ term that remains at it. This is question B.
 
 ### Is demand important?
 
@@ -112,7 +130,10 @@ Demand allocation yes, the demand level hardly.
 ### Is the exogenous profit rate important?
 
 Yes, as an entry gate rather than a price. In the core model r̄ does two jobs: entry, with
-probability θ·max(0, r_new − r̄)/r̄, and the price of production uc* + r̄κ* used in question B.
+probability θ·max(0, r_new − r̄)/r̄, and the price of production uc* + r̄κ* used in question B. In
+E3 the two jobs move together: r̄ = 0.16 raises the price of production used at λ > 0 and also
+closes entry, so that arm is read against the E4 cells at λ = 0 (decided 9 Nov; a separate rate
+for the evaluation price was considered and not kept).
 
 - At r̄ = 0.05 the industry rate is above r̄ in 95 of 100 periods: entry is open. At 0.16 it is
   above in fewer than 3: entry is closed.
@@ -131,26 +152,30 @@ probability θ·max(0, r_new − r̄)/r̄, and the price of production uc* + r̄
   under Marx-biased technical change?
 - **RQ2 (A).** How does the answer depend on the price-war regime (guerres des prix), the
   investment rule, open or closed entry, and demand growth?
-- **RQ3 (B).** Why does the winner win: is it the price at which the profit-rate rule judges
-  techniques?
+- **RQ3 (B).** Why does the winner win: how much of the advantage comes from the price at which
+  the profit-rate rule judges techniques, and how much from the general rate that stays in its
+  hurdle at prices of production?
 
 | # | Hypothesis | Source | Experiment | v2 evidence |
 | --- | --- | --- | --- | --- |
 | H1 | The unit-cost rule wins under price competition; the lowest-cost firm leads prices | Shaikh 2016, Table 7.3, pp. 313–317 | E1, E2 | Met: 0.81 (categories), 0.94 (innovation set) |
-| H1′ | The profit-rate rule cannot lose systematically: no capitalist adopts a technique that lowers the rate at current prices | Okishio 1961, as stated in Roemer 1979, p. 379 | E1 | Fails as a statement about who survives |
-| H2 | The criteria conflict only under Marx-biased change | Duménil & Lévy 2005, p. 209; Michl 2023, pp. 47–48 | E2 | Met: no draws 0.51, neutral 0.78, β = 3 0.97 |
-| H3 | With profit-financed investment and closed entry, selection runs through accumulation and can favour the profit-rate rule | Nelson & Winter 1982, pp. 17, 19; Duménil & Lévy 1995, p. 217 | E4 | Met under categories only: 0.32, and 0.85 with the accelerator |
+| H1′ | The profit-rate rule cannot lose systematically: no capitalist adopts a technique that lowers the rate at current prices | Roemer 1979, pp. 379 (cost-reducing innovations), 386 (the criterion with fixed capital, at current prices); Duménil & Lévy 2005, p. 209 (more profitable at going prices: Marx's and the classics' criterion) | E1 | Fails as a statement about who survives |
+| H2 | The criteria conflict only for capital-using, cost-reducing designs, so the advantage grows with the Marx bias | Shaikh 2016, pp. 315, 318; Michl 2023, pp. 47–48 | E2 | Partly: no draws 0.51; β = 0.5, 1.5, 3 give 0.80, 0.94, 0.97; but the neutral set, which contains such designs, already gives 0.78 |
+| H3 | With profit-financed investment and closed entry, selection runs through accumulation and can favour the profit-rate rule | Nelson & Winter 1982, pp. 17, 19; Duménil & Lévy 1995, p. 217 | E4 | Met under categories and v2's markup floor only: 0.32, and 0.85 with the accelerator; at drift (0.43) with the unit-cost floor and scrapping on operating cost |
 | H4 | Systematic price cutting narrows the margin p − uc, hence the hurdle and the conflict zone, so the advantage shrinks | Group conjecture (review-v2, section 4) | E4 | Mixed: 0.81 → 0.71 at the defaults, but 0.79 against 0.84 on average in the factorial |
-| H5 | Judged at the price of production, the profit-rate rule converges on the unit-cost rule | Shaikh 2016, pp. 315–317, 321 | E3 | Met: 0.81 → 0.53 and 0.71 → 0.48 |
+| H5 | Judged at the price of production, the profit-rate rule's hurdle falls to r̄: the advantage shrinks, and vanishes only where r̄κ is too small to change the choice | Shaikh 2016, pp. 315–317, 320 n. 36, 321 | E3 | Partly: categories 0.81 → 0.53 and 0.71 → 0.48 (drift); innovation set 0.94 → 0.78 (beyond drift); r̄ = 0.16 0.64 → 0.715 |
 | H6 | Under price cutting the lowest-cost technique has the highest sustainable rate, so the profit-rate adopter does not realise the rate it maximises | Shaikh 2016, pp. 313–317 | E1, E5 | Met: 4.5 % against 8.4 % in the base cell |
-| H7 | Neutral, local innovation selected at a rising wage produces Marx-biased change | Duménil & Lévy 1995, p. 214 | E7 | Not at a fixed wage: the neutral set gives capital-saving change, Marx-biased in 0 % of seeds |
 
 Not tested, and the report should say so: Okishio's theorem about the general rate of profit,
-since r̄ is exogenous and the money wage is the numéraire.
+since r̄ is exogenous and the money wage is the numéraire. Nor H7, that neutral, local innovation
+selected at a rising wage produces Marx-biased change (Duménil & Lévy 1995, p. 214; Park 2001): at
+a fixed wage v2's neutral set gives capital-saving change, Marx-biased in 0 % of seeds. E7 was
+dropped on 9 November and the question goes to the discussion as an extension.
 
 ## The simplified model (core + entry/exit)
 
-Six steps a period and one rule that differs between the types; v2's defaults are kept wherever v2 showed a choice matters, plus a finite plant life.
+Six steps a period and one rule that differs between the types; v2's defaults are kept wherever v2
+showed a choice matters, plus a finite plant life.
 
 **Setting.** One industry in a given economy: money wage = numéraire (w = 1), exogenous demand
 D_t = D_0(1 + g)^t, exogenous general rate r̄, δ = 0.10. A technique j is a pair (ucs_j, κ_j):
@@ -177,24 +202,30 @@ of the regulating technique R, the lowest unit cost in operation (v2's
 
 **Schedule.**
 
-1. **Pricing.** Each firm sees last period's lowest price R. After a shortage (demand above
-   normal capacity) it moves up to the next higher rival price. Otherwise it undercuts to
-   (1 − c)R, c = 0.02, if it has spare capacity (last period's utilisation below 1) and, under *cost-edge cutting* (real competition,
-   the default), a unit-cost edge over a firm posting R; under *systematic cutting*
-   (leader-follow) spare capacity is enough. Else it follows R. Floor in both regimes: the unit
-   cost of its best plant. The share of periods with a cut is recorded as the price-war frequency.
+1. **Pricing.** Each firm sees last period's lowest price R. After a shortage (demand above normal
+   capacity) it moves up to the next higher rival price. Otherwise it undercuts to (1 − c)R, c =
+   0.02, if it has spare capacity (last period's utilisation below 1) and, under *cost-edge
+   cutting* (real competition, the default), a unit-cost edge over a firm posting R; under
+   *systematic cutting* (leader-follow) spare capacity is enough. Else it follows R. Floor in both
+   regimes: the unit cost of its best plant. The share of periods with a cut is recorded as the
+   price-war frequency.
 2. **Demand.** Shares follow the replicator below with E = 1/p and χ = 1. Sales are capped by
    offered capacity; unserved demand goes pro rata to firms with spare capacity, the rest is lost.
-3. **Production and accounts.** Plants run cheapest first, up to normal capacity, with no overtime. Profit after depreciation by time;
-   dividends 0.5 × max(0, profit). No debt, interest or bankruptcy.
-4. **Scrapping.** A plant retires at age T = 10 (= 1/δ), after 2 periods with the price below its operating cost
-   ucs (capital is sunk), or after 2 periods idle. No replacement of working plants.
+3. **Production and accounts.** Plants run cheapest first, up to normal capacity, with no
+   overtime. Profit after depreciation by time; dividends 0.5 × max(0, profit). No debt, interest
+   or bankruptcy.
+4. **Scrapping.** A plant retires at age T = 10 (= 1/δ), after 2 periods with the price below its
+   operating cost ucs (capital is sunk), or after 2 periods idle. No replacement of working
+   plants.
 5. **Technical change and investment.** Draws as below. *Retained earnings* (autofinancement, the
-   default): buy as many whole plants of j* as accumulated retained profits still in cash pay
-   for. *Accelerator*: desired capacity = f_i,t·D_t / u*, the demand addressed to the firm
-   before the capacity cap over a target utilisation u* = 0.9; buy the plants missing to reach it,
-   if cash allows. Without overtime, sales never exceed capacity, so a sales-based accelerator
-   would never expand.
+   default): buy as many whole plants of j* as its investible funds, still in cash, pay for:
+   accumulated retained profits plus the depreciation reserves of the plants that have left
+   (retired at age T, scrapped or idle). Replacement is thus paid out of depreciation and net
+   expansion out of profit; with profits alone, a plant life of 10 periods and a payout of 0.5
+   would require a profit rate of 20 % just to hold capacity (decided 9 Nov). *Accelerator*:
+   desired capacity = f_i,t·D_t / u*, the demand addressed to the firm before the capacity cap
+   over a target utilisation u* = 0.9; buy the plants missing to reach it, if cash allows. Without
+   overtime, sales never exceed capacity, so a sales-based accelerator would never expand.
 6. **Entry and exit.** One entrant with the probability below, of size 0.5 × the average
    incumbent's capacity, technique chosen by its own rule on the public menu, rule copied from an
    incumbent drawn by market share and flipped with probability μ = 0.02, price by the common
@@ -212,14 +243,13 @@ ucs_n = (1-a)\,ucs_o, \quad \kappa_n = (1+k\,a)\,\kappa_o, \quad a \sim U(0, A],
 \Pr(\text{entry}_t) = \min\Big\{1,\ \theta\,\frac{\max(0,\ r^{new}_t - \bar r)}{\bar r}\Big\}
 ```
 
-**Technical change.** Each period, with probability π = 0.2, a firm draws one design from its
-best known technique o (equation above; A = 0.05, σ = 0.8, β = 1.5). It keeps the design if its
-own rule prefers it to o; a design becomes public 2 periods after its first plant. β = 0 gives
-pure operating-cost cuts, which both rules adopt. The neutral set (direction uniform on the
-circle) and the categories rule stay as robustness switches of about 20 lines each; "no draws" is the null. E7 swaps the Marx set for neutral draws and lets the money wage grow at
-g_w a period, with the capital good as numéraire and ucs read as labour per unit, so that Marx
-bias can appear as a result (Duménil & Lévy 1995). r^new_t is the capacity-weighted realised rate of the plants built in the last 5
-periods, with θ = 5.
+**Technical change.** Each period, with probability π = 0.2, a firm draws one design from its best
+known technique o (equation above; A = 0.05, σ = 0.8, β = 1.5). It keeps the design if its own
+rule prefers it to o; a design becomes public 2 periods after its first plant. β = 0 gives pure
+operating-cost cuts, which both rules adopt. The neutral set (direction uniform on the circle) and
+the categories rule stay as robustness switches of about 20 lines each; "no draws" is the null.
+r^new_t is the capacity-weighted realised rate of the plants built in the last 5 periods, with θ =
+5.
 
 **Randomness and neutrality.** One random stream per firm, spawned from the run seed, so a firm's
 draws never depend on its place in the list; the two controls then sit at 0.5 by symmetry (v2:
@@ -232,7 +262,7 @@ one label-swap test guards this. Python 3.12 or later, since the float sum chang
 | Evaluation-price weight | λ | 0 | E3: 0, 0.25, 0.5, 0.75, 1 |
 | Price-war regime | — | cost-edge cutting | E4: systematic cutting |
 | Investment rule | — | retained earnings | E4: accelerator |
-| General rate (entry gate) | r̄ | 0.05 | E4: 0.16 |
+| General rate (entry gate; price of production at λ > 0) | r̄ | 0.05 | E3 and E4: 0.16 |
 | Demand growth | g | 0 | E4: 0.01 |
 | Largest operating-cost cut per design | A | 0.05 | Morris 0.02–0.10 |
 | Draw probability per period | π | 0.2 | Morris 0.1–0.4 |
@@ -245,15 +275,15 @@ one label-swap test guards this. Python 3.12 or later, since the float sum chang
 | Mutation at entry | μ | 0.02 | Morris 0–0.05 |
 | Plant life (scrapping on operating cost) | T | 10 | Robustness: 5 and 20 |
 | Spread of bias | σ | 0.8 | Fixed |
-| Wage growth (E7 only) | g_w | 0 | E7: 0, 0.01, 0.02 |
-| Lag before a design is public | L | 2 | E7: 2, 10 |
+| Lag before a design is public | L | 2 | Fixed |
 | Target utilisation (accelerator only) | u* | 0.9 | Robustness: 0.8 and 0.95 in the accelerator cells of E4 |
 | Spare-capacity threshold (pricing) | u_full | 1 | Fixed |
 | Initial firms per (technique, rule) pair | k | 1 (6 firms) | Robustness: 2 and 5 (12 and 30 firms), demand scaled by k |
 
-**Code target.** Keep the template's layout (`equations/`, `markets/`, `model/`) with about 20 equation files instead of 36, each named
-`equations/<step>_<equation>.py` after the loop step that uses it (`pricing_floor.py`,
-`demand_replicator.py`; `common_` for definitions several steps share, such as the unit cost), two output tables (per period and label; one summary row per run)
+**Code target.** Keep the template's layout (`equations/`, `markets/`, `model/`) with about 20
+equation files instead of 36, each named `equations/<step>_<equation>.py` after the loop step that
+uses it (`pricing_floor.py`, `demand_replicator.py`; `common_` for definitions several steps
+share, such as the unit cost), two output tables (per period and label; one summary row per run)
 instead of seven, and no debug suite. About 600 lines of model and 200 of experiments.
 
 ## What to drop from version 2, and why
@@ -280,8 +310,8 @@ floor of 2 firms.
 
 ## Model analysis
 
-Eight experiments, each a mixed population run against the two neutral controls on the same
-seeds. Total budget about 36,000 runs, under an hour on
+Seven experiments, each a mixed population run against the two neutral controls on the same
+seeds. Total budget about 38,400 runs, under an hour on
 10 workers at v2's speed (21,600 runs in 23 minutes).
 
 **Outcome measures.**
@@ -302,18 +332,38 @@ seeds. Total budget about 36,000 runs, under an hour on
 | E0 | Without technical change, does the industry show Shaikh's real-competition facts? | Single-rule populations, no draws: leader = lowest-cost firm, price against the regulating price of production, unequal margins and profit rates | 50 | One panel of a typical run |
 | E1 | Which rule wins at the defaults? | Mixed and both controls, β = 1.5 | 500 | Typical run (prices, capacity shares) and share won |
 | E2 | Does the advantage grow with Marx bias? | β = 0, 0.5, 1.5, 3; neutral set; no draws | 200 | Share won against β, controls as a band |
-| E3 | Does the advantage come from the evaluation price (B)? | λ = 0, 0.25, 0.5, 0.75, 1 under both price-war regimes | 200 | Share won and mean hurdle against λ |
+| E3 | How much of the advantage comes from the evaluation price (B)? | λ = 0, 0.25, 0.5, 0.75, 1 under both price-war regimes and r̄ = 0.05, 0.16: 20 cells | 200 | Share won and mean hurdle against λ, one curve per r̄ |
 | E4 | Where does each rule win (A)? | Price-war regime × investment rule × r̄ (0.05, 0.16) × g (0, 1 %): 16 cells, then the same 16 under the categories rule | 200 | Two 4 × 4 heat maps |
 | E5 | Through which channel does the winner win? | Decomposition of the E4 cells; within-cell regression of the profit-rate gap on `okishio_dearer` (v2: +0.075, interval 0.060–0.091) | E4 runs | Bars of the four terms in four cells |
 | E6 | Can one firm of a rule invade a population of the other? | 1 firm of one rule among 9 of the other, both ways; control = the same set-up with one rule | 500 | Invasion rate against its control |
-| E7 | Does Marx bias emerge from neutral innovation when wages rise? | Neutral draws; menu shared after 2 or 10 periods; wage growth g_w = 0, 1, 2 % a period (capital good as numéraire): 6 cells | 200 | Share of seeds with emergent Marx bias, by label, beside share won |
 
 There is no docking against v2: E0 is the check that the rebuilt code behaves like an industry
-under real competition before E1–E6 are read.
+under real competition before E1–E6 are read; the v2 pilot below gives the numbers to compare them
+with.
+
+## Pilot in v2 before the spec is frozen
+
+Eight cells of v2 at the rebuilt model's settings give the reference numbers that E1, E3 and E4
+are then compared with, and show whether the industry holds its capacity (decided 9 Nov).
+
+- **Settings.** Innovation set with β = 1.5, `SCRAP_COST = "operating_cost"`, `PLANT_LIFE = 10`,
+  retained earnings.
+- **Cells.** Pricing (real competition; leader-follow with `LEADER_FOLLOW_FLOOR = "unit_cost"`) ×
+  r̄ (0.05, 0.16) × g (0, 1 %): 8 cells × 3 populations × 200 seeds = 4,800 runs, about 5 minutes
+  at the speed of stage 1.
+- **Second arm.** The same 8 cells with the depreciation reserve released when a plant leaves (a
+  few lines on a throwaway branch of v2), to test the investment rule of the rebuilt model.
+- **Read.** Share won against the controls; capacity, entries and periods above r̄ (is the
+  industry renewed by its firms or by entrants?); price over the regulating price of production.
+- **Use.** If the unit-cost advantage stays beyond drift in the second arm, freeze the spec. If it
+  does not, revisit scrapping and investment before any v3 code is written.
+- **Not covered.** v2 keeps overtime and its own shortage rule, so the pilot is a reference, not a
+  docking.
 
 ## Sensitivity analysis
 
-Screen the ten continuous parameters of the parameter table with Morris elementary effects, then run five discrete robustness checks; the report gets one figure and one table. The point to show
+Screen the ten continuous parameters of the parameter table with Morris elementary effects, then
+run five discrete robustness checks; the report gets one figure and one table. The point to show
 is that the headline (E1) and the mechanism (E3) do not rest on the values the model fixes.
 
 - **Outcome.** Y = share won by the mixed population minus the mean share won by the two
@@ -346,20 +396,21 @@ as a robustness switch.
 
 ## Links to the literature
 
-Twenty-two texts are in the Zotero library (checked on 9 November 2026 with `tools/zotero.py`;
-perso unless noted). The methods references at the end are not, and must be added before they
-are cited.
+Twenty-eight texts are in the Zotero library (checked on 9 November 2026 with `tools/zotero.py`;
+perso unless noted): five of the methods references were added since the first check. The texts
+marked — are not in the library and must be added before they are cited.
 
 | Role | Text | Zotero | Use in the report |
 | --- | --- | --- | --- |
 | Choice of technique | Okishio 1961, *Kobe University Economic Review* | 3ZDE32J4, no PDF | The theorem; cite through Roemer and Shaikh unless the PDF turns up |
-| | Roemer 1979, *CJE* 3 | TX2DFFI7 | H1′: statement of the criterion (p. 379) |
+| | Roemer 1979, *CJE* 3 | TX2DFFI7 | H1′: the criterion, for cost-reducing innovations (p. 379) and with fixed capital at current prices (p. 386) |
 | | Shaikh 1978, *CJE* 2(2) | J9AEUKMD | Criterion stated at prices of production (pp. 241–242): H5 |
 | | Shaikh 1980, *CJE* 4 | EECWZJXJ | Reply on the choice of technique (p. 81) |
-| | Shaikh 2016, *Capitalism* | BMKVYW2U | Real competition (concurrence réelle), regulating capitals, Table 7.3, pp. 313–324: H1, H5, H6 and the test industry |
+| | Shaikh 2016, *Capitalism* | BMKVYW2U | Real competition (concurrence réelle), regulating capitals, Table 7.3 (p. 271), pp. 313–324: H1, H2, H5, H6 and the test industry (Tables 7.10–7.11, p. 315) |
 | | Okishio 2001, *CJE* 25(4) | BJE3KHR9, no PDF | How competition forms production prices: background for B; not yet opened |
-| | Duménil & Lévy 2005, *Research in Political Economy* 22 | LWGHAJ9B | Testing the Marxian-classical criterion (pp. 209–213): H2, H5 |
-| | Michl 2023, *New School Economic Review* | FX3M6W5I | Conflict of the viability criteria (pp. 47–48); Marx-biased change (pp. 37–41) |
+| | Duménil & Lévy 2005, *Research in Political Economy* 22 | LWGHAJ9B | Comment on Park (2005): the profit-rate criterion at going prices is Marx's and the classics', not Okishio's own (p. 209); US data for 1948–2002 satisfy it (pp. 210–214): H1′ and the discussion. The attached PDF is the whole volume |
+| | Park 2001, *Research in Political Economy* 19 | 9CUFY49Q, no PDF | Okishio's against Shaikh's criterion, simulated in the Duménil–Lévy–Foley framework (reported in Shaikh 2016, p. 322): closest precedent for the two rules and for H7; not yet opened |
+| | Michl 2023, *New School Economic Review* | FX3M6W5I | Conflict of the viability criteria (pp. 47–48): H2; Marx-biased change (pp. 37–41) |
 | | Foley, Michl & Tavani 2019, *Growth and Distribution* | V98SW3XI | Viability criterion, Marx-biased change; the PDF did not open in the v2 analysis, retry |
 | | Basu 2010, *Metroeconomica* | A8RD2HN7 | Marx-biased technical change; not yet opened |
 | | Basu 2026, *Review of Radical Political Economics* | EQUSWFVB | Technical change and the rate of profit in classical-Marxian growth models; the most recent treatment, read first |
@@ -373,11 +424,12 @@ are cited.
 | | Dosi et al. 2015 (*SBE*); Foster, Haltiwanger & Syverson 2008 (*AER*) | TVXQ9DA7; QX5VTYKC | Weak selection in the data: why χ is not the lever |
 | Computational classical-Marxian | Cogliano, Veneziani & Yoshihara 2022, *Journal of Economic Surveys* | NY6KI3CY | Where the model sits; not yet opened |
 | | Cogliano, Veneziani & Yoshihara 2022, "An agent-based approach to classical competitive prices" | DRGHDBSG | Closest ABM precedent; read before the seminar |
-| Methods, not in the library | Grimm et al. 2020, ODD protocol (*JASSS*) | — | Model description in the appendix |
-| | Morris 1991 (*Technometrics*); Campolongo, Cariboni & Saltelli 2007 (*Environmental Modelling & Software*) | — | Screening design and μ* |
-| | ten Broeke, van Voorn & Ligtenberg 2016; Lee et al. 2015 (both *JASSS*) | — | Choice of method; number of replications |
-| | Fagiolo, Moneta & Windrum 2007 (*Computational Economics*) | — | Validation by stylised facts |
+| Methods | Grimm et al. 2020, ODD protocol (*JASSS*) | JIHGLM2R | Model description in the appendix |
+| | Morris 1991 (*Technometrics*); Campolongo, Cariboni & Saltelli 2007 (*Environmental Modelling & Software*) | DS57QSIN; X29VV2GM | Screening design and μ* |
+| | ten Broeke, van Voorn & Ligtenberg 2016; Lee et al. 2015 (both *JASSS*) | BTRNEF9Q; Lee: — | Choice of method; number of replications |
+| | Fagiolo, Moneta & Windrum 2007 (*Computational Economics*) | XKW5NTIY | Validation by stylised facts |
 | | Metcalfe 1998; Botwinick 1993 (books) | — | Replicator selection; entry and the equalisation of rates |
+| | Nakatani 1980, *CJE* 4(1), comment on Shaikh's price-cutting argument (DOI 10.1093/oxfordjournals.cje.a035437) | — | To add and read for H1: title and DOI checked on CrossRef; author's name from memory, text not read |
 
 ## Structure of the 10-page report
 
@@ -389,12 +441,12 @@ Bassi).
 | § | Section | Pages | Content | Exhibits |
 | --- | --- | --- | --- | --- |
 | 1 | Introduction | 0.75 | The Okishio–Shaikh controversy in one paragraph; RQ1–RQ3; the answer in two sentences; what an evolutionary test adds | — |
-| 2 | Literature and hypotheses | 1.25 | Choice of technique (Okishio, Roemer, Shaikh, Duménil & Lévy, Michl, Basu); real competition (Shaikh, Salter); evolutionary selection (Nelson & Winter, Silverberg et al., Metcalfe); computational classical-Marxian work (Cogliano et al.) | Table 1: H1–H6 |
+| 2 | Literature and hypotheses | 1.25 | Choice of technique (Okishio, Roemer, Shaikh, Duménil & Lévy, Michl, Park, Basu); real competition (Shaikh, Salter); evolutionary selection (Nelson & Winter, Silverberg et al., Metcalfe); computational classical-Marxian work (Cogliano et al.) | Table 1: H1–H6 |
 | 3 | Model | 2.5 | Setting; the one equation; technical change; price-war regimes; demand; investment; scrapping; entry and exit; neutrality | Figure 1: the conflict zone on Shaikh's menu (D2 has the lowest unit cost, 75, but at p = 100 D1 has the higher rate, 16.86 % against 15.83 %); Table 2: parameters |
 | 4 | Experimental design | 1 | Mixed population against controls; share won and Wilson intervals; beyond drift; decomposition; seeds | — |
-| 5 | Results | 3 | 5.1 Headline and null (E0, E1); 5.2 Bias, imposed (E2) and emergent (E7); 5.3 Mechanism: evaluation price, realised rates, dearer orders (E3, E5); 5.4 Conditions and channels (E4, E5); 5.5 Where the profit-rate rule wins: the categories corner, invasion (E6) | Figure 2: typical run; Figure 3: share won against β and against λ; Figure 4: E4 heat maps; Figure 5: decomposition bars |
+| 5 | Results | 3 | 5.1 Headline and null (E0, E1); 5.2 Bias of technical change (E2); 5.3 Mechanism: evaluation price and general rate, realised rates, dearer orders (E3, E5); 5.4 Conditions and channels (E4, E5); 5.5 Where the profit-rate rule wins: the categories corner, invasion (E6) | Figure 2: typical run; Figure 3: share won against β and against λ; Figure 4: E4 heat maps; Figure 5: decomposition bars |
 | 6 | Sensitivity analysis | 0.75 | Morris screening; discrete robustness checks, the scrapping test argued | Figure 6: μ* against σ; Table 3: robustness |
-| 7 | Discussion and conclusion | 0.75 | Okishio's theorem: its micro premise fails out of equilibrium, its macro claim is not tested here. Limits: fixed wage, exogenous r̄ and demand, one industry, no credit. Extensions: endogenous wage (Duménil & Lévy), several industries, a stock-flow consistent closure | — |
+| 7 | Discussion and conclusion | 0.75 | Okishio's theorem: its micro premise fails out of equilibrium, its macro claim is not tested here. Limits: fixed wage, exogenous r̄ and demand, one industry, no credit. Extensions: bias emerging from neutral innovation at a rising wage (Duménil & Lévy, Park), several industries, a stock-flow consistent closure | — |
 
 The schedule diagram goes in the slides, not the report: the numbered schedule takes less room on
 the page.
@@ -412,26 +464,28 @@ each.
 - **Block 2, method and results.** (5) Mixed population against two neutral controls: what
   "beyond drift" means. (6) The unit-cost rule wins (0.81, 0.94 against 0.38–0.56); no technical
   change, no contest (0.51). (7) The more Marx-biased the change, the larger the advantage.
-- **Block 3, mechanism.** (8) The evaluation price: judged at the price of production, the two
-  rules coincide. (9) The profit-rate firms do not realise the rate they maximise (4.5 % against
+- **Block 3, mechanism.** (8) The evaluation price: judged at the price of production, the
+  advantage shrinks to what the general rate leaves (drift under categories, 0.78 under the
+  innovation set). (9) The profit-rate firms do not realise the rate they maximise (4.5 % against
   8.4 %).
 - **Block 4, conditions and robustness.** (10) The map of conditions: price channel against
   accumulation channel. (11) Where the profit-rate rule wins: a closed, self-financed, growing
-  industry, under the categories rule only; the accelerator flips it (0.32 → 0.85).
-  (12) Robustness: Morris screening and the scrapping test. (13) Conclusion and limits; on
+  industry, under the categories rule and v2's markup floor only; the accelerator flips it (0.32 →
+  0.85). (12) Robustness: Morris screening and the scrapping test. (13) Conclusion and limits; on
   20 November, the rebuild plan and the questions for the audience.
 
 ## Timeline and division of work
 
-The rebuilt model gets five days of coding before the 20 November seminar.
+The rebuilt model gets five days of coding before the 20 November seminar. A pilot in v2 comes
+first, on 10–11 November.
 
 | Dates (2026) | Step |
 | --- | --- |
-| 10–11 Nov | Group meeting: freeze the spec (decisions below) |
+| 10–11 Nov | Pilot in v2, then group meeting: freeze the spec (decisions below) |
 | 12–16 Nov | Write the simplified code |
 | 17–19 Nov | E0–E3 runs, seminar slides |
 | 20 Nov | Simulated seminar |
-| 21–25 Nov | E4–E6 runs, Morris screening |
+| 21–25 Nov | E4–E6 runs, Morris screening, robustness checks |
 | 26–29 Nov | Write the report |
 | 30 Nov | Final slides, rehearsal |
 | 1 Dec | Report and presentation due |
@@ -445,16 +499,21 @@ The rebuilt model gets five days of coding before the 20 November seminar.
 
 ## Decisions the group needs to take
 
-Status on 9 November: every row below is agreed as recommended except the questions for
-Funalot and Bassi, which are still to be asked.
+Status on 9 November: every row below is agreed as recommended except the questions for Funalot
+and Bassi, which are still to be asked. The last four rows were decided by Ugo on 9 November after
+the review and are still to be confirmed by the group.
 
 | Decision | Options | Recommendation | Why |
 | --- | --- | --- | --- |
-| Technical-change rule | Innovation set main; categories main; both side by side | Innovation set main, categories as robustness, E7 as extension | Reversals exist only under categories; the innovation set makes the conflict zone an outcome |
+| Technical-change rule | Innovation set main; categories main; both side by side | Innovation set main, categories as robustness; emergent bias left to the discussion (E7 dropped 9 Nov) | Reversals exist only under categories; the innovation set makes the conflict zone an outcome |
 | Scrapping test | Unit cost (v2); operating cost (Salter, Shaikh) | **Decided 9 Nov:** operating cost with a plant life of 10 periods | Salter's and Shaikh's margin: capital is sunk, so a plant runs while it covers its operating cost; the finite life retires old vintages, which v2 lacked |
 | Pricing rule | v2's two rules as they are; one rule with a "who cuts" switch and a common unit-cost floor | One rule, two regimes | The markup floor never lets the hurdle reach 0; one floor makes the regimes differ only in how often firms cut |
 | Investment factor | "Finance" with borrowing; "investment rule" without debt | Investment rule, no debt | Borrowing is inert under leader-follow and close to inert under real competition |
-| Evaluation price | Two ends only; continuous λ | Continuous λ (5 levels) | A dose-response curve is the cleanest exhibit for question B |
+| Evaluation price | Two ends only; continuous λ | Continuous λ (5 levels), crossed with r̄ (0.05, 0.16) | A dose-response curve is the cleanest exhibit for question B |
 | r̄ in the text | "General rate"; "open against closed industry" | Open against closed industry | That is what it does in the model: above r̄ in 95 of 100 periods against fewer than 3 |
 | 20 November seminar | v2 results and the rebuild plan; wait for v3 | v2 results and the plan | v3 results will be at most two days old by then |
 | Questions for Funalot and Bassi | — | Ask now | Do references and appendices count in the 10 pages? Length of each presentation? Is the template layout required? |
+| Mechanism test (H5, E3) | Reword only; cross E3 with r̄; a separate rate for the evaluation price | **Decided 9 Nov:** reword H5 and cross E3 with r̄ (0.05, 0.16) | At prices of production the hurdle falls to r̄, not to 0: v2 gives drift under categories but 0.78 under the innovation set and 0.715 at r̄ = 0.16. r̄ = 0.16 also closes entry, so that arm is read against E4 |
+| Financing of replacement | Retained profits only (v2); all cash; no maximum age; depreciation reserve released when a plant leaves | **Decided 9 Nov:** reserve released when a plant leaves; net expansion out of retained profits | With a plant life of 10 periods, profits alone hold capacity only at r = δ/(1 − d) = 20 %, which keeps entry open and prices far above the price of production |
+| Status of the v2 numbers | An answer to defend; predictions to retest, with a v2 pilot | **Decided 9 Nov:** predictions, and a pilot of 8 v2 cells before the spec is frozen | 0.81, 0.94 and 0.32 come from unit-cost scrapping, no maximum age and the markup floor; the closest v2 cells give 0.75 and 0.43 |
+| Emergent bias (E7, H7) | Keep E7; pose it in real terms; comparative statics; drop | **Decided 9 Nov:** drop E7, H7 goes to the discussion | A rising money wage with prices that rise only after a shortage squeezes margins to zero, so h → 0 and the rules coincide; H7 is in neither Table 1 nor the slides |
