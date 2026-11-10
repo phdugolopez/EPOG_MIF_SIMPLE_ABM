@@ -4,23 +4,31 @@ A period is the tuple STEPS, run in order, then close_period. Every step compute
 from the state at the start of the step, so the order of industry.firms never matters. The
 run viewer runs the same tuple and reads the firms between two steps.
 
-State of the build: steps 0, 3 and 4, close_period and check are final. Steps 1, 2, 5 and 6
+State of the build: steps 0, 1, 3 and 4, close_period and check are final. Steps 2, 5 and 6
 are the stubs of stage 2, each with its final signature and a docstring that says what it
-reads and writes; stages 3a, 3b and 3d write their bodies.
+reads and writes; stages 3b and 3d write their bodies.
 """
-from math import fsum
+from math import fsum, isclose
+from typing import NamedTuple
 
 from equations.accounts_depreciation import depreciation
 from equations.accounts_dividends import dividends
 from equations.accounts_merit_order import dispatch
 from equations.common_regulating_price import price_of_production, regulating_technique
 from equations.common_technique_choice import frontier
+from equations.common_unit_cost import unit_cost
 from equations.entry_new_plant_rate import new_plant_rate
+from equations.pricing_cutting import cutting_price
+from equations.pricing_entitlement import (entitled_cost_edge, entitled_normal_price,
+                                           entitled_systematic)
+from equations.pricing_floor import operating_cost_floor
+from equations.pricing_universal import universal_price
 from equations.scrapping_below_cost import periods_below_cost, scrap_cost
 from equations.scrapping_idle_plants import periods_idle
 from equations.scrapping_retirement import retirement_reason
 from markets.payments import pay
 from markets.plant_market import remove_plant
+from model.entities import Firm
 from model.outputs import count, record_end, record_production
 from parameters import EPS, LABELS, MONEY_EPS
 
@@ -75,6 +83,16 @@ def publish_designs(industry) -> None:
     industry.public = frontier(industry.public, p.delta)
 
 
+class Quote(NamedTuple):
+    """What step 1 reads about one firm, taken before any price changes."""
+    firm: Firm
+    price: float           # the price it posted last period
+    cost: float            # the unit cost of its best plant
+    normal_price: float    # the price of production of its best plant
+    floor: float           # the lowest price it may cut to
+    spare: bool            # whether it had spare capacity last period
+
+
 def set_prices(industry) -> None:
     """Step 1, pricing (v4-final-model.md, "Schedule", step 1).
 
@@ -84,13 +102,101 @@ def set_prices(industry) -> None:
 
     Reads each firm's price, util and plants (unit cost, kappa, last output), and
     industry.excess. Writes firm.price and firm.cut.
-
-    Stub of stage 2: every price stays as it is. Stage 3a writes the body, as section 12 of
-    the plan has it.
     """
+    p = industry.params
+
+    # Read every firm before any price changes: the firms move at the same time.
+    # Only the firms with a plant in operation set a price.
+    quotes = [read_quote(firm, p) for firm in industry.firms if firm.plants]
+
     # No firm has cut yet this period.
     for firm in industry.firms:
         firm.cut = False
+
+    # Each firm posts its price from what the others posted last period.
+    for own in quotes:
+        # A firm's rivals are the other firms with a plant in operation.
+        rivals = [other for other in quotes if other.firm is not own.firm]
+        if p.pricing == "universal":
+            price, has_cut = universal_step(own, quotes, industry.excess, p)
+        else:
+            price, has_cut = cutting_step(own, rivals, industry.excess, p)
+        own.firm.price = price
+        own.firm.cut = has_cut
+
+
+def read_quote(firm, p) -> Quote:
+    """The quote of a firm with a plant in operation."""
+    # The best plant has the lowest unit cost; a tie goes to the lower capital per unit.
+    best = min(firm.plants, key=lambda plant: (plant_unit_cost(plant, p), plant.technique.kappa))
+    cost = plant_unit_cost(best, p)
+
+    if p.price_floor == "operating_cost":
+        # The operating costs of the plants that ran last period, and of every plant it owns.
+        ran = [plant.technique.ucs for plant in firm.plants if plant.output > EPS]
+        owned = [plant.technique.ucs for plant in firm.plants]
+        floor = operating_cost_floor(ran, owned)
+    else:
+        floor = cost
+
+    return Quote(
+        firm=firm,
+        price=firm.price,
+        cost=cost,
+        normal_price=cost + p.rbar * best.technique.kappa,
+        floor=floor,
+        spare=firm.util < p.u_full,
+    )
+
+
+def cutting_step(own: Quote, rivals: list[Quote], excess: float, p) -> tuple[float, bool]:
+    """The price of a firm under one of the three cutting rules, and whether it cut."""
+    return cutting_price(
+        previous=own.price,
+        rival_prices=[rival.price for rival in rivals],
+        entitled=is_entitled(own, rivals, p),
+        excess=excess,
+        floor=own.floor,
+        cut=p.price_cut,
+        shortage_step=p.shortage_step,
+    )
+
+
+def is_entitled(own: Quote, rivals: list[Quote], p) -> bool:
+    """Whether the price rule lets the firm undercut the lowest price of its rivals."""
+    if not rivals:
+        return False
+    lowest = min(rival.price for rival in rivals)
+    # The unit costs of the rivals that posted that lowest price.
+    costs_at_lowest = [rival.cost for rival in rivals if isclose(rival.price, lowest)]
+
+    if p.pricing == "systematic":
+        return entitled_systematic(own.spare)
+    if p.pricing == "normal_price":
+        return entitled_normal_price(own.spare, own.cost, costs_at_lowest, lowest,
+                                     own.normal_price)
+    return entitled_cost_edge(own.spare, own.cost, costs_at_lowest)
+
+
+def universal_step(own: Quote, quotes: list[Quote], excess: float, p) -> tuple[float, bool]:
+    """The price of a firm under universal undercutting, and whether it cut."""
+    # L, the lowest price posted last period by a firm with a plant in operation.
+    lowest = min(quote.price for quote in quotes)
+    return universal_price(
+        previous=own.price,
+        lowest=lowest,
+        floor=own.floor,
+        excess=excess,
+        alone=len(quotes) == 1,
+        cut=p.price_cut,
+        rise=p.shortage_rise,
+        cap=p.monopoly_cap,
+    )
+
+
+def plant_unit_cost(plant, p) -> float:
+    """The unit cost of a plant's technique."""
+    return unit_cost(plant.technique.ucs, plant.technique.kappa, p.delta)
 
 
 def allocate_demand(industry) -> None:
