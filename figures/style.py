@@ -27,7 +27,11 @@ PRICING = {"cost_edge": "cost-edge cutting", "systematic": "systematic cutting",
            "leader_follow_overtime": "leader-follow pricing with overtime",
            "leader_follow_ucs_overtime": "leader-follow pricing with overtime, operating-cost floor",
            "overtime": "with overtime",
-           "normal_price_overtime": "normal-price cutting with overtime"}
+           "normal_price_overtime": "normal-price cutting with overtime",
+           "v4_cost_edge": "version 4 settings, cost-edge cutting",
+           "v4_normal_price": "version 4 settings, normal-price cutting",
+           "v4_leader_follow": "version 4 settings, leader-follow",
+           "v4_systematic": "version 4 settings, systematic cutting"}
 
 
 def apply() -> None:

@@ -9,8 +9,10 @@ from unittest import mock
 
 from experiments.cells import EXPERIMENTS
 from experiments.harness import run_experiment
-from experiments.price_rules import (MONOPOLY_CAP, RISE, RULES, U_MAX, allocate_with_overtime,
-                                     dispatch_with_overtime, experiments, install_leader_follow,
+from experiments.price_rules import (MONOPOLY_CAP, RISE, RULES, U_MAX, V4_RBAR,
+                                     allocate_with_overtime, dispatch_with_overtime,
+                                     entrant_undercuts, experiments, install_leader_follow,
+                                     install_v4, install_v4_leader_follow, install_v4_normal_price,
                                      install_leader_follow_overtime, install_leader_follow_ucs,
                                      install_leader_follow_ucs_overtime,
                                      install_normal_price_overtime, install_overtime,
@@ -19,7 +21,7 @@ from experiments.price_rules import (MONOPOLY_CAP, RISE, RULES, U_MAX, allocate_
                                      set_prices_leader_follow_ucs, set_prices_normal,
                                      unit_cost_floor)
 from experiments.summary import run_row
-from helpers import add_firm, empty_industry
+from helpers import add_firm, empty_industry, industry as built_industry
 from model import scheduler
 from model.model import run
 from parameters import Parameters
@@ -156,7 +158,8 @@ class TestFloors(unittest.TestCase):
                 self.assertIs(scheduler.set_prices, step)
         self.assertEqual(set(RULES), {"systematic", "leader_follow", "leader_follow_ucs",
                                       "leader_follow_overtime", "leader_follow_ucs_overtime",
-                                      "overtime", "normal_price_overtime"})
+                                      "overtime", "normal_price_overtime", "v4_cost_edge",
+                                      "v4_systematic", "v4_normal_price", "v4_leader_follow"})
 
 
 class TestNormalPriceCutting(unittest.TestCase):
@@ -230,6 +233,60 @@ class TestNormalPriceCutting(unittest.TestCase):
             install_normal_price_overtime()
             self.assertIs(scheduler.set_prices, set_prices_normal)
             self.assertIs(scheduler.allocate, allocate_with_overtime)
+
+
+class TestVersion4Settings(unittest.TestCase):
+    def test_the_entrant_posts_one_cut_below_the_lowest_price(self):
+        ind = built_industry(seed=3)
+        scheduler.period(ind)
+        lowest = min(firm.price for firm in ind.firms if firm.plants)
+        entrant = entrant_undercuts(ind, 0.3, 0.9)
+        self.assertAlmostEqual(entrant.price, 0.98 * lowest, places=9)
+        self.assertTrue(entrant.pending_plants and not entrant.plants)
+
+    def test_the_entrant_never_posts_below_the_unit_cost_of_its_plants(self):
+        ind = built_industry(seed=3)
+        scheduler.period(ind)
+        for firm in ind.firms:
+            firm.price = 75.5                         # 0.98 x 75.5 is below every unit cost of the menu
+        entrant = entrant_undercuts(ind, 0.3, 0.9)
+        technique = entrant.pending_plants[0].technique
+        self.assertAlmostEqual(entrant.price, technique.ucs + 0.1 * technique.kappa, places=9)
+
+    def test_the_rules_install_overtime_the_entrant_and_their_step(self):
+        v3_step = scheduler.set_prices
+        for install, step in ((install_v4, v3_step), (install_v4_normal_price, set_prices_normal),
+                              (install_v4_leader_follow, set_prices_leader_follow)):
+            with mock.patch.multiple(scheduler, set_prices=v3_step, allocate=None, dispatch=None,
+                                     create_entrant=None):
+                install()
+                self.assertIs(scheduler.set_prices, step)
+                self.assertIs(scheduler.create_entrant, entrant_undercuts)
+                self.assertIs(scheduler.allocate, allocate_with_overtime)
+
+    def test_the_cells_take_the_general_rate_of_version_4_unless_they_set_their_own(self):
+        cells = experiments("v4_cost_edge")
+        self.assertEqual(cells["E1_v4_cost_edge"]["cells"], {"defaults": {"rbar": V4_RBAR}})
+        self.assertEqual(cells["E0_v4_cost_edge"]["cells"], {"no_draws": {"rbar": V4_RBAR, "tech_change": "none"}})
+        e3 = cells["E3_v4_cost_edge"]["cells"]
+        self.assertEqual(len(e3), 10)
+        self.assertEqual(e3["lam_0.5_v4_cost_edge_rbar_0.05"], {"rbar": 0.05, "lam": 0.5})
+        self.assertEqual(experiments("v4_systematic")["E1_v4_systematic"]["cells"],
+                         {"defaults": {"rbar": V4_RBAR, "pricing": "systematic"}})
+
+    def test_swapped_labels_give_the_same_trajectories_under_the_settings_of_version_4(self):
+        changes = dict(allocate=allocate_with_overtime, dispatch=dispatch_with_overtime,
+                       create_entrant=entrant_undercuts)
+        for step in (None, set_prices_normal, set_prices_leader_follow):
+            extra = {"set_prices": step} if step else {}
+            for name, population in POPULATIONS.items():
+                with self.subTest(step=step, population=name), mock.patch.multiple(scheduler, **changes, **extra):
+                    params = replace(Parameters(), rbar=V4_RBAR, **population)
+                    states, rows = trajectory(params, 4, 200)
+                    swapped_states, swapped_rows = trajectory(swapped(params), 4, 200)
+                    self.assertEqual(states, swapped_states)
+                    self.assertEqual(rows, mirror(swapped_rows))
+                    self.assertEqual(trajectory(params, 7, 80), trajectory(params, 7, 80, reverse=True))
 
 
 class TestOvertime(unittest.TestCase):

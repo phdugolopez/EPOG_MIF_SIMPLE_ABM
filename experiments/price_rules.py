@@ -19,6 +19,10 @@ no rule below is the default of version 3. Each runs the cells of cells.py on th
   normal_price_overtime
                      version 3's two regimes joined by the price of production, with the same
                      overtime: systematic cutting above it, cost-edge cutting below it
+  v4_cost_edge, v4_normal_price, v4_leader_follow, v4_systematic
+                     the settings proposed for version 4 under each price rule: overtime, a
+                     general rate of 0.16 in every cell that does not set it, and an entrant
+                     that posts c below the lowest price
 
 E3 keeps its ten cost-edge cells (lambda x rbar), renamed after the rule. The files are those of
 the harness, in outputs/<rule>/<experiment>/.
@@ -33,6 +37,7 @@ from equations.pricing_floor import price_floor
 from equations.pricing_rule import posted_price
 from experiments.cells import EXPERIMENTS
 from experiments.harness import run_experiment
+from markets.entry_exit import create_entrant
 from markets.goods_market import allocate
 from model import scheduler
 from parameters import EPS
@@ -40,6 +45,7 @@ from parameters import EPS
 RISE = 0.03          # version 2's LEADER_RISE: the rise after excess demand, and of a firm alone
 MONOPOLY_CAP = 3.0   # version 2's MONOPOLY_CAP: a firm alone stops at this multiple of its floor
 U_MAX = 1.2          # overtime: output up to this multiple of normal capacity, without a premium
+V4_RBAR = 0.16       # general rate proposed for version 4: the initial menu earns it at a price of 100
 
 
 def leader_follow_price(previous: float, leader: float, floor: float, excess: float, alone: bool,
@@ -171,25 +177,57 @@ def install_normal_price_overtime() -> None:
     install_overtime()
 
 
+def entrant_undercuts(industry, u_parent: float, u_flip: float):
+    """Step 6 with an entrant that posts c below the lowest price, down to the unit cost of its
+    own plants. Its technique is still chosen at the lowest price, as in version 3."""
+    firm = create_entrant(industry, u_parent, u_flip)
+    p = industry.params
+    # The entrant's plants are on order: its floor is the lowest unit cost among them.
+    floor = min(unit_cost(q.technique.ucs, q.technique.kappa, p.delta) for q in firm.pending_plants)
+    firm.price = max((1.0 - p.price_cut) * firm.price, floor)
+    return firm
+
+
+def install_v4() -> None:
+    """Overtime and the undercutting entrant; the price rule is version 3's, cost-edge cutting
+    or, when a cell sets it, systematic cutting."""
+    install_overtime()
+    scheduler.create_entrant = entrant_undercuts
+
+
+def install_v4_normal_price() -> None:
+    scheduler.set_prices = set_prices_normal
+    install_v4()
+
+
+def install_v4_leader_follow() -> None:
+    install_leader_follow()
+    install_v4()
+
+
 RULES = {"systematic": None, "leader_follow": install_leader_follow,
          "leader_follow_ucs": install_leader_follow_ucs,
          "leader_follow_overtime": install_leader_follow_overtime,
          "leader_follow_ucs_overtime": install_leader_follow_ucs_overtime,
          "overtime": install_overtime,
-         "normal_price_overtime": install_normal_price_overtime}
+         "normal_price_overtime": install_normal_price_overtime,
+         "v4_cost_edge": install_v4, "v4_systematic": install_v4,
+         "v4_normal_price": install_v4_normal_price, "v4_leader_follow": install_v4_leader_follow}
 
 
 def experiments(rule: str) -> dict:
     """The experiments of cells.py under the rule, named <experiment>_<rule>. A cell that sets
     systematic cutting is left out; the others lose their `pricing` and take the rule's name.
-    Under "overtime" the pricing is version 3's, so the cells stay as they are."""
+    Under "overtime" the pricing is version 3's, so the cells stay as they are. A v4 rule sets
+    the general rate of version 4 in every cell that does not set its own."""
     if rule == "overtime":
         return {f"{name}_{rule}": experiment for name, experiment in EXPERIMENTS.items()}
-    regime = {"pricing": "systematic"} if rule == "systematic" else {}
+    regime = {"pricing": "systematic"} if rule in ("systematic", "v4_systematic") else {}
+    rate = {"rbar": V4_RBAR} if rule.startswith("v4_") else {}
     return {
         f"{name}_{rule}": {**experiment, "cells": {
             cell.replace("cost_edge", rule): {
-                **{key: value for key, value in overrides.items() if key != "pricing"}, **regime}
+                **rate, **{key: value for key, value in overrides.items() if key != "pricing"}, **regime}
             for cell, overrides in experiment["cells"].items()
             if overrides.get("pricing") != "systematic"}}
         for name, experiment in EXPERIMENTS.items()}
