@@ -52,13 +52,16 @@ python run.py                            # one run at the defaults -> outputs/pe
 
 ## Where the build stands
 
-The stages are in section 9 of `docs/design/v3-plan.md`. Stages 1 (scaffold) and 2 (skeleton)
-are done. The loop of `model/scheduler.py` runs and passes its checks, with the six step
-functions as stubs: each has its final signature and a docstring that says what it reads and
-writes. Shared and final: `pay`, `buy_plant`, `remove_plant` with the reserve rule, the end of
-step 3 (regulating price, r_new), `count` and its keys, `check`, `tests/helpers.py`.
+The stages are in section 9 of `docs/design/v3-plan.md`. Stages 1, 2 and 3a to 3d are done: the
+whole model is written, in one tree, and every test passes (`python -m unittest discover -s
+tests`). The model code counts 762 lines without blank lines, against a limit of 770: a change
+that adds lines has to remove some.
 
-Next are the four parallel parts, each on its own files and the body of its own step functions:
-3a pricing (`set_prices`), 3b demand, entry and exit (`allocate_demand`, `enter_and_exit`),
-3c accounts, scrapping and outputs (`produce_and_account`, `scrap_plants`), 3d technical change
-and investment (`invest`). `parameters.py` is frozen: a new constant is a departure to register.
+Next is stage 4: `tests/test_neutrality.py`, the rest of `tests/test_model.py`, the profile
+against 0.11 s a run (0.12 s now) and the read of E0. `parameters.py` is frozen: a new constant
+is a departure to register.
+
+Known after stage 3 (plan, section 9, "First read after stage 3"): at the defaults the industry
+cycles between a deep shortage and a long overcapacity, far from the pilot's levels. The rules
+are those of the specification. Do not tune a rule to remove the cycle without a decision
+recorded in `docs/design/v3-choices.md`.

@@ -139,9 +139,10 @@ Two remarks on the count:
   which `run.py` calls. In `model/outputs.py` it would bring the model code to about 780.
 - The first plan's budgets were tight even by `wc -l`. These are redone file by file on the new
   count and include the reserve rule; real code can land 10 % either side.
-- **After stage 2** the count is 409, and the projection for the whole model is about 730: above
-  the target, inside the limit. The scheduler's docstrings, which state what each step reads and
-  writes, take more lines than budgeted.
+- **After stage 3** the whole model is written and counts 762 lines: above the target, inside
+  the limit, after its docstrings were shortened (it stood at 784). The budgets of this section
+  were about 10 % too low, mostly in `scheduler.py` (203 against 185), `outputs.py` and
+  `markets/entry_exit.py`. The speed remedy of section 9 would bring it to about 774.
 
 ## 2. Data structures
 
@@ -184,6 +185,7 @@ class Firm:
     profit: float = 0.0        # after depreciation
     write_offs: float = 0.0
     cut: bool = False          # undercut at step 1
+    active: bool = False       # had a plant in operation at step 3 of this period (Q9)
     plants: list[Plant]        # in operation
     pending_plants: list[Plant]   # ordered, produce from next period
     known: list[Technique]     # its own designs that are not public
@@ -306,7 +308,8 @@ period t
              survivors' shares x (1 - share)
 
 7  record_end(); check(); time + 1
-     check asserts: |sum of all cash| < 1e-6 (money conservation), every firm's cash >= -1e-9,
+     check asserts: |sum of all cash| < 1e-6 + 1e-9 x |rest-of-economy cash| (money
+     conservation, up to rounding), every firm's cash > -1e-6,
      shares sum to 1, K(t+1) = K(t) - retired + ordered - exit + entry
 ```
 
@@ -348,7 +351,7 @@ Arguments are floats, or lists of floats in firm or plant order. "v2" names the 
 | | `price_of_production(ucs, kappa, delta, rbar)` | uc + r̄κ. | v2 `regulating_price`, second half |
 | `setup_initial_plants.py` | `initial_ages(output, size, life)` | n = normal output / S rounded half up (at least 1) plants, of ages floor(i T / n). | new (A2, A3) |
 | `pricing_floor.py` | `price_floor(unit_costs)` | The unit cost of the firm's lowest-unit-cost plant in operation; 0 without a plant. | new (A5) |
-| `pricing_rule.py` | `posted_price(previous, rival_prices, rival_costs, own_cost, floor, spare, excess, cost_edge, cut, shortage_step)` → (price, cut) | After a shortage, the next higher rival price, or previous × (1 + step × excess) with no rival above; else (1 − c) × the lowest rival price if entitled to cut; else the lowest price posted, its own included; never below the floor. | v2 `real_competition_price`; the systematic regime is new |
+| `pricing_rule.py` | `posted_price(previous, rival_prices, rival_costs, own_cost, spare, excess, cost_edge, cut, shortage_step)` → (price, cut) | After a shortage, the next higher rival price, or previous × (1 + step × excess) with no rival above; else (1 − c) × the lowest rival price if entitled to cut; else the lowest price posted, its own included; never below `own_cost`, the unit cost of its best plant, which is both the edge criterion and the floor. | v2 `real_competition_price`; the systematic regime is new |
 | `demand_replicator.py` | `competitiveness(price)` | E = 1 / p. | v2 `competitiveness` |
 | | `replicator_shares(previous_shares, competitiveness, chi)` | f_i = f_i,−1 (1 + χ (E_i − Ē) / Ē), negatives set to 0, renormalised. | v2 `replicator_shares` |
 | `accounts_merit_order.py` | `dispatch(ucs, ages, capacity, quantity)` → outputs | Plants run lowest operating cost first, then youngest, each up to its normal capacity. | v2 `merit_order.dispatch`, without overtime; ties by age (A13 b) |
@@ -386,11 +389,12 @@ Three remarks on the ports:
 - `posted_price`: "entitled to cut" = spare capacity, and under cost-edge cutting a unit cost
   below that of at least one rival posting the lowest rival price (strict inequality, so equal
   costs give no edge). v2's second condition, own cost below the cut price, is replaced by the
-  floor: price = max(min(previous, target), floor) (Q2). The returned `cut` is true
-  when the firm was entitled and its price is below the lowest rival price. Two prices are "equal"
-  by `math.isclose`.
-- `plants_affordable` adds 1e-9 before the floor: after T charges of δ × cost a book value can be
-  1e-13 off zero, and funds / cost would otherwise be 0.9999999999999999.
+  floor: price = max(min(previous, target), floor) (Q2). The returned `cut` is true when the
+  firm was entitled and its price fell below both its previous price and the lowest rival price:
+  a firm that stays below rivals held at their floors is not counted as cutting again. Rivals
+  are the other firms with a plant in operation. Two prices are "equal" by `math.isclose`.
+- `plants_affordable` adds 1e-9 to the funds before the floor: after T charges of δ × cost a
+  book value can be 1e-13 off zero, and funds / cost would otherwise be 0.9999999999999999.
 - The realised conflict share and v2's `adoption_zone` are not ported: no listed observable needs
   them.
 
@@ -516,8 +520,10 @@ steps 1–5 of t. Sums are over its firms or their plants in operation in t.
 | `rate_low`, `rate_high` | lowest and highest realised profit rate among firms with capacity (industry; E0) |
 
 The flow columns come from `count(industry, firm, key, amount)`, called by `buy_plant`,
-`remove_plant`, `create_entrant`, `remove_firm` and `invest`; it is the only function outside
-entry that reads a label.
+`remove_plant`, `create_entrant`, `remove_firm`, `produce_and_account` and `invest`; it is the
+only function outside entry that reads a label. The tally keeps every amount and sums them
+with `fsum`, and a value that is not defined (a label without firms, capacity or sales) is
+`None`, so two runs of one seed give equal tables.
 
 ### Run table: one row per run
 
@@ -702,10 +708,37 @@ touches only its own files and the body of its own step functions in `scheduler.
 | 6 E4, E5, Morris | E4 cells, read beside the pilot; `e5_channels.py`, `morris.py`; `fig4` to `fig6`. | Jake (E4), Ugo (Morris) | 4 h | 21–23 Nov |
 | 7 E6, robustness | `populations.py`, the E6 and robustness cells, `tab3_robustness.py`. | Pierre-Loup (E6), Vincent (robustness) | 3 h | 24–25 Nov |
 
-**Built so far:** stages 1 and 2. The loop runs with its six steps as stubs, each with its
-final signature and a docstring that says what it reads and writes; the test files of the four
-parts exist and hold the tests of what stage 2 wrote (`pay`, `buy_plant`, `remove_plant`, the
-construction lag, diffusion, r_new).
+**Built so far:** stages 1, 2 and 3a to 3d, all in one tree, so the four parts are already
+merged. Stage 4 is left with `test_neutrality`, the rest of `test_model`, the profile and the
+read of E0.
+
+**First read after stage 3** (20 seeds a cell, 10 November; a look, not a result):
+
+| Cell | Unit-cost label wins | Capacity / demand at the end | Price / price of production | Industry rate | Firms at the end | Time a run |
+| --- | --- | --- | --- | --- | --- | --- |
+| Mixed, defaults | 20 of 20 | 1.49 | 1.44 | 0.090 | 30 | 0.12 s |
+| Control, all unit-cost | 8 of 20 | 1.44 | 1.43 | 0.081 | 33 | 0.11 s |
+| Control, all profit-rate | 11 of 19, 1 tie | 1.18 | 1.32 | 0.087 | 26 | 0.14 s |
+| Mixed, no technical change | 20 of 20 | 1.44 | 1.25 | 0.086 | 31 | 0.05 s |
+| Mixed, r̄ = 0.16 | 19 of 20 | 1.24 | 1.16 | 0.149 | 15 | 0.08 s |
+| Mixed, systematic cutting | 15 of 20 | 1.32 | 1.46 | 0.093 | 30 | 0.15 s |
+
+- **The industry cycles.** In seed 0 the price falls from 100 to 77 in 13 periods, r_new drops
+  below r̄, the reserves of the plants that retire are withdrawn and none is replaced: capacity
+  falls from 1.48 to 0.65 times demand in seven periods. The shortage then lifts the price to
+  145 in six periods, entry occurs every period and capacity overshoots to 2.08 times demand;
+  the price needs 33 periods of cuts to come back. Nearly half of the plants leave idle.
+- **Against the pilot** (arm 4): price over the price of production 1.25–1.46 against
+  0.93–1.11, capacity over demand 1.2–1.5 against 0.99–1.09, about 30 firms against 6 to 8, the
+  profit-rate hurdle 0.23 against 0.06–0.08. The industry rate at r̄ = 0.16 matches (0.149).
+  The pilot kept overtime, which absorbs a shortage, and left the withdrawn reserve in cash.
+- **Consequences.** The E0 thresholds of section 7 are not met at the defaults. Without
+  technical change the unit-cost label still wins 20 of 20, where v2 found drift: the price
+  stays above 85, where the profit-rate rule prefers D1. No plant left through the
+  operating-cost test (Q18). The rules are those of the specification; whether to change one
+  is for the group, before E1 is read.
+- **Speed.** 0.12 s a run at the defaults against the target of 0.11: the public menu holds
+  about 140 techniques at the end.
 
 What makes 3a–3d independent: `pay`, `buy_plant`, `remove_plant` with the reserve rule, r_new,
 `count` and every dataclass field exist after stage 2, and `parameters.py` is frozen there (a new
