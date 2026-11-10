@@ -4,9 +4,8 @@ A period is the tuple STEPS, run in order, then close_period. Every step compute
 from the state at the start of the step, so the order of industry.firms never matters. The
 run viewer runs the same tuple and reads the firms between two steps.
 
-State of the build: every step but step 5 is final. invest is the stub of stage 2, with its
-final signature and a docstring that says what it reads and writes; stage 3d writes its
-body.
+Each step function reads like its paragraph of the schedule; what a step needs beyond that is
+in the helpers that follow it.
 """
 from math import fsum, isclose
 from typing import NamedTuple
@@ -14,13 +13,19 @@ from typing import NamedTuple
 from equations.accounts_depreciation import depreciation
 from equations.accounts_dividends import dividends
 from equations.accounts_merit_order import dispatch
+from equations.common_hurdle import evaluation_price, hurdle
 from equations.common_regulating_price import price_of_production, regulating_technique
-from equations.common_technique_choice import frontier
+from equations.common_technique_choice import choose_technique, frontier, technique_cost
 from equations.common_unit_cost import unit_cost
 from equations.demand_replicator import competitiveness, replicator_shares
 from equations.entry_exit_rule import leaving
 from equations.entry_new_plant_rate import new_plant_rate
 from equations.entry_probability import entry_probability
+from equations.investment_accelerator import plants_wanted
+from equations.investment_draw_categories import draw_categories
+from equations.investment_draw_marx import draw_marx
+from equations.investment_draw_neutral import draw_neutral
+from equations.investment_retained_earnings import plants_affordable
 from equations.pricing_cutting import cutting_price
 from equations.pricing_entitlement import (entitled_cost_edge, entitled_normal_price,
                                            entitled_systematic)
@@ -32,8 +37,8 @@ from equations.scrapping_retirement import retirement_reason
 from markets.entry_exit import create_entrant, remove_firm, rescale_shares
 from markets.goods_market import allocate
 from markets.payments import pay
-from markets.plant_market import remove_plant
-from model.entities import Firm
+from markets.plant_market import buy_plant, remove_plant
+from model.entities import Firm, Technique
 from model.outputs import count, record_end, record_production
 from parameters import EPS, LABELS, MONEY_EPS
 
@@ -381,10 +386,68 @@ def invest(industry) -> None:
     Reads the firm's stream; the public menu and firm.known; price and reg_price; funds, cash,
     notional, capacity and the plants on order. Writes hurdle and known; pending_plants, cash
     and funds through markets.plant_market.buy_plant.
-
-    Stub of stage 2: no number is drawn, no design is made and no plant is ordered. Stage 3d
-    writes the body.
     """
+    p = industry.params
+
+    # Each firm reads the public menu and the regulating price, which no firm moves here.
+    for firm in industry.firms:
+        # Four uniforms and one normal, used or not: every cell reads the same numbers.
+        u = firm.rng.random(4)
+        z = firm.rng.standard_normal()
+
+        # Its hurdle at its evaluation price, and its best technique on the menu it knows.
+        menu = industry.public + firm.known
+        eval_price = evaluation_price(firm.price, industry.reg_price, p.lam)
+        firm.hurdle = hurdle(firm.rule, eval_price, menu, p.delta)
+        best = choose_technique(menu, firm.hurdle, p.delta)
+
+        # With a plant in operation it draws a design from that technique with probability pi.
+        if firm.active and p.tech_change != "none" and u[0] < p.draw_prob:
+            ucs, kappa = draw_design(best, eval_price, u, z, p)
+            count(industry, firm, "drawn", 1)
+            # It keeps the design if its own rule prefers it; a design that ties is not kept.
+            design_cost = technique_cost(ucs, kappa, firm.hurdle, p.delta)
+            if design_cost < technique_cost(best.ucs, best.kappa, firm.hurdle, p.delta):
+                best = Technique(f"{firm.id}.{industry.time}", ucs, kappa)
+                firm.known.append(best)
+                menu.append(best)
+                firm.hurdle = hurdle(firm.rule, eval_price, menu, p.delta)
+                count(industry, firm, "kept", 1)
+
+        # It orders plants of its best technique: paid now, delivered next period.
+        plants = plants_ordered(firm, best, p)
+        for _ in range(plants):
+            buy_plant(industry, firm, best, "ordered")
+        # An order is dearer when the unit-cost rule would have chosen another technique.
+        if plants > 0 and best is not choose_technique(menu, 0.0, p.delta):
+            count(industry, firm, "orders_dearer", plants)
+
+
+def draw_design(best, eval_price: float, u, z: float, p) -> tuple[float, float]:
+    """A design drawn from a firm's best technique, as (ucs, kappa), under the rule that
+    `tech_change` names."""
+    # The size of the step is in (0, 1], so a design is never the technique itself.
+    u_step = 1.0 - u[1]
+    if p.tech_change == "marx":
+        return draw_marx(best.ucs, best.kappa, u_step, z, p.design_step, p.bias, p.bias_spread)
+    if p.tech_change == "neutral":
+        return draw_neutral(best.ucs, best.kappa, u_step, u[2], p.design_step)
+    return draw_categories(best.ucs, best.kappa, p.delta, eval_price, u[2], u_step, u[3],
+                           p.design_step, p.conflict_share)
+
+
+def plants_ordered(firm, technique, p) -> int:
+    """The plants of a technique a firm orders this period, under the rule that `investment`
+    names."""
+    cost = technique.kappa * p.plant_size
+    if p.investment == "retained":
+        # Retained earnings: the whole plants its funds pay for, as far as they are in cash.
+        return plants_affordable(min(firm.funds, firm.cash), cost)
+    # Accelerator: the plants missing for the demand addressed to it, plants on order
+    # counted, as far as its cash pays.
+    on_order = fsum(plant.capacity for plant in firm.pending_plants)
+    wanted = plants_wanted(firm.notional, firm.capacity, on_order, p.plant_size)
+    return min(wanted, plants_affordable(firm.cash, cost))
 
 
 def enter_and_exit(industry) -> None:
