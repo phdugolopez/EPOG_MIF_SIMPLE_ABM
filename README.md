@@ -8,8 +8,8 @@ the course template
 
 Version 4 is the second rebuild from a clean tree. It is written for a reader: at most 1,000
 lines of model code, comments and docstrings excluded, and every rule that varies is an option
-of `parameters.py`. **The tree is clean and the build has not started**; the stages are in
-section 13 of `docs/design/v4-plan.md`.
+of `parameters.py`. It is being built in stages (section 13 of `docs/design/v4-plan.md`);
+**stage 1 is done**: the parameters, the entities and the equations that several steps share.
 
 - Specification: `docs/design/v4-final-model.md`.
 - Decisions and departures: `docs/design/v4-choices.md`.
@@ -34,3 +34,21 @@ p^e = (1 − λ) own price + λ price of production of the regulating technique
 
 A period opens with the deliveries and has six steps: pricing, demand, production and
 accounts, scrapping, technical change and investment, entry and exit.
+
+## Install and test
+
+Python 3.12 or later. The model and the tests need only numpy:
+
+```bash
+python3 -m unittest discover -s tests
+```
+
+## Layout
+
+```text
+parameters.py     every parameter, constant and option
+equations/        one rule per file, pure functions, named <step>_<equation>.py
+model/            entities.py
+tests/            one test file per step; test_budget.py and test_readability.py
+docs/design/      the specification of version 4 and the records of versions 2 and 3
+```

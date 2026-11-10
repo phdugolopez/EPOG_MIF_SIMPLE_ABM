@@ -79,6 +79,13 @@ python3 run.py                            # one run at the defaults -> outputs/p
 
 ## Where the build stands
 
-The stages are in section 13 of `docs/design/v4-plan.md`. The tree is clean: the code of
-version 3 was removed in the first commit of `v4`, and nothing of version 4 is written yet.
-Next is stage 1, the scaffold.
+The stages are in section 13 of `docs/design/v4-plan.md`. Stage 1 (scaffold) is done:
+`parameters.py`, `model/entities.py`, the five `common_` equations, `setup_menu.py` and
+`setup_initial_plants.py`, with `test_common`, the menu part of `test_setup`, `test_budget`
+and `test_readability`. The model code counts 207 lines.
+
+`parameters.py` has two constants more than section 7 of the plan first listed: `OPTIONS`,
+the levels of every option, and `MONEY_EPS`, the tolerance of `check`. The plan now lists
+them.
+
+Next is stage 2, the skeleton of the period loop.

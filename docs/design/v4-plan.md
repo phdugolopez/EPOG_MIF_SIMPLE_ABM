@@ -344,6 +344,7 @@ from dataclasses import dataclass
 
 LABELS = ("shaikh", "okishio")
 EPS = 1e-9                                  # numerical tolerance
+MONEY_EPS = 1e-6                            # tolerance on a sum of money or of capacity
 
 # Shaikh 2016, Tables 7.10-7.11: name, operating cost, capital per unit of normal output.
 SHAIKH_MENU = (("C", 64.25, 137.50), ("D1", 61.77, 142.31), ("D2", 59.21, 157.89))
@@ -353,6 +354,21 @@ SHAIKH_RATE = 0.16                          # the general rate of that table
 START = tuple((name, label, output)
               for name, output in (("C", 120.0), ("D1", 120.0), ("D2", 140.0))
               for label in LABELS)
+
+# The levels of every option that takes a name; model.build refuses any other level.
+OPTIONS = {
+    "rule_shaikh": ("unit_cost", "profit_rate"),
+    "rule_okishio": ("unit_cost", "profit_rate"),
+    "menu_scaling": ("scaled", "fixed"),
+    "pricing": ("cost_edge", "normal_price", "systematic", "universal"),
+    "price_floor": ("unit_cost", "operating_cost"),
+    "scrap_cost": ("operating_cost", "unit_cost"),
+    "reserve": ("conditional", "always", "never"),
+    "tech_change": ("marx", "neutral", "categories", "none"),
+    "investment": ("retained", "accelerator"),
+    "entry_price": ("undercut", "lowest"),
+    "entry_label": ("share", "even"),
+}
 
 
 @dataclass(frozen=True)
@@ -424,7 +440,9 @@ class Parameters:
   `u_target`. Changed: `rbar` 0.16, `shortage_step` 0.25, `pricing` with four levels.
 - **Frozen after stage 2.** A new constant is then a departure to register.
 - **A wrong level raises.** `build` checks every option against its levels, so a misspelt
-  cell fails at once instead of running the default.
+  cell fails at once instead of running the default. The levels are in `OPTIONS`, added in
+  stage 1 with `MONEY_EPS`, the tolerance of `check`: both are constants, so they are here.
+  The file then counts 69 lines, against 60 in section 2.
 
 ## 8. Output tables
 
