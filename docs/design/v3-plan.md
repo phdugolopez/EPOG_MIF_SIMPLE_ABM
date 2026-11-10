@@ -989,8 +989,9 @@ measures from period 20, means over 20 seeds (minimum and maximum are those of e
   rule, a cut without spare capacity, the monopoly cap) and about ten lines in a model that
   stands at 769 of 770.
 
-**Leader-follow with the operating-cost floor, E0** (10 November; the same analysis variant,
-`python -m experiments.price_rules leader_follow_ucs E0`, commit `5d31fec`, 100 runs, no error).
+**Leader-follow with the operating-cost floor** (10 November; the same analysis variant,
+`python -m experiments.price_rules leader_follow_ucs`; E0 on commit `5d31fec`, 100 runs, no
+error).
 
 - **The floor.** v2's `LEADER_FOLLOW_FLOOR = "operating_cost"`, as its documents define it: the
   operating cost ucs of the dearest plant the firm ran last period, or of its cheapest plant
@@ -1023,8 +1024,35 @@ measures from period 20, means over 20 seeds (minimum and maximum are those of e
   thresholds met (price, profit rate) and not met (capacity) are those of the unit-cost floor.
 - **v2's collapse does not occur.** There the operating-cost floor left 81 of 200 seeds
   without capacity; here no seed ends without capacity.
-- **Not run.** E1 to E3 under this floor. With technical change the costs fall over time,
-  so whether the floor binds more often there is not known from E0.
+- **E1 to E3 under this floor** (11,100 runs in 2 min 19 s on 10 workers, commit `7453a9c`, no
+  error). Share of seeds won by the unit-cost label in the mixed population; the last column
+  counts the runs of the three populations that are the same under the two floors:
+
+| Experiment | Cell | Unit-cost floor | Operating-cost floor | Identical runs |
+| --- | --- | --- | --- | --- |
+| E1, 500 seeds | defaults | 0.49 (0.45–0.53) | 0.49 (0.44–0.53) | 1,340 of 1,500 |
+| E2, 200 seeds | β = 0 | 0.49 (0.42–0.56) | 0.49 (0.42–0.56) | 322 of 600 |
+| | β = 0.5 | 0.47 (0.40–0.54) | 0.47 (0.40–0.54) | 437 of 600 |
+| | β = 1.5 | 0.53 (0.46–0.59) | 0.52 (0.45–0.59) | 541 of 600 |
+| | β = 3 | 0.57 (0.49–0.63) | 0.57 (0.50–0.64) | 562 of 600 |
+| | neutral set | 0.51 (0.44–0.58) | 0.48 (0.41–0.55) | 403 of 600 |
+| | no draws | 0.73 (0.67–0.79) | 0.72 (0.66–0.78) | 405 of 600 |
+| E3, r̄ = 0.05 | λ = 0, 0.25, 0.5, 0.75, 1 | 0.53, 0.47, 0.46, 0.50, 0.51 | 0.52, 0.48, 0.45, 0.50, 0.49 | 2,786 of 3,000 |
+| E3, r̄ = 0.16 | λ = 0, 0.25, 0.5, 0.75, 1 | 0.08, 0.13, 0.10, 0.11, 0.15 | 0.08, 0.13, 0.10, 0.11, 0.15 | 3,000 of 3,000 |
+
+- **Nothing moves.** No share won changes by more than 0.03 and every verdict is the same:
+  only "no draws" and the five cells at r̄ = 0.16 are beyond drift. In the mixed population
+  the outcome of a seed changes in 2 of 500 runs of E1 and in at most 14 of 200 in a cell of
+  E2. The price, capacity, profit rate and lost demand of E1 are those of the unit-cost floor
+  (1.13 times the price of production, 1.03 times demand, 0.063, 0.086), and no plant leaves
+  through the cost test.
+- **The floor binds even less with technical change.** On 50 seeds of the mixed population
+  under the operating-cost floor, a firm posts below its unit cost in 0.06 % of periods at
+  the defaults, by 1.6 % at most, and in 0.25 % with the neutral set, by 4.1 % at most. At
+  r̄ = 0.16 the price never comes within 13 % of a unit cost, so the runs are the same.
+- **A property of v2's rule seen on the way.** Its floor applies to a cut only: after excess
+  demand a firm posts 1.03 L even when that is below its floor. Under the unit-cost floor
+  this happens in 0.01 % of periods with the neutral set, by 1.2 % at most.
 
 What makes 3a–3d independent: `pay`, `buy_plant`, `remove_plant` with the reserve rule, r_new,
 `count` and every dataclass field exist after stage 2, and `parameters.py` is frozen there (a new

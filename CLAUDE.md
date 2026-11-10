@@ -64,12 +64,12 @@ need matplotlib and write to `outputs/figures/`. `outputs/` is not versioned.
 
 `python -m experiments.price_rules leader_follow` repeats E0 to E3 under v2's leader-follow rule
 with the unit-cost floor (outputs in `outputs/leader_follow/`), `leader_follow_ucs` under the
-same rule with v2's operating-cost floor (E0 only so far), and `systematic` under v3's
+same rule with v2's operating-cost floor, and `systematic` under v3's
 systematic cutting. It is an analysis variant, registered in `docs/design/v3-choices.md`: the
 rule is patched in from the script and the model is not changed. Its read is in the plan,
 section 9: under leader-follow E0 is met on the price and the profit rate but not on capacity,
 and the unit-cost label no longer wins beyond drift at the defaults. The operating-cost floor
-gives the same E0: the floor almost never binds.
+gives the same E0 to E3: the floor almost never binds.
 
 Next is stage 6: the E4 cells, `experiments/e5_channels.py`, `experiments/morris.py` (SALib) and
 figures 4 to 6.
