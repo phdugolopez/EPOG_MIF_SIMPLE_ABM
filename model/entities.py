@@ -82,3 +82,14 @@ class Industry:
     next_id: int = 0
     tally: dict = field(default_factory=dict)                    # this period's flows by label
     rows: list[dict] = field(default_factory=list)               # the period table
+
+
+def new_firm(industry: Industry, label: str, price: float, share: float) -> Firm:
+    """A firm joins the industry with the rule of its label and its own random stream, keyed
+    by its serial number and not by its place in the list."""
+    key = np.random.SeedSequence(industry.seed, spawn_key=(1, industry.next_id))
+    rule = getattr(industry.params, "rule_" + label)
+    firm = Firm(industry.next_id, label, rule, np.random.default_rng(key), industry.time, price, share)
+    industry.next_id += 1
+    industry.firms.append(firm)
+    return firm

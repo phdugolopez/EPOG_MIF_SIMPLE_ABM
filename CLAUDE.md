@@ -46,12 +46,19 @@ is in `../ABM-sources`, read-only.
 ## Commands
 
 ```bash
-python -m unittest discover -s tests     # every test
-python -m unittest discover -s tests -v  # with the line count printed by test_budget
+python -m unittest discover -s tests     # every test; test_budget prints the line count
+python run.py                            # one run at the defaults -> outputs/periods.csv
 ```
 
 ## Where the build stands
 
-The stages are in section 9 of `docs/design/v3-plan.md`. Stage 1 (scaffold) is done: parameters,
-entities, the `common_` and `setup_` equations and their tests. Next is stage 2 (skeleton of the
-period loop).
+The stages are in section 9 of `docs/design/v3-plan.md`. Stages 1 (scaffold) and 2 (skeleton)
+are done. The loop of `model/scheduler.py` runs and passes its checks, with the six step
+functions as stubs: each has its final signature and a docstring that says what it reads and
+writes. Shared and final: `pay`, `buy_plant`, `remove_plant` with the reserve rule, the end of
+step 3 (regulating price, r_new), `count` and its keys, `check`, `tests/helpers.py`.
+
+Next are the four parallel parts, each on its own files and the body of its own step functions:
+3a pricing (`set_prices`), 3b demand, entry and exit (`allocate_demand`, `enter_and_exit`),
+3c accounts, scrapping and outputs (`produce_and_account`, `scrap_plants`), 3d technical change
+and investment (`invest`). `parameters.py` is frozen: a new constant is a departure to register.

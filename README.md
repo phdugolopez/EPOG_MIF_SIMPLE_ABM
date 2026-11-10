@@ -6,8 +6,9 @@ cost (Shaikh) compete with firms that choose by the highest profit rate at an ev
 [pierrefunalot/EPOG_MIF_SIMPLE_ABM](https://github.com/pierrefunalot/EPOG_MIF_SIMPLE_ABM).
 
 Version 3 is a rebuild from a clean tree of about 700 lines, which keeps only what moved the
-results of version 2. It is being built in stages; **stage 1 (scaffold) is done**, so the model
-does not run yet.
+results of version 2. It is being built in stages; **stages 1 and 2 are done**: the period loop
+runs and passes its checks, but its six steps are still stubs, so prices, shares and capacity do
+not move yet.
 
 - Specification: `docs/design/final-model-proposal.md` and the addendum in
   `docs/design/v3-planning-prompt.md`.
@@ -25,6 +26,7 @@ Python 3.12 or later. macOS or Linux:
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python -m unittest discover -s tests
+.venv/bin/python run.py                  # one run at the defaults -> outputs/periods.csv
 ```
 
 Windows: replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
@@ -49,9 +51,9 @@ and investment, entry and exit.
 ```text
 parameters.py     every parameter, constant and switch
 equations/        one rule per file, pure functions, named <step>_<equation>.py
-markets/          the transactions: payments, goods, plants, entry and exit      (from stage 2)
-model/            entities.py; model.py, scheduler.py, outputs.py                (from stage 2)
-run.py            one run at the defaults                                        (from stage 2)
+markets/          the transactions: payments and plants; goods, entry and exit   (from stage 3)
+model/            entities.py, model.py, scheduler.py, outputs.py
+run.py            one run at the defaults
 tests/            one test file per step
 experiments/      cells, harness, Morris screening                               (from stage 5)
 figures/          one script per report exhibit                                  (from stage 5)

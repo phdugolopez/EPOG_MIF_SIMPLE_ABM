@@ -102,8 +102,8 @@ markets/                                80  the transactions: they move cash, pl
   entry_exit.py                         38  create_entrant(), remove_firm() (A10)
 
 model/                                 367
-  entities.py                           70  Technique, Plant, Firm, Account, Industry (section 2)
-  model.py                              50  build(): initial population, cash and streams; new_firm(); run()
+  entities.py                           80  Technique, Plant, Firm, Account, Industry (section 2); new_firm()
+  model.py                              40  build(): initial population and cash; run()
   scheduler.py                         185  period(), start_period(), the six step functions, check()
   outputs.py                            62  the period table: count(), record_production(), record_end()
 
@@ -139,6 +139,9 @@ Two remarks on the count:
   which `run.py` calls. In `model/outputs.py` it would bring the model code to about 780.
 - The first plan's budgets were tight even by `wc -l`. These are redone file by file on the new
   count and include the reserve rule; real code can land 10 % either side.
+- **After stage 2** the count is 409, and the projection for the whole model is about 730: above
+  the target, inside the limit. The scheduler's docstrings, which state what each step reads and
+  writes, take more lines than budgeted.
 
 ## 2. Data structures
 
@@ -211,6 +214,10 @@ class Industry:
 ```
 
 A technique is "known" to a firm if it is in `industry.public` or in `firm.known`.
+
+`new_firm(industry, label, price, share)` creates a firm with the rule of its label and its own
+stream, and adds it to the industry. It is in `entities.py` and not in `model.py`, which imports
+the scheduler: `markets/entry_exit.py` can then create an entrant without a circular import.
 
 **Three accounts, one identity.** `cash` is money. `profit` is sales less operating cost less
 depreciation. `funds` is what the retained-earnings rule may spend: it rises by retained profit
@@ -367,7 +374,7 @@ Transactions in `markets/` (they change state, so they are not equations):
 
 | File | Function | Docstring | Ports |
 | --- | --- | --- | --- |
-| `payments.py` | `pay(industry, payer, payee, amount)` | The only place cash moves: payer.cash − amount, payee.cash + amount. | v2 `payments.pay`, as called in `entry_exit.py` |
+| `payments.py` | `pay(payer, payee, amount)` | The only place cash moves: payer.cash − amount, payee.cash + amount; a negative amount is refused. | v2 `payments.pay`, as called in `entry_exit.py`, without the flow matrix |
 | `goods_market.py` | `allocate(demand, shares, offered)` → (sales, lost) | Each firm sells min(share × D, offered capacity); the overflow is shared once, pro rata to spare offered capacity; the rest is lost. | v2 `goods_market.allocate`, one round, no priority to the cheapest |
 | `plant_market.py` | `buy_plant(industry, firm, technique, cause)` | The firm pays κS now, its funds fall by κS, and the plant joins `pending_plants`. | v2 `buy_plant`, as called in `create_entrant` |
 | | `remove_plant(industry, firm, plant, reason)` | The plant leaves. Its reserve, cost − book value, joins the funds if `reserve_released`; else the firm pays it to the rest of the economy, as far as its cash allows. The book value is written off. | new (A7, A13 j) |
@@ -494,7 +501,7 @@ steps 1–5 of t. Sums are over its firms or their plants in operation in t.
 | `profit`, `dividends` | after depreciation; d × max(0, profit) |
 | `capital` | purchase cost of its plants in operation |
 | `profit_rate` | profit / capital: the realised rate (Q12) |
-| `cash`, `funds`, `write_offs` | sums at the end of step 5 |
+| `cash`, `funds`, `write_offs` | sums over the label's firms at the end of the period, after step 6 |
 | `hurdle` | mean h of its firms in step 5 |
 | `orders`, `orders_dearer` | plants ordered (steps 5 and 6); those whose technique is not the lowest-unit-cost technique known to the buyer |
 | `drawn`, `kept` | designs drawn; designs kept |
@@ -688,12 +695,17 @@ touches only its own files and the body of its own step functions in `scheduler.
 | 2 Skeleton | `model.py` (initial population, cash and streams), `payments.py`, `plant_market.py` in full with `scrapping_reserve.py`, `scheduler.py` with `period`, `start_period`, `check`, the end of step 3 (regulating price, r_new, with `entry_new_plant_rate.py`) and the six step functions as stubs with their final signatures and docstrings (prices and shares unchanged, sales = min(share × D, capacity), nothing else), `outputs.py` with `count` and its keys, `run.py`, `tests/helpers.py`. Tests: `test_setup`, reproducibility and money conservation on the stub loop. | Ugo | 3 h | 12 Nov |
 | 3a Pricing ∥ | `pricing_rule.py`, `pricing_floor.py`, `set_prices`. Test: `test_pricing`. | Jake | 2 h | 13–14 Nov |
 | 3b Demand, entry and exit ∥ | `demand_replicator.py`, `goods_market.py`, `allocate_demand`; the other four `entry_` files, `markets/entry_exit.py`, `enter_and_exit`. Tests: `test_demand`, `test_entry`. | Pierre-Loup | 3.5 h | 13–14 Nov |
-| 3c Accounts, scrapping, outputs ∥ | The three `accounts_` files and the other three `scrapping_` files, `produce_and_account`, `scrap_plants`, `outputs.py` in full, `experiments/summary.py`. Tests: `test_accounts`, `test_scrapping`. | Vincent | 3.5 h | 13–14 Nov |
+| 3c Accounts, scrapping, outputs ∥ | The three `accounts_` files and the other three `scrapping_` files, `produce_and_account`, `scrap_plants`, `outputs.py` in full, `experiments/summary.py`, and `run.py` also writes `run.csv`. Tests: `test_accounts`, `test_scrapping`. | Vincent | 3.5 h | 13–14 Nov |
 | 3d Technical change and investment ∥ | The three `investment_draw_` files, `investment_retained_earnings.py`, `investment_accelerator.py`, `invest`. Test: `test_investment`. | Ugo | 3 h | 13–14 Nov |
 | 4 Integration | The four parts together; `test_neutrality`, `test_model`; profile 20 seeds against 0.11 s a run; line count; a first read of E0 on 20 seeds and of the plants leaving by reason (Q18). | Ugo, all four review | 3 h | 15 Nov |
 | 5 Harness, E0–E3 | `stats.py`, `cells.py` (E0–E3), `harness.py`, `test_experiments`; runs; E1 beside the pilot; `fig1` to `fig3`. | Ugo (harness, E2, E3), Vincent (E0), Pierre-Loup (E1) | 4 h and 3 min of runs | 16 Nov, runs 17–19 Nov |
 | 6 E4, E5, Morris | E4 cells, read beside the pilot; `e5_channels.py`, `morris.py`; `fig4` to `fig6`. | Jake (E4), Ugo (Morris) | 4 h | 21–23 Nov |
 | 7 E6, robustness | `populations.py`, the E6 and robustness cells, `tab3_robustness.py`. | Pierre-Loup (E6), Vincent (robustness) | 3 h | 24–25 Nov |
+
+**Built so far:** stages 1 and 2. The loop runs with its six steps as stubs, each with its
+final signature and a docstring that says what it reads and writes; the test files of the four
+parts exist and hold the tests of what stage 2 wrote (`pay`, `buy_plant`, `remove_plant`, the
+construction lag, diffusion, r_new).
 
 What makes 3a–3d independent: `pay`, `buy_plant`, `remove_plant` with the reserve rule, r_new,
 `count` and every dataclass field exist after stage 2, and `parameters.py` is frozen there (a new
