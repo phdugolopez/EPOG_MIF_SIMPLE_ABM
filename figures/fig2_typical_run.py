@@ -39,8 +39,9 @@ def main(seed: int = 0, rule: str = ""):
     price.plot(periods, series(mixed, "shaikh", "reg_price"), color=style.MUTED,
                label="price of production of the regulating technique")
     unit_cost, profit_rate = series(mixed, "shaikh", "price"), series(mixed, "okishio", "price")
-    if all(isclose(a, b) for a, b in zip(unit_cost, profit_rate)):     # one line, not two on top
-        price.plot(periods, unit_cost, color=style.SECONDARY, label="posted price, the same for the two labels")
+    if all(isclose(a, b, rel_tol=0.005) for a, b in zip(unit_cost, profit_rate)):   # one line, not two on top
+        price.plot(periods, unit_cost, color=style.SECONDARY,
+                   label="posted price of both labels (never more than 0.5 % apart)")
     else:
         price.plot(periods, profit_rate, color=style.PROFIT_RATE, label="profit-rate label")
         price.plot(periods, unit_cost, color=style.UNIT_COST, label="unit-cost label")

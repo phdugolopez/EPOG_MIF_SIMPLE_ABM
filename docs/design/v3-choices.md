@@ -81,8 +81,10 @@ numbers are those of the plan and of A13.
 - The price rule decides the headline (`v3-plan.md`, section 9, "E0 to E3 under leader-follow
   pricing", 10 November): the unit-cost label wins 0.98 of seeds under cost-edge cutting and
   0.49 under v2's leader-follow rule with the unit-cost floor, which meets E0 on the price
-  and the profit rate but loses 13 to 14 % of demand in shortages. The group decides which
-  rule is the default, and whether leader-follow replaces systematic cutting as specified.
+  and the profit rate but loses 13 to 14 % of demand in shortages. With overtime without a
+  premium it loses 4 to 5 % and matches the pilot's reference numbers, and the headline is
+  the same. The group decides which rule is the default, whether leader-follow replaces
+  systematic cutting as specified, and whether overtime comes back with it.
 - Questions for Funalot and Bassi: do references and appendices count in the 10 pages, how long
   is each presentation, is the template layout required?
 

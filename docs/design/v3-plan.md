@@ -989,6 +989,52 @@ measures from period 20, means over 20 seeds (minimum and maximum are those of e
   rule, a cut without spare capacity, the monopoly cap) and about ten lines in a model that
   stands at 769 of 770.
 
+**Why the unit-cost label stops winning under leader-follow** (10 November; read from the run
+files of E1 to E3 and from 50 seeds of the mixed population; no new rule).
+
+| Mixed population at the defaults | Cost-edge | Systematic | Leader-follow |
+| --- | --- | --- | --- |
+| Share of seeds won by the unit-cost label | 0.98 | 0.56 | 0.49 |
+| Its final capacity share | 0.89 | 0.56 | 0.50 |
+| Change in its sales share through the price (the replicator) | +0.27 | +0.02 | 0.00 |
+| Change in its sales share through entry and exit | +0.14 | +0.05 | 0.00 |
+| Change in its capacity share through orders and retirements | +0.24 | +0.03 | 0.00 |
+| Realised profit rate, unit-cost / profit-rate label | 0.079 / 0.099 | 0.083 / 0.104 | 0.061 / 0.064 |
+| Hurdle of the profit-rate label; its orders that are not the cheapest | 0.205; 0.88 | 0.222; 0.90 | 0.096; 0.64 |
+| Periods in which the two labels post different prices (50 seeds) | 0.81 | | 0.00 |
+| Mean unit cost, unit-cost / profit-rate label (50 seeds) | 57.6 / 63.4 | | 57.6 / 58.7 |
+| Mean κ, unit-cost / profit-rate label (50 seeds) | 246 / 178 | | 231 / 209 |
+
+- **A lower unit cost is not a higher profit rate.** The designs the unit-cost rule adopts
+  lower the unit cost and raise κ. Above the price of production they earn a lower rate than
+  the techniques the profit-rate rule keeps: under cost-edge cutting the unit-cost label
+  earns 0.079 against 0.099, and 0.087 against 0.112 in the 95 % of periods with the price
+  above the price of production. It wins 0.98 of seeds all the same.
+- **Under cost-edge cutting it wins through the price.** Only a firm with a cost edge cuts,
+  and a rival at its floor cannot follow, so the two labels post different prices in 0.81 of
+  periods. The replicator then moves 0.27 of the market to the unit-cost label, and entrants,
+  who inherit a label in proportion to market shares, add 0.14.
+- **Leader-follow closes that channel.** Every firm posts 0.98 L, or 1.03 L after a shortage,
+  whatever its cost, so the two labels post the same price in every period and the replicator
+  term is exactly 0. The price level follows the capacity cycle, not the lowest unit cost.
+- **Nothing else can carry a cost advantage.** In this model a market share moves only through
+  a price difference or through entry and exit. Sales are rationed by share, so capacity
+  beyond a firm's share stays idle and is scrapped; and entrants draw their label from the
+  market shares, which is a random walk. Hence drift.
+- **The two rules also differ less.** The price is lower (1.13 against 1.37 times the price of
+  production), so the hurdle of the profit-rate label is 0.096 against 0.205 and it adopts
+  more of the cost-reducing designs: the gap in unit cost between the labels is 2 % against
+  9 %.
+- **At r̄ = 0.16 the profit-rate label wins by accumulation.** The price never comes within 13 %
+  of a unit cost, so the industry stays in the conflict zone: the profit-rate label earns
+  more below the price of production (0.127 against 0.114) and above it (0.160 against
+  0.152), and its plants cost less per unit of capacity (κ of 178 against 218). It orders
+  more capacity (0.36 of the capacity share), sells the overflow in shortages and gains by
+  entry (0.07 of sales share).
+- **"No draws" is the exception, and not explained.** The unit-cost label wins 0.73 there, by
+  entry and exit (+0.15 of sales share) and by retirements of the other label's plants
+  (+0.27 of capacity share), not by the price (0.00). The reason has not been isolated.
+
 **Leader-follow with the operating-cost floor** (10 November; the same analysis variant,
 `python -m experiments.price_rules leader_follow_ucs`; E0 on commit `5d31fec`, 100 runs, no
 error).
@@ -1053,6 +1099,94 @@ error).
 - **A property of v2's rule seen on the way.** Its floor applies to a cut only: after excess
   demand a firm posts 1.03 L even when that is below its floor. Under the unit-cost floor
   this happens in 0.01 % of periods with the neutral set, by 1.2 % at most.
+
+**Leader-follow with overtime without a premium** (10 November; the same analysis variant,
+`python -m experiments.price_rules leader_follow_overtime` and `leader_follow_ucs_overtime`).
+
+- **The variant.** A firm sells up to 1.2 times the capacity it offers; its plants run to
+  normal capacity cheapest first, then youngest, and what is left runs as overtime in the same
+  order, at the same operating cost. Excess demand stays demand above normal capacity, so the
+  price rises at the same signal as before. These are the functions of the diagnosis
+  ("overtime to 1.2"), moved to `price_rules.py`. The label-swap and firm-order tests pass.
+- **Runs.** 11,200 under each floor, in 2 min 23 s and 2 min 15 s on 10 workers, commit
+  `0cb2e69`, no error. Figures `fig2_typical_run_leader_follow_overtime` and
+  `fig3_bias_lambda_leader_follow_overtime`.
+- **E0** (50 seeds; each cell gives all unit-cost / all profit-rate):
+
+| Measure | Threshold | No overtime | Overtime | Overtime, operating-cost floor |
+| --- | --- | --- | --- | --- |
+| Periods in which the price leader has the lowest unit cost | at least 0.9 | 1.00 / 1.00 | 1.00 / 1.00 | 1.00 / 1.00 |
+| Seeds with capacity at the end within 0.9–1.2 of demand | at least 45 of 50 | 10 / 13 | 20 / 20 | 20 / 22 |
+| Capacity over demand at the end, mean (range over seeds) | | 1.06 (0.15–1.90) / 1.12 (0.30–1.81) | 1.02 (0.24–1.63) / 1.10 (0.24–1.81) | 1.02 (0.18–1.66) / 1.08 (0.18–1.84) |
+| Price over the price of production | 0.9–1.2 | 1.15 / 1.13 | 1.06 / 1.07 | 1.06 / 1.07 |
+| Industry profit rate | 0.03–0.10 | 0.078 / 0.077 | 0.067 / 0.069 | 0.067 / 0.071 |
+| Spread of profit rates across firms | above 0 | 0.065 / 0.063 | 0.076 / 0.078 | 0.076 / 0.078 |
+| Seeds ending without capacity | 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| Share of demand lost over the run | for information | 0.140 / 0.128 | 0.041 / 0.053 | 0.040 / 0.060 |
+| Utilisation; periods with a cut; firms at the end | for information | 0.77; 0.60; 24 / 0.79; 0.60; 24 | 0.91; 0.60; 23 / 0.90; 0.60; 23 | 0.91; 0.61; 23 / 0.90; 0.61; 22 |
+
+- **The cycle** (unit-cost floor; 20 seeds, from period 20; minimum and maximum are those of
+  each run; the demand lost is over the whole run):
+
+| Rule | Cell | Capacity / demand, mean (min–max) | Price / price of production, mean (max) | Periods with lost demand | Demand lost | Industry rate | Periods with overtime |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| No overtime | E0, all unit-cost | 1.12 (0.27–1.94) | 1.16 (1.54) | 0.40 | 0.140 | 0.078 | |
+| | mixed, defaults | 1.07 (0.34–1.69) | 1.15 (1.58) | 0.38 | 0.088 | 0.063 | |
+| Overtime | E0, all unit-cost | 1.05 (0.40–1.74) | 1.07 (1.35) | 0.21 | 0.038 | 0.067 | 0.40 |
+| | mixed, defaults | 1.03 (0.60–1.41) | 1.05 (1.27) | 0.11 | 0.013 | 0.056 | 0.36 |
+
+- **E1 to E3.** Share of seeds won by the unit-cost label, mixed population:
+
+| Experiment | Cell | No overtime | Overtime | Overtime, operating-cost floor |
+| --- | --- | --- | --- | --- |
+| E1, 500 seeds | defaults | 0.49 (0.45–0.53) | 0.50 (0.45–0.54) | 0.49 (0.45–0.54) |
+| E2, 200 seeds | β = 0 | 0.49 (0.42–0.56) | 0.48 (0.41–0.56) | 0.42 (0.35–0.49) |
+| | β = 0.5 | 0.47 (0.40–0.54) | 0.43 (0.36–0.50) | 0.44 (0.37–0.51) |
+| | β = 1.5 | 0.53 (0.46–0.59) | 0.47 (0.40–0.54) | 0.48 (0.41–0.55) |
+| | β = 3 | 0.57 (0.49–0.63) | 0.47 (0.40–0.54) | 0.49 (0.42–0.56) |
+| | neutral set | 0.51 (0.44–0.58) | 0.47 (0.40–0.54) | 0.53 (0.46–0.59) |
+| | no draws | 0.73 (0.67–0.79) | 0.73 (0.66–0.79) | 0.71 (0.64–0.77) |
+| E3, r̄ = 0.05 | λ = 0, 0.25, 0.5, 0.75, 1 | 0.53, 0.47, 0.46, 0.50, 0.51 | 0.47, 0.50, 0.42, 0.41, 0.48 | 0.48, 0.49, 0.43, 0.41, 0.48 |
+| E3, r̄ = 0.16 | λ = 0, 0.25, 0.5, 0.75, 1 | 0.08, 0.13, 0.10, 0.11, 0.15 | 0.20, 0.16, 0.16, 0.18, 0.17 | 0.20, 0.16, 0.16, 0.18, 0.17 |
+
+- **Against the pilot** (arm 4, which has leader-follow and overtime; unit-cost floor):
+
+| Measure | Pilot, arm 4 | Leader-follow | With overtime |
+| --- | --- | --- | --- |
+| Share won, r̄ = 0.05 | drift | 0.46–0.53 | 0.41–0.50 |
+| Share won, r̄ = 0.16 | 0.10–0.19 | 0.08–0.15 | 0.16–0.20 |
+| Industry profit rate | 0.06 at r̄ = 0.05; 0.14–0.15 at 0.16 | 0.06; 0.14 | 0.055; 0.134 |
+| Price over the price of production | 0.93–1.11 | 1.13–1.15; 1.02 | 1.05; 0.94–0.95 |
+| Capacity over demand | 0.99–1.09 | 1.01–1.05; 1.01–1.09 | 1.01–1.03; 0.99–1.03 |
+| Hurdle of the profit-rate label, r̄ = 0.05 | 0.06–0.08 | 0.096 | 0.068 |
+| Its orders that are not the cheapest technique, r̄ = 0.05 | 0.46–0.65 | 0.64 | 0.47 |
+| Entries a run | 47–140 | 126–127; 63–66 | 120; 45–47 |
+| Plants whose reserve is released, by label | 0.74 and 0.76; 0.38 and 0.40 | 0.68 and 0.68; 0.35 and 0.37 | 0.68 and 0.68; 0.34 and 0.35 |
+
+- **Overtime tames the cycle.** The demand lost falls from 14 to 4 % in E0 and from 8.6 to
+  1.1 % at the defaults, the periods with lost demand from 0.40 to 0.21 and from 0.38 to
+  0.11, and the highest price from 1.54 to 1.35 times the price of production. Firms work
+  overtime in 0.4 of periods and utilisation is 0.91 to 0.95.
+- **E0 comes closer and is still not met on capacity.** The price is at 1.06 to 1.07 times
+  the price of production and the rate at 0.07, in the band in all 50 seeds. Capacity ends
+  within the band in 20 seeds of 50, against 10 and 13: it still swings between 0.40 and 1.74
+  times demand in an average run.
+- **The headline does not change.** At r̄ = 0.05 no cell with draws is beyond drift (0.41 to
+  0.50; E1: 0.50, with controls at 0.54 and 0.51, both intervals containing one half). Only
+  "no draws" is (0.73). At r̄ = 0.16 the profit-rate label wins, a little less often (the
+  unit-cost label wins 0.16 to 0.20). The two labels still post the same price, so the
+  replicator term stays at 0.00.
+- **The two rules differ even less.** The price is lower, so the hurdle of the profit-rate
+  label is 0.068 against 0.096 and 47 % of its orders are not the cheapest technique,
+  against 64 %.
+- **The floor matters a little more, and still decides nothing.** With overtime the price
+  falls lower before the shortage, so fewer runs are the same under the two floors (34 of
+  100 in E0, 1,152 of 1,500 in E1, 1,895 of 3,600 in E2). No share won moves by more than
+  0.06 and no verdict changes; at r̄ = 0.16 the cells are identical.
+- **The pilot's reference numbers are met.** With overtime every measure is inside the
+  pilot's range or at its edge, except the released reserves (0.68 against 0.74 to 0.76) and
+  the rate at r̄ = 0.16 (0.134 against 0.14 to 0.15). At r̄ = 0.16 the price is below the
+  price of production on average (0.94 to 0.95).
 
 What makes 3a–3d independent: `pay`, `buy_plant`, `remove_plant` with the reserve rule, r_new,
 `count` and every dataclass field exist after stage 2, and `parameters.py` is frozen there (a new
