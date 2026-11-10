@@ -38,8 +38,8 @@ python3 -m venv .venv
 
 `experiments.price_rules` repeats the experiments under another price rule (v2's leader-follow
 rule with the unit-cost floor, `leader_follow_ucs` for its operating-cost floor, either with
-`_overtime` for output up to 1.2 times normal capacity without a premium, or v3's systematic
-cutting in every cell). It is an analysis
+`_overtime` for output up to 1.2 times normal capacity without a premium, `overtime` for the
+same overtime on v3's own pricing, or v3's systematic cutting in every cell). It is an analysis
 variant, registered in `docs/design/v3-choices.md`: the model is not changed.
 
 The model, `run.py` and the harness need only numpy; the figures need matplotlib and the

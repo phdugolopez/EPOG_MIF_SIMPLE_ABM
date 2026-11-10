@@ -1188,6 +1188,129 @@ error).
   the rate at r̄ = 0.16 (0.134 against 0.14 to 0.15). At r̄ = 0.16 the price is below the
   price of production on average (0.94 to 0.95).
 
+**Version 3's own pricing with overtime without a premium** (10 November; the same analysis
+variant, `python -m experiments.price_rules overtime`).
+
+- **The variant.** The cells of E0 to E3 as section 7 defines them, E3 with its two regimes,
+  and the overtime of the block above: output up to 1.2 times normal capacity at the same
+  operating cost, the shortage signal unchanged. The label-swap and firm-order tests pass
+  under both regimes.
+- **Runs.** 17,200 in 4 min 12 s on 10 workers, commit `080f0e2`, no error. Files in
+  `outputs/overtime/`; figures `fig2_typical_run_overtime` and `fig3_bias_lambda_overtime`.
+- **E0** (50 seeds; each cell gives all unit-cost / all profit-rate):
+
+| Measure | Threshold | No overtime (stage 5) | Overtime |
+| --- | --- | --- | --- |
+| Periods in which the price leader has the lowest unit cost | at least 0.9 | 1.00 / 1.00 | 1.00 / 1.00 |
+| Seeds with capacity at the end within 0.9–1.2 of demand | at least 45 of 50 | 0 / 1 | 0 / 3 |
+| Capacity over demand at the end, mean (range over seeds) | | 1.57 (1.36–1.75) / 2.35 (1.16–2.85) | 1.56 (1.27–1.78) / 1.66 (1.04–2.73) |
+| Price over the price of production | 0.9–1.2 | 1.16 / 1.37 | 1.16 / 1.12 |
+| Industry profit rate | 0.03–0.10 | 0.044 / 0.072 | 0.043 / 0.047 |
+| Spread of profit rates across firms | above 0 | 0.12 / 0.18 | 0.13 / 0.11 |
+| Seeds ending without capacity | 0 | 0 / 0 | 0 / 0 |
+| Share of demand lost over the run | for information | 0.000 / 0.006 | 0.000 / 0.000 |
+| Utilisation; periods with a cut; firms at the end | for information | 0.62; 0.01; 43 / 0.51; 0.09; 65 | 0.61; 0.01; 42 / 0.68; 0.10; 44 |
+
+- **The cycle** (20 seeds, from period 20; minimum and maximum are those of each run; the
+  demand lost is over the whole run):
+
+| Regime | Cell | Overtime | Capacity / demand, mean (min–max) | Price / price of production, mean (max) | Periods with lost demand | Demand lost | Industry rate | Periods with overtime |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Cost-edge | E0, all unit-cost | no | 1.62 (1.28–1.93) | 1.16 (1.16) | 0.00 | 0.000 | 0.044 | |
+| | | yes | 1.63 (1.25–1.93) | 1.16 (1.16) | 0.00 | 0.000 | 0.043 | 0.00 |
+| | mixed, defaults | no | 1.42 (0.55–2.27) | 1.46 (2.98) | 0.17 | 0.034 | 0.090 | |
+| | | yes | 1.21 (0.64–1.96) | 1.20 (2.00) | 0.05 | 0.006 | 0.069 | 0.23 |
+| Systematic | mixed, defaults | no | 1.50 (0.54–2.32) | 1.49 (3.04) | 0.16 | 0.035 | 0.093 | |
+| | | yes | 1.25 (0.60–1.99) | 1.23 (2.23) | 0.06 | 0.008 | 0.073 | 0.23 |
+
+- **E1 and E2.** Share of seeds won by the unit-cost label in the mixed population, with its
+  95 % Wilson interval; the last two columns are for the runs with overtime:
+
+| Experiment | Cell | No overtime (stage 5) | Overtime | Its two controls | Beyond drift |
+| --- | --- | --- | --- | --- | --- |
+| E1, 500 seeds | defaults | 0.98 (0.97–0.99) | 0.92 (0.89–0.94) | 0.51 and 0.47 | yes |
+| E2, 200 seeds | β = 0 | 0.58 (0.51–0.64) | 0.57 (0.50–0.64) | 0.48 and 0.43 | no |
+| | β = 0.5 | 0.92 (0.88–0.95) | 0.75 (0.68–0.81) | 0.51 and 0.51 | yes |
+| | β = 1.5 | 0.98 (0.95–0.99) | 0.89 (0.84–0.93) | 0.49 and 0.45 | yes |
+| | β = 3 | 0.98 (0.96–0.99) | 0.96 (0.92–0.98) | 0.47 and 0.51 | yes |
+| | neutral set | 0.82 (0.76–0.87) | 0.69 (0.62–0.75) | 0.46 and 0.51 | yes |
+| | no draws | 1.00 (0.98–1.00) | 0.99 (0.97–1.00) | 0.44 and 0.54 | yes |
+
+- **E3** (200 seeds, mixed population):
+
+| Share won by the unit-cost label | λ = 0 | 0.25 | 0.5 | 0.75 | 1 |
+| --- | --- | --- | --- | --- | --- |
+| Cost-edge, r̄ = 0.05, no overtime | 0.98 | 0.98 | 0.93 | 0.84 | 0.68 |
+| Cost-edge, r̄ = 0.05, overtime | 0.89 | 0.90 | 0.87 | 0.79 | 0.71 |
+| Mean hurdle of the profit-rate label, overtime | 0.107 | 0.088 | 0.076 | 0.062 | 0.050 |
+| Systematic, r̄ = 0.05, no overtime | 0.61 | 0.52 | 0.54 | 0.41 | 0.48 |
+| Systematic, r̄ = 0.05, overtime | 0.57 | 0.53 | 0.54 | 0.48 | 0.40 |
+| Cost-edge, r̄ = 0.16, no overtime | 0.88 | 0.94 | 0.95 | 0.96 | 0.97 |
+| Cost-edge, r̄ = 0.16, overtime | 0.95 | 0.95 | 0.96 | 0.97 | 0.96 |
+| Systematic, r̄ = 0.16, no overtime | 0.04 | 0.03 | 0.03 | 0.06 | 0.12 |
+| Systematic, r̄ = 0.16, overtime | 0.05 | 0.05 | 0.04 | 0.05 | 0.07 |
+
+  With overtime the ten cost-edge cells are beyond drift, no systematic cell is at r̄ = 0.05,
+  and the five systematic cells at r̄ = 0.16 are, on the side of the profit-rate label.
+- **The mixed population at the defaults** (E1):
+
+| Measure | No overtime | Overtime |
+| --- | --- | --- |
+| Final capacity share of the unit-cost label | 0.89 | 0.78 |
+| Price over the price of production | 1.37 | 1.14 |
+| Capacity over demand at the end | 1.34 | 1.12 |
+| Industry profit rate | 0.083 | 0.063 |
+| Utilisation | 0.71 | 0.85 |
+| Share of demand lost | 0.032 | 0.005 |
+| Hurdle of the profit-rate label; its orders that are not the cheapest | 0.205; 0.88 | 0.105; 0.69 |
+| Realised profit rate, unit-cost / profit-rate label | 0.079 / 0.099 | 0.063 / 0.065 |
+| Change in its sales share through the price | +0.27 | +0.18 |
+| Change in its sales share through entry and exit | +0.14 | +0.11 |
+
+- **Against the pilot** (arm 4; the cells at λ = 0):
+
+| Measure | Pilot, arm 4 | v3's pricing with overtime |
+| --- | --- | --- |
+| Share won, cost-edge cutting | 0.94–0.97 | 0.92 (E1); 0.95 at r̄ = 0.16 |
+| Final capacity share, same cells | 0.72–0.79 | 0.78; 0.75 |
+| Share won, systematic cutting, r̄ = 0.05 | drift | 0.57, not beyond drift |
+| Share won, systematic cutting, r̄ = 0.16 | 0.10–0.19 | 0.05 |
+| Industry profit rate | 0.06 at r̄ = 0.05; 0.14–0.15 at 0.16 | 0.064–0.066; 0.140–0.146 |
+| Price over the price of production | 0.93–1.11 | 1.15–1.16; 1.02–1.06 |
+| Capacity over demand | 0.99–1.09 | 1.14–1.17; 1.11–1.19 |
+| Hurdle of the profit-rate label, r̄ = 0.05 | 0.06–0.08 | 0.107 |
+| Its orders that are not the cheapest technique, r̄ = 0.05 | 0.46–0.65 | 0.68 |
+| Entries a run | 47–140 | 124–125; 53–61 |
+| Plants whose reserve is released, by label | 0.74 and 0.76; 0.38 and 0.40 | 0.71–0.72 and 0.73–0.74; 0.43–0.48 and 0.46–0.50 |
+
+- **The headline holds, less strongly.** The unit-cost label wins 0.92 of seeds at the
+  defaults against 0.98, with a final capacity share of 0.78 against 0.89: the pilot's
+  numbers (0.94–0.97 and 0.72–0.79). It still wins through the price (+0.18 of sales share)
+  and through entry (+0.11), with profit rates of 0.063 and 0.065.
+- **The advantage now grows with the bias over the whole range.** 0.57, 0.75, 0.89 and 0.96
+  for β = 0, 0.5, 1.5 and 3, where the runs without overtime are at the ceiling from
+  β = 0.5 (0.92, 0.98, 0.98). β = 0 stays within drift.
+- **The evaluation price still matters at r̄ = 0.05.** The share won falls from 0.89 to 0.71
+  as λ goes to 1 and the hurdle from 0.107 to 0.050. At r̄ = 0.16 it is flat (0.95 to 0.97).
+- **The cycle is milder.** At the defaults the demand lost falls from 3.2 to 0.5 %, the
+  periods with lost demand from 0.17 to 0.05, the highest price from 2.98 to 2.00 times the
+  price of production and capacity at the end from 1.34 to 1.12 times demand. Firms work
+  overtime in 0.23 of periods.
+- **E0 is not helped where it failed.** In the all-unit-cost population demand never exceeds
+  capacity, so overtime is never used and the runs are those of stage 5: cutting stops after
+  two periods, the price stays at 1.16 times the price of production and capacity at 1.56
+  times demand. In the all-profit-rate population capacity falls from 2.35 to 1.66 and the
+  price from 1.37 to 1.12. Capacity ends within the band in 0 and 3 seeds of 50.
+- **Systematic cutting keeps its verdicts**: drift at r̄ = 0.05 and a win of the profit-rate
+  label at r̄ = 0.16 (the unit-cost label wins 0.04 to 0.07).
+- **Checks.** Both E1 controls have an interval that contains one half (0.46–0.55 and
+  0.43–0.52), and in each control the reserve is released for the same share of plants under
+  the two labels (0.73 and 0.73).
+- **For the group.** Overtime on the pricing as specified keeps the headline, removes most of
+  the lost demand and brings E1 to the pilot's numbers. It does not repair E0, whose failure
+  under cost-edge cutting is the price that stops falling without technical change
+  (diagnosis, point 1). Capacity, the price and the hurdle stay above the pilot's ranges.
+
 What makes 3a–3d independent: `pay`, `buy_plant`, `remove_plant` with the reserve rule, r_new,
 `count` and every dataclass field exist after stage 2, and `parameters.py` is frozen there (a new
 constant is a departure to register in `v3-choices.md`). Stage 4 merges in the order 3c, 3a, 3b,

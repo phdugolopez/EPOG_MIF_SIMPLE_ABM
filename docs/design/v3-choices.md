@@ -84,7 +84,9 @@ numbers are those of the plan and of A13.
   and the profit rate but loses 13 to 14 % of demand in shortages. With overtime without a
   premium it loses 4 to 5 % and matches the pilot's reference numbers, and the headline is
   the same. The group decides which rule is the default, whether leader-follow replaces
-  systematic cutting as specified, and whether overtime comes back with it.
+  systematic cutting as specified, and whether overtime comes back with it. On the pricing
+  as specified, overtime keeps the headline (0.92 against 0.98), cuts the demand lost from
+  3.2 to 0.5 % and does not repair E0.
 - Questions for Funalot and Bassi: do references and appendices count in the 10 pages, how long
   is each presentation, is the template layout required?
 

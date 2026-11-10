@@ -66,7 +66,7 @@ need matplotlib and write to `outputs/figures/`. `outputs/` is not versioned.
 with the unit-cost floor (outputs in `outputs/leader_follow/`), `leader_follow_ucs` under the
 same rule with v2's operating-cost floor, `leader_follow_overtime` and
 `leader_follow_ucs_overtime` with output up to 1.2 times normal capacity without a premium,
-and `systematic` under v3's
+`overtime` with the same overtime on v3's own pricing, and `systematic` under v3's
 systematic cutting. It is an analysis variant, registered in `docs/design/v3-choices.md`: the
 rule is patched in from the script and the model is not changed. Its read is in the plan,
 section 9: under leader-follow E0 is met on the price and the profit rate but not on capacity,
@@ -74,7 +74,9 @@ and the unit-cost label no longer wins beyond drift at the defaults. The operati
 gives the same E0 to E3: the floor almost never binds. Overtime cuts the demand lost from 9 to
 1 % at the defaults and brings the pilot's reference numbers within range; E0 is still not met
 on capacity and the headline does not change. The plan also says why: under leader-follow
-every firm posts the same price, so a cost advantage no longer moves market shares.
+every firm posts the same price, so a cost advantage no longer moves market shares. With
+overtime on v3's own pricing the unit-cost label wins 0.92 of seeds at the defaults (0.98
+without), the demand lost falls from 3.2 to 0.5 %, and E0 is still not met.
 
 Next is stage 6: the E4 cells, `experiments/e5_channels.py`, `experiments/morris.py` (SALib) and
 figures 4 to 6.
