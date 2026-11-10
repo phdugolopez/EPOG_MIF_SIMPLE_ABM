@@ -74,5 +74,5 @@ experiments/      summary.py (the run row), cells.py, stats.py, harness.py; pric
                   experiments under another price rule); diagnosis.py (throwaway)
 tests/            one test file per step
 figures/          style.py and one script per report exhibit (figures 1 to 3 so far)
-docs/design/      specification, plan and decisions
+docs/design/      specification, plan and decisions; v4-final-model.md is the proposal for version 4
 ```
