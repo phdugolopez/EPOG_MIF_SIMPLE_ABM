@@ -4,9 +4,9 @@ A period is the tuple STEPS, run in order, then close_period. Every step compute
 from the state at the start of the step, so the order of industry.firms never matters. The
 run viewer runs the same tuple and reads the firms between two steps.
 
-State of the build: steps 0, 1, 3 and 4, close_period and check are final. Steps 2, 5 and 6
-are the stubs of stage 2, each with its final signature and a docstring that says what it
-reads and writes; stages 3b and 3d write their bodies.
+State of the build: every step but step 5 is final. invest is the stub of stage 2, with its
+final signature and a docstring that says what it reads and writes; stage 3d writes its
+body.
 """
 from math import fsum, isclose
 from typing import NamedTuple
@@ -17,15 +17,20 @@ from equations.accounts_merit_order import dispatch
 from equations.common_regulating_price import price_of_production, regulating_technique
 from equations.common_technique_choice import frontier
 from equations.common_unit_cost import unit_cost
+from equations.demand_replicator import competitiveness, replicator_shares
+from equations.entry_exit_rule import leaving
 from equations.entry_new_plant_rate import new_plant_rate
+from equations.entry_probability import entry_probability
 from equations.pricing_cutting import cutting_price
 from equations.pricing_entitlement import (entitled_cost_edge, entitled_normal_price,
                                            entitled_systematic)
-from equations.pricing_floor import operating_cost_floor
+from equations.pricing_floor import operating_cost_floor, unit_cost_floor
 from equations.pricing_universal import universal_price
 from equations.scrapping_below_cost import periods_below_cost, scrap_cost
 from equations.scrapping_idle_plants import periods_idle
 from equations.scrapping_retirement import retirement_reason
+from markets.entry_exit import create_entrant, remove_firm, rescale_shares
+from markets.goods_market import allocate
 from markets.payments import pay
 from markets.plant_market import remove_plant
 from model.entities import Firm
@@ -137,7 +142,7 @@ def read_quote(firm, p) -> Quote:
         owned = [plant.technique.ucs for plant in firm.plants]
         floor = operating_cost_floor(ran, owned)
     else:
-        floor = cost
+        floor = unit_cost_floor([plant_unit_cost(plant, p) for plant in firm.plants])
 
     return Quote(
         firm=firm,
@@ -209,23 +214,33 @@ def allocate_demand(industry) -> None:
 
     Reads share, price, the plants (operating cost, capacity) and demand. Writes firm.share,
     firm.notional and firm.sales; industry.lost and industry.excess.
-
-    Stub of stage 2: shares stay as they are, a firm offers every plant, and nothing is
-    re-allocated. Stage 3b writes the body.
     """
     p = industry.params
+    firms = industry.firms
 
-    # Each firm sells the demand addressed to it, up to the overtime limit on its capacity.
-    for firm in industry.firms:
-        firm.notional = firm.share * industry.demand
-        firm.sales = min(firm.notional, p.u_max * firm.capacity)
+    # Market shares follow the replicator: a firm cheaper than the average gains.
+    levels = [competitiveness(firm.price) for firm in firms]
+    shares = replicator_shares([firm.share for firm in firms], levels, p.chi)
 
-    # What no firm serves is lost.
-    industry.lost = industry.demand - fsum(firm.sales for firm in industry.firms)
+    # A firm can sell up to u_max times the normal capacity of the plants it offers.
+    limits = [p.u_max * fsum(plant.capacity for plant in offered_plants(firm))
+              for firm in firms]
+    sales, lost = allocate(industry.demand, shares, limits)
+    for firm, share, sold in zip(firms, shares, sales):
+        firm.share = share
+        firm.notional = share * industry.demand
+        firm.sales = sold
+    industry.lost = lost
 
     # The shortage signal: demand above the normal capacity in operation, as a share of demand.
-    capacity = fsum(firm.capacity for firm in industry.firms)
+    capacity = fsum(firm.capacity for firm in firms)
     industry.excess = max(0.0, industry.demand - capacity) / industry.demand
+
+
+def offered_plants(firm) -> list:
+    """The plants a firm offers at step 2 and runs at step 3."""
+    # Those whose operating cost its price covers: the others would lose on every unit.
+    return [plant for plant in firm.plants if plant.technique.ucs <= firm.price]
 
 
 def produce_and_account(industry) -> None:
@@ -260,8 +275,8 @@ def run_plants(firm, p) -> None:
     for plant in firm.plants:
         plant.output = 0.0
 
-    # The plants offered at step 2: those whose operating cost the firm's price covers.
-    offered = [plant for plant in firm.plants if plant.technique.ucs <= firm.price]
+    # Only the plants offered at step 2 run.
+    offered = offered_plants(firm)
     outputs = dispatch(
         ucs=[plant.technique.ucs for plant in offered],
         ages=[plant.age for plant in offered],
@@ -383,10 +398,27 @@ def enter_and_exit(industry) -> None:
     Reads the industry's stream; shares and capacities; r_new; the lowest price of a firm
     with a plant in operation; the public menu. Writes firms; shares; the entrant, its price
     and its plants on order; cash.
-
-    Stub of stage 2: no number is drawn, no firm leaves and none enters. Stage 3b writes the
-    body.
     """
+    p = industry.params
+    firms = industry.firms
+
+    # The industry takes three uniforms a period, used or not.
+    u_entry, u_parent, u_flip = industry.rng.random(3)
+
+    # Exits first. Capacity counts the plants in operation and on order.
+    capacities = [fsum(plant.capacity for plant in firm.plants + firm.pending_plants)
+                  for firm in firms]
+    flags = leaving([firm.share for firm in firms], capacities, p.exit_share, p.min_firms)
+    # The firms that leave; the shares of those that stay are scaled up to sum to 1.
+    leavers = [firm for firm, leaves in zip(firms, flags) if leaves]
+    for firm in leavers:
+        remove_firm(industry, firm)
+    if leavers:
+        rescale_shares(firms)
+
+    # Then at most one entrant, the more likely the more new plants earn above rbar.
+    if u_entry < entry_probability(industry.r_new, p.rbar, p.entry_speed):
+        create_entrant(industry, u_parent, u_flip)
 
 
 def close_period(industry) -> None:
