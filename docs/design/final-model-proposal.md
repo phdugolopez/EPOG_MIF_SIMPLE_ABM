@@ -7,7 +7,9 @@ the two figures and the decision tracker. Every number comes from the v2 sensiti
 is a decision until it is recorded in `v3-choices.md` (`choices.md` is the version 2 record,
 frozen on 9 November). Revised on 9 November after a review against the literature and the v2
 runs: four decisions (mechanism test, financing of replacement, status of the v2 numbers, E7) are
-in the last rows of the decision table, and the group still has to confirm them.
+in the last rows of the decision table, and the group still has to confirm them. Revised again on
+10 November after the v2 pilot (section "Pilot in v2"): the depreciation reserve is released only
+when new plants earn the general rate.
 
 ## At a glance
 
@@ -19,8 +21,9 @@ judged" (question B).
   Marx), v2 found that selection favours the unit-cost rule beyond drift: 0.81 of seeds at the v2
   defaults (500 seeds), 0.94 under the innovation set (200 seeds), against 0.38–0.56 for the
   neutral controls. Those runs scrap on unit cost with no maximum age; the v2 cell closest to the
-  rebuilt model (innovation set, scrapping on operating cost) gives 0.75, still beyond drift. A
-  pilot in v2 settles the reference numbers before the code starts.
+  rebuilt model (innovation set, scrapping on operating cost) gives 0.75, still beyond drift. The
+  v2 pilot of 10 November, at the rebuilt model's settings, gives 0.94–0.97 under cost-edge
+  cutting, with 0.72–0.79 of final capacity (section "Pilot in v2").
 - **Mechanism.** The profit-rate rule judges techniques at the current market price. Above the
   price of production (prix de production) its hurdle is high (0.094 against r̄ = 0.05), so it
   refuses capital-using, cost-reducing designs and keeps dearer plants that price cutting then
@@ -32,11 +35,12 @@ judged" (question B).
   the categories rule (0.32 at 500 seeds). The same corner gives 0.98 to the unit-cost rule under
   the innovation set. The reversal also rests on v2's markup floor and scrapping test: with the
   unit-cost floor and scrapping on operating cost, as in the rebuilt model, the same cell is at
-  drift (0.43, 200 seeds).
+  drift (0.43, 200 seeds). In the pilot the profit-rate rule wins under systematic cutting at r̄ =
+  0.16 (0.10–0.19), where the price channel is nil.
 - **Model.** Core + entry/exit: one industry, Shaikh's three techniques, six firms in identical
   pairs. About 600 lines and five switches, against about 5,100 lines and 25 switches in v2.
 - **Treatments.** Bias of technical change, evaluation price, price-war regime, investment rule,
-  open or closed entry, demand growth.
+  level of the general rate, demand growth.
 - **Analysis.** Mixed population against two neutral controls, share of seeds won with Wilson
   intervals, whole-run decomposition into price, accumulation, entry and exit.
 - **Sensitivity.** Morris screening on 10 continuous parameters, plus five discrete robustness
@@ -133,7 +137,10 @@ Yes, as an entry gate rather than a price. In the core model r̄ does two jobs: 
 probability θ·max(0, r_new − r̄)/r̄, and the price of production uc* + r̄κ* used in question B. In
 E3 the two jobs move together: r̄ = 0.16 raises the price of production used at λ > 0 and also
 closes entry, so that arm is read against the E4 cells at λ = 0 (decided 9 Nov; a separate rate
-for the evaluation price was considered and not kept).
+for the evaluation price was considered and not kept). With the replacement condition of 10
+November r̄ gets a third job, the centre of gravity of the profit rate: in the pilot the industry
+rate is 6 % at r̄ = 0.05 and 14–15 % at 0.16, and entry stays active at both, so the report
+presents r̄ as the level of the general rate, not as open against closed industry.
 
 - At r̄ = 0.05 the industry rate is above r̄ in 95 of 100 periods: entry is open. At 0.16 it is
   above in fewer than 3: entry is closed.
@@ -158,10 +165,10 @@ for the evaluation price was considered and not kept).
 
 | # | Hypothesis | Source | Experiment | v2 evidence |
 | --- | --- | --- | --- | --- |
-| H1 | The unit-cost rule wins under price competition; the lowest-cost firm leads prices | Shaikh 2016, Table 7.3, pp. 313–317 | E1, E2 | Met: 0.81 (categories), 0.94 (innovation set) |
+| H1 | The unit-cost rule wins under price competition; the lowest-cost firm leads prices | Shaikh 2016, Table 7.3, pp. 313–317 | E1, E2 | Met: 0.81 (categories), 0.94 (innovation set); pilot 0.94–0.97 |
 | H1′ | The profit-rate rule cannot lose systematically: no capitalist adopts a technique that lowers the rate at current prices | Roemer 1979, pp. 379 (cost-reducing innovations), 386 (the criterion with fixed capital, at current prices); Duménil & Lévy 2005, p. 209 (more profitable at going prices: Marx's and the classics' criterion) | E1 | Fails as a statement about who survives |
 | H2 | The criteria conflict only for capital-using, cost-reducing designs, so the advantage grows with the Marx bias | Shaikh 2016, pp. 315, 318; Michl 2023, pp. 47–48 | E2 | Partly: no draws 0.51; β = 0.5, 1.5, 3 give 0.80, 0.94, 0.97; but the neutral set, which contains such designs, already gives 0.78 |
-| H3 | With profit-financed investment and closed entry, selection runs through accumulation and can favour the profit-rate rule | Nelson & Winter 1982, pp. 17, 19; Duménil & Lévy 1995, p. 217 | E4 | Met under categories and v2's markup floor only: 0.32, and 0.85 with the accelerator; at drift (0.43) with the unit-cost floor and scrapping on operating cost |
+| H3 | With profit-financed investment and closed entry, selection runs through accumulation and can favour the profit-rate rule | Nelson & Winter 1982, pp. 17, 19; Duménil & Lévy 1995, p. 217 | E4 | Met under categories and v2's markup floor only: 0.32, and 0.85 with the accelerator; at drift (0.43) with the unit-cost floor and scrapping on operating cost; pilot: 0.10–0.19 under systematic cutting at r̄ = 0.16 (innovation set) |
 | H4 | Systematic price cutting narrows the margin p − uc, hence the hurdle and the conflict zone, so the advantage shrinks | Group conjecture (review-v2, section 4) | E4 | Mixed: 0.81 → 0.71 at the defaults, but 0.79 against 0.84 on average in the factorial |
 | H5 | Judged at the price of production, the profit-rate rule's hurdle falls to r̄: the advantage shrinks, and vanishes only where r̄κ is too small to change the choice | Shaikh 2016, pp. 315–317, 320 n. 36, 321 | E3 | Partly: categories 0.81 → 0.53 and 0.71 → 0.48 (drift); innovation set 0.94 → 0.78 (beyond drift); r̄ = 0.16 0.64 → 0.715 |
 | H6 | Under price cutting the lowest-cost technique has the highest sustainable rate, so the profit-rate adopter does not realise the rate it maximises | Shaikh 2016, pp. 313–317 | E1, E5 | Met: 4.5 % against 8.4 % in the base cell |
@@ -220,12 +227,15 @@ of the regulating technique R, the lowest unit cost in operation (v2's
 5. **Technical change and investment.** Draws as below. *Retained earnings* (autofinancement, the
    default): buy as many whole plants of j* as its investible funds, still in cash, pay for:
    accumulated retained profits plus the depreciation reserves of the plants that have left
-   (retired at age T, scrapped or idle). Replacement is thus paid out of depreciation and net
-   expansion out of profit; with profits alone, a plant life of 10 periods and a payout of 0.5
-   would require a profit rate of 20 % just to hold capacity (decided 9 Nov). *Accelerator*:
-   desired capacity = f_i,t·D_t / u*, the demand addressed to the firm before the capacity cap
-   over a target utilisation u* = 0.9; buy the plants missing to reach it, if cash allows. Without
-   overtime, sales never exceed capacity, so a sales-based accelerator would never expand.
+   (retired at age T, scrapped or idle), released only in periods when r^new_t ≥ r̄, the signal of
+   the entry gate; otherwise the reserve is withdrawn and paid out to the rest of the economy, so
+   that capital leaves the industry when new plants earn less than the general rate. Replacement
+   is thus paid out of depreciation and net expansion out of profit (decided 10 Nov after the v2
+   pilot: with profits alone the profit rate settles at 20 %, with the reserve always released
+   near zero, with this condition around r̄). *Accelerator*: desired capacity = f_i,t·D_t / u*,
+   the demand addressed to the firm before the capacity cap over a target utilisation u* = 0.9;
+   buy the plants missing to reach it, if cash allows. Without overtime, sales never exceed
+   capacity, so a sales-based accelerator would never expand.
 6. **Entry and exit.** One entrant with the probability below, of size 0.5 × the average
    incumbent's capacity, technique chosen by its own rule on the public menu, rule copied from an
    incumbent drawn by market share and flipped with probability μ = 0.02, price by the common
@@ -262,7 +272,7 @@ one label-swap test guards this. Python 3.12 or later, since the float sum chang
 | Evaluation-price weight | λ | 0 | E3: 0, 0.25, 0.5, 0.75, 1 |
 | Price-war regime | — | cost-edge cutting | E4: systematic cutting |
 | Investment rule | — | retained earnings | E4: accelerator |
-| General rate (entry gate; price of production at λ > 0) | r̄ | 0.05 | E3 and E4: 0.16 |
+| General rate (entry gate; replacement condition; price of production at λ > 0) | r̄ | 0.05 | E3 and E4: 0.16 |
 | Demand growth | g | 0 | E4: 0.01 |
 | Largest operating-cost cut per design | A | 0.05 | Morris 0.02–0.10 |
 | Draw probability per period | π | 0.2 | Morris 0.1–0.4 |
@@ -319,7 +329,9 @@ seeds. Total budget about 38,400 runs, under an hour on
 - **Share won**: share of decided seeds in which the unit-cost label holds more than half of
   producing capacity at t = 200, with its 95 % Wilson interval. *Beyond drift* = interval
   disjoint from both controls' intervals.
-- **Final capacity share** and **takeover date**.
+- **Final capacity share**, whose mean is reported beside the share won, and **takeover date**.
+  Exact ties at one half are counted apart and left out of the share won (decided 10 Nov: with six
+  stable firms the pilot had up to 73 ties in 200 seeds, which v2 counted as losses).
 - **Decomposition** of the unit-cost label's capacity share over the whole run into price,
   accumulation, exit and entry terms. Whole run, not t = 100–199: in the cells that matter most
   takeovers happen before t = 100.
@@ -341,24 +353,46 @@ There is no docking against v2: E0 is the check that the rebuilt code behaves li
 under real competition before E1–E6 are read; the v2 pilot below gives the numbers to compare them
 with.
 
-## Pilot in v2 before the spec is frozen
+## Pilot in v2 (run 10 November)
 
-Eight cells of v2 at the rebuilt model's settings give the reference numbers that E1, E3 and E4
-are then compared with, and show whether the industry holds its capacity (decided 9 Nov).
+Four arms of eight v2 cells at the rebuilt model's settings were run on 10 November (4,800 runs
+each, no error). They settle the financing of replacement and give the reference numbers for E1
+and E4.
 
 - **Settings.** Innovation set with β = 1.5, `SCRAP_COST = "operating_cost"`, `PLANT_LIFE = 10`,
-  retained earnings.
-- **Cells.** Pricing (real competition; leader-follow with `LEADER_FOLLOW_FLOOR = "unit_cost"`) ×
-  r̄ (0.05, 0.16) × g (0, 1 %): 8 cells × 3 populations × 200 seeds = 4,800 runs, about 5 minutes
-  at the speed of stage 1.
-- **Second arm.** The same 8 cells with the depreciation reserve released when a plant leaves (a
-  few lines on a throwaway branch of v2), to test the investment rule of the rebuilt model.
-- **Read.** Share won against the controls; capacity, entries and periods above r̄ (is the
-  industry renewed by its firms or by entrants?); price over the regulating price of production.
-- **Use.** If the unit-cost advantage stays beyond drift in the second arm, freeze the spec. If it
-  does not, revisit scrapping and investment before any v3 code is written.
-- **Not covered.** v2 keeps overtime and its own shortage rule, so the pilot is a reference, not a
-  docking.
+  retained earnings; pricing (real competition; leader-follow with `LEADER_FOLLOW_FLOOR =
+  "unit_cost"`) × r̄ (0.05, 0.16) × g (0, 1 %); 3 populations × 200 seeds. Arms 2 to 4 stagger the
+  initial ages (addendum A3) and patch their rule in from the launch script: no file of v2 is
+  changed.
+
+| Arm | Financing of replacement | Industry profit rate | Unit-cost rule under cost-edge cutting | Under systematic cutting |
+| --- | --- | --- | --- | --- |
+| 1 | Retained profits only (v2 switches) | 20–21 % | 0.64–1.00 (0.64, at r̄ = 0.16 and g = 0, is not beyond drift) | 0.12–0.46; at r̄ = 0.16 up to 113 seeds of 200 end with no capacity |
+| 2 | Reserve always released | 0.5–2.5 % | 0.82–0.95, but 0.53–0.56 of final capacity | Drift |
+| 3 | Reserve released if the firm's own choice earns r̄ at its price | 7–8 % at r̄ = 0.05, 14–15 % at 0.16 | 0.98–1.00 at r̄ = 0.05; 0.25–0.37 at 0.16 | Drift at r̄ = 0.05; 0.02–0.04 at 0.16 |
+| 4 (kept) | Reserve released if r^new ≥ r̄ | 6 % at r̄ = 0.05, 14–15 % at 0.16 | 0.94–0.97, with 0.72–0.79 of final capacity | Drift at r̄ = 0.05; 0.10–0.19 at 0.16 |
+
+Share of seeds won by the unit-cost rule, exact ties left out (`cells.csv` keeps v2's measure,
+which counts a tie as a loss).
+
+- **Arm 1.** Capacity holds only at r = (δ + g)/(1 − d): 170–197 entries a run, and a price at
+  1.77 times the price of production at r̄ = 0.05. v2 also gives every initial plant age 0, so the
+  whole initial capacity retires at t = 9.
+- **Arm 2.** Capacity holds (101–103 % of demand, 6 to 8 firms), but the rate falls to g/(1 − d)
+  and the hurdle of the profit-rate rule to 0.01–0.03: the two rules nearly coincide.
+- **Arm 3.** The condition reads the firm's own technique, and the unit-cost firms fail it more
+  often (reserve released for 61 % of their plants against 81 % at r̄ = 0.16, 40 seeds). Its
+  reversal under cost-edge cutting is an artefact of the condition.
+- **Arm 4.** The condition is the same for every firm (reserve released for 74 % and 76 % of
+  plants at r̄ = 0.05, 38 % and 40 % at 0.16, 30 seeds). The rate gravitates around r̄, the price
+  stays at 0.93–1.11 times the price of production and capacity at 99–109 % of demand. At r̄ =
+  0.05 the hurdle (0.06–0.08) and the dearer orders (46–65 %) are close to v2's (0.094, 51 %).
+  Entry stays active (47–140 entries a run), also at r̄ = 0.16.
+- **Not covered.** v2 keeps overtime and its own shortage rule, systematic cutting is v2's
+  leader-follow with the unit-cost floor, and the withdrawn reserve stays in cash instead of being
+  paid out. The pilot is a reference, not a docking.
+- **Files.** `outputs/pilot/arm1` to `arm4` of the v2 checkout (`runs.csv`, `cells.csv`), with
+  `run_pilot_arm1.py` to `run_pilot_arm4.py`.
 
 ## Sensitivity analysis
 
@@ -476,12 +510,12 @@ each.
 
 ## Timeline and division of work
 
-The rebuilt model gets five days of coding before the 20 November seminar. A pilot in v2 comes
-first, on 10–11 November.
+The rebuilt model gets five days of coding before the 20 November seminar. The v2 pilot was run on
+10 November.
 
 | Dates (2026) | Step |
 | --- | --- |
-| 10–11 Nov | Pilot in v2, then group meeting: freeze the spec (decisions below) |
+| 10–11 Nov | Pilot in v2 (run 10 Nov), then group meeting: freeze the spec (decisions below) |
 | 12–16 Nov | Write the simplified code |
 | 17–19 Nov | E0–E3 runs, seminar slides |
 | 20 Nov | Simulated seminar |
@@ -500,8 +534,9 @@ first, on 10–11 November.
 ## Decisions the group needs to take
 
 Status on 9 November: every row below is agreed as recommended except the questions for Funalot
-and Bassi, which are still to be asked. The last four rows were decided by Ugo on 9 November after
-the review and are still to be confirmed by the group.
+and Bassi, which are still to be asked. The last five rows were decided by Ugo on 9 and 10
+November, after the review and the v2 pilot, and are still to be confirmed by the group; so is the
+revised row on r̄.
 
 | Decision | Options | Recommendation | Why |
 | --- | --- | --- | --- |
@@ -510,10 +545,11 @@ the review and are still to be confirmed by the group.
 | Pricing rule | v2's two rules as they are; one rule with a "who cuts" switch and a common unit-cost floor | One rule, two regimes | The markup floor never lets the hurdle reach 0; one floor makes the regimes differ only in how often firms cut |
 | Investment factor | "Finance" with borrowing; "investment rule" without debt | Investment rule, no debt | Borrowing is inert under leader-follow and close to inert under real competition |
 | Evaluation price | Two ends only; continuous λ | Continuous λ (5 levels), crossed with r̄ (0.05, 0.16) | A dose-response curve is the cleanest exhibit for question B |
-| r̄ in the text | "General rate"; "open against closed industry" | Open against closed industry | That is what it does in the model: above r̄ in 95 of 100 periods against fewer than 3 |
+| r̄ in the text | "General rate"; "open against closed industry" | **Revised 10 Nov:** level of the general rate (centre of gravity of the profit rate, and entry gate) | With the replacement condition the rate gravitates around r̄ and entry stays active at 0.16 (47–52 entries a run in the pilot) |
 | 20 November seminar | v2 results and the rebuild plan; wait for v3 | v2 results and the plan | v3 results will be at most two days old by then |
 | Questions for Funalot and Bassi | — | Ask now | Do references and appendices count in the 10 pages? Length of each presentation? Is the template layout required? |
 | Mechanism test (H5, E3) | Reword only; cross E3 with r̄; a separate rate for the evaluation price | **Decided 9 Nov:** reword H5 and cross E3 with r̄ (0.05, 0.16) | At prices of production the hurdle falls to r̄, not to 0: v2 gives drift under categories but 0.78 under the innovation set and 0.715 at r̄ = 0.16. r̄ = 0.16 also closes entry, so that arm is read against E4 |
-| Financing of replacement | Retained profits only (v2); all cash; no maximum age; depreciation reserve released when a plant leaves | **Decided 9 Nov:** reserve released when a plant leaves; net expansion out of retained profits | With a plant life of 10 periods, profits alone hold capacity only at r = δ/(1 − d) = 20 %, which keeps entry open and prices far above the price of production |
-| Status of the v2 numbers | An answer to defend; predictions to retest, with a v2 pilot | **Decided 9 Nov:** predictions, and a pilot of 8 v2 cells before the spec is frozen | 0.81, 0.94 and 0.32 come from unit-cost scrapping, no maximum age and the markup floor; the closest v2 cells give 0.75 and 0.43 |
+| Financing of replacement | Retained profits only (v2); reserve always released; reserve released on a condition (the firm's own technique; the entry signal) | **Decided 10 Nov after the pilot:** reserve released only when r^new ≥ r̄, else withdrawn and paid out; net expansion out of retained profits | Profits alone give a profit rate of 20 %, the reserve always released a rate near zero; with the condition on the entry signal the rate gravitates around r̄, and the condition is the same for every firm (pilot, arms 1 to 4) |
+| Status of the v2 numbers | An answer to defend; predictions to retest, with a v2 pilot | **Decided 9 Nov:** predictions, and a pilot of 8 v2 cells before the spec is frozen (run 10 Nov, four arms) | 0.81, 0.94 and 0.32 come from unit-cost scrapping, no maximum age and the markup floor; the closest v2 cells give 0.75 and 0.43 |
 | Emergent bias (E7, H7) | Keep E7; pose it in real terms; comparative statics; drop | **Decided 9 Nov:** drop E7, H7 goes to the discussion | A rising money wage with prices that rise only after a shortage squeezes margins to zero, so h → 0 and the rules coincide; H7 is in neither Table 1 nor the slides |
+| Ties and the winner | Ties counted as losses (v2); ties counted apart | **Decided 10 Nov:** exact ties counted apart; mean final capacity share reported beside the share won | With six stable firms the pilot had up to 73 ties in 200 seeds, which pulled the controls down to 0.30 |

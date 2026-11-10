@@ -4,13 +4,14 @@ Paste everything below the line into a Claude Code session started at the root o
 worktree (`Projets/ABM-v3`, branch `v3` of `phdugolopez/EPOG_MIF_SIMPLE_ABM`), with the v2
 checkout left beside it in `../ABM-sources` as a read-only reference. Written 9 November 2026;
 revised the same day after the review of the proposal (E7 dropped, E3 crossed with r̄,
-depreciation reserve in A7, open points in A13).
+depreciation reserve in A7, open points in A13) and on 10 November after the v2 pilot (replacement
+condition in A7, ties in A11).
 
 The prompt asks for a plan only and stops. The addendum (section 4) holds proposed defaults for
 everything the proposal leaves open: the group confirms or changes them before the plan is
-accepted. Do not paste the prompt before the v2 pilot of the proposal (section "Pilot in v2") has
-been read and the specification confirmed. Then build in the stages the plan defines, one session
-or one prompt per stage.
+accepted. The v2 pilot of the proposal (section "Pilot in v2") was run on 10 November: do not
+paste the prompt before the group has confirmed the specification. Then build in the stages the
+plan defines, one session or one prompt per stage.
 
 ---
 
@@ -74,9 +75,10 @@ Your task now is **a plan, not code**. Write `docs/design/v3-plan.md`, commit it
    Morris, then E6 and the robustness checks.
 8. **Tests**, each with what it asserts: one per mechanism; the label swap (labels swapped
    everywhere except the hurdle mapping give identical trajectories); money conservation every
-   period; the depreciation reserve (a firm with no profit still replaces a plant that retires at
-   age T; funds never exceed cash); reproducibility (same seed, same run); symmetric controls
-   (per-firm streams).
+   period; the depreciation reserve (with r_new ≥ r̄ a firm with no profit still replaces a plant
+   that retires at age T; with r_new < r̄ the reserve is paid out and the plant is not replaced;
+   funds never exceed cash); reproducibility (same seed, same run); symmetric controls (per-firm
+   streams).
 9. **Stages**: an ordered build, each stage ending with the tests passing and a commit, with an
    estimate of its time. Stage 1 also writes the new `CLAUDE.md` (section 3) and replaces the
    version 2 `README.md`. Mark the stages the four mechanism owners can do in parallel once the
@@ -155,16 +157,22 @@ A6 **Demand.** `share` is the notional replicator share, kept separate from the 
    price; unserved demand is re-allocated once, pro rata to spare offered capacity; the rest is
    lost and recorded.
 
-A7 **Investment.** Investible funds F accumulate profit after depreciation, minus dividends, plus
-   the depreciation reserve of every plant that leaves (retired at age T, scrapped or idle: its
-   purchase cost minus its book value; the remaining book value is a write-off, as v2's
-   `firm.write_offs`), minus spending on plants. Retained earnings: funds = min(F, cash); buy
-   floor(funds / (κ*·S)) plants of j*. Replacement is thus paid out of depreciation and net
-   expansion out of retained profit (decided 9 November: with profits alone, T = 10 and d = 0.5,
-   capacity holds only at a profit rate of 20 %). An initial plant releases its full purchase cost
-   although part of it was depreciated before t = 0; the cash cap covers that. Accelerator:
-   desired capacity = notional demand / u*; buy ceil((desired − capacity − on order) / S) plants
-   of j*, as far as cash pays.
+A7 **Investment.** Investible funds F accumulate profit after depreciation, minus dividends, minus
+   spending on plants, plus the depreciation reserve of a plant that leaves (retired at age T,
+   scrapped or idle: its purchase cost minus its book value; the remaining book value is a
+   write-off, as v2's `firm.write_offs`) if r_new ≥ r̄ in that period. r_new is the signal of
+   entry (A10), computed once per period before any plant retires, the same for every firm; with
+   no plant in its window the reserve is released. If r_new < r̄ the reserve is withdrawn: the
+   firm pays it to the rest-of-economy account, as far as its cash allows, and it is never
+   invested. Retained earnings: funds = min(F, cash); buy floor(funds / (κ*·S)) plants of j*.
+   Replacement is thus paid out of depreciation when new plants earn the general rate, and net
+   expansion out of retained profit. Decided 10 November after the v2 pilot (proposal, section
+   "Pilot in v2"): with profits alone the profit rate settles at (δ + g)/(1 − d), with the reserve
+   always released at g/(1 − d), with this condition around r̄; a condition on the firm's own
+   technique favours the profit-rate rule and was rejected. An initial plant releases its full
+   purchase cost although part of it was depreciated before t = 0; the cash cap covers that.
+   Accelerator: desired capacity = notional demand / u*; buy ceil((desired − capacity − on order)
+   / S) plants of j*, as far as cash pays.
 
 A8 **Hurdle timing.** h is computed at the investment step from the evaluation price p^e built
    from the firm's price this period. The regulating technique R (lowest unit cost among plants in
@@ -187,8 +195,11 @@ A10 **Entry and exit.** r_new = capacity-weighted realised rate (plant profit / 
    firms; an exiting firm's cash goes to the rest-of-economy account.
 
 A11 **Winner.** A seed is decided if producing capacity is positive at t = 200; the unit-cost
-   label wins if it holds more than half of it. Populations: mixed (each label on its own rule)
-   and two controls (both labels on one rule), same seeds.
+   label wins if it holds more than half of it, loses with less than half, and an exact tie at one
+   half is counted apart: the share won is wins over wins plus losses, and the mean final capacity
+   share is reported beside it (decided 10 November: the pilot had up to 73 ties in 200 seeds).
+   Populations: mixed (each label on its own rule) and two controls (both labels on one rule),
+   same seeds.
 
 A12 **Invasion (E6), to confirm.** Ten firms on D1 with equal capacity: 9 residents of one rule
    and 1 mutant of the other; the control puts the mutant on the residents' rule. The measure is
@@ -216,3 +227,9 @@ A13 **Open points from the review of 9 November.** Not decided: the plan must li
    (i) Constants outside the proposal's parameter table (0.5 × the excess-demand share in A5, the
        1 % exit share, the 5-period entry window, the 2 scrapping periods, the entrant's size of
        0.5): list them in `parameters.py`.
+   (j) The withdrawn reserve (A7): paid to the rest-of-economy account (proposed), or left in the
+       firm's cash as in the pilot.
+   (k) Initial cash: 0 (A2), or the depreciation already accumulated on the initial plants, which
+       would back the reserves they release (proposed).
+   (l) In the pilot no plant left through the operating-cost test (40 seeds of three cells):
+       plants leave by age or idleness. Check whether the test ever binds in v3.
