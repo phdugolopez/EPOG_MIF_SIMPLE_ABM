@@ -25,28 +25,31 @@ cost-edge cutting, r̄ = 0.16, overtime, the undercutting entrant, a shortage st
 
 ## 1. Where version 4 is built
 
-A clean tree `../ABM-v4`: a git worktree on a new branch `v4` cut from `main` (decision 10).
-v3 stays read-only beside it, as v2 did beside v3.
+A clean tree `../ABM-v4`: a git worktree on a new branch `v4` cut from the head of `v3`
+(decision 10, as changed by Ugo on 10 November). v3 stays read-only beside it, as v2 did
+beside v3.
 
 ```bash
-git worktree add ../ABM-v4 -b v4 main
+git worktree add ../ABM-v4 -b v4 v3
 ```
 
-The first commit of `v4` then does three things:
+The first commit of `v4` then does three things, as the first commit of v3 did with v2
+(`651c773`, "v3: clean tree"):
 
-- **It empties the tree.** `main` carries version 1 (`equations/`, `markets/`, `model/`,
-  `outputs/`, `tests/`, `parameters.py`, `plot_outputs.py`, `run.py`, `README.md`,
-  `requirements.txt`): all removed. `.gitattributes` stays.
-- **It brings the specification.** `docs/design/` with `v4-final-model.md`, `v4-choices.md`,
-  `v4-plan.md`, `v4-review.md` and `v4-literature-check.md`, copied from the commit of `v3`
-  that closes this plan. No other document of `v3` is copied.
+- **It empties the tree.** `equations/`, `markets/`, `model/`, `experiments/`, `figures/`,
+  `tests/`, `parameters.py`, `run.py`, `README.md` and `CLAUDE.md` are removed.
+  `.gitattributes`, `.gitignore`, `.github/` and `requirements.txt` stay.
+- **It keeps the documents.** `docs/design/` comes whole, with its history. Five files are the
+  specification of version 4: `v4-final-model.md`, `v4-choices.md`, `v4-plan.md`,
+  `v4-review.md` and `v4-literature-check.md`. The others are the records of v2 and v3:
+  no rule, default or file layout is taken from them.
 - **It writes the rules of the build.** A new `CLAUDE.md` (authority, the rules of section 12,
-  the commands), `.gitignore` (`outputs/`, `__pycache__/`).
+  the commands) and a new `README.md`.
 
-A correction to the review: it said `v3` was cut from `main`. It was cut from the head of `v2`
-and emptied in its first commit. Cutting `v4` from the head of `v3` would do the same and
-bring the documents with their history (open question 1). Until Ugo says so the plan follows
-the decision.
+The review said `v3` was cut from `main`. It was cut from the head of `v2` and emptied in its
+first commit; `v4` does the same with `v3`. Nothing is copied by hand, and a later change to
+a document is made in one tree only: after the first commit of `v4` the five documents are
+edited there, not in `v3`.
 
 ## 2. File tree
 
@@ -110,7 +113,7 @@ ABM-v4/
     e5_channels.py  the reads of E5
   figures/          style.py, fig1 to fig6, tab3_robustness.py
   tests/            helpers.py and one file per step (section 11)
-  docs/design/      the five documents of section 1
+  docs/design/      the documents of v3; five are the specification (section 1)
 ```
 
 | Part | v3 | Version 4 | Margin |
@@ -781,10 +784,8 @@ experiments run from 17 to 19 November, the seminar is on 20 November.
 
 Each has a proposed default, which the build follows until the question is answered.
 
-1. **The base of branch `v4`.** Decided: `main`. `v3` itself was cut from the head of `v2`,
-   not from `main`, and emptied in its first commit; cutting `v4` from the head of `v3` would
-   bring the five documents with their history and need no copy. *Default: as decided,
-   `main`. Proposed to Ugo: the head of `v3`.*
+1. **The base of branch `v4`.** *Settled by Ugo on 10 November: the head of `v3`, emptied
+   in the first commit (section 1; decision 10).*
 2. **`entry_label = "even"`.** The review said "even odds". A coin between the two labels
    would break the label swap: swapped, the same uniform gives the other rule. *Default: the
    parent is drawn evenly among the incumbents, one vote a firm, then flipped with μ. It

@@ -26,7 +26,7 @@ findings.
 | 7 | The gate is on the default price rule: if E0 fails there on the new code, no other experiment is read. Under the other rules E0's verdict is reported beside every result (row 20) | E0 fails under systematic cutting and universal undercutting, which are levels of the first treatment | 10 Nov | Settled in the review, accepted by Ugo |
 | 8 | Every E0 measure is read on periods 20 to 199, is defined as in the proposal's E0 table, and is a column of the run row (row 18) | The tables mixed two windows, and the script that computed the measures was not in the tree | 10 Nov | Settled in the review, accepted by Ugo |
 | 9 | v2's leader-follow rule is named universal undercutting, `pricing = "universal"`, with "leader-follow in v2 and the notebook" at its first mention (question 3) | Every firm cuts whatever its cost. Price leadership in Shaikh and in Hall and Hitch is what cost-edge cutting does | 10 Nov | Decided by Ugo; to confirm |
-| 10 | Version 4 is built in a clean tree `../ABM-v4`: a git worktree on a new branch `v4` cut from `main`. The proposal, this register, the plan and the review are copied in at its first commit. v3 stays read-only (question 4; row 31) | As v3 was built beside v2: what does not change is ported, not inherited | 10 Nov | Decided by Ugo; to confirm |
+| 10 | Version 4 is built in a clean tree `../ABM-v4`: a git worktree on a new branch `v4` cut from the head of `v3` and emptied in its first commit. `docs/design/` comes with its history. v3 stays read-only (question 4; row 31). First decided as cut from `main`; changed by Ugo the same day, on the plan's open question 1 | As v3 was built beside v2, from the head of `v2`: what does not change is ported, not inherited, and no document is copied by hand | 10 Nov | Decided by Ugo; to confirm |
 | 11 | One option `entry_label`: the incumbent whose label is copied is drawn by market share (default) or evenly, one vote a firm. One robustness check on E1, at the default and under universal undercutting (question 5) | Through entry and exit 0.16 of the market moves to the unit-cost label, against 0.21 through the price (cost-edge, r̄ = 0.16, 500 seeds). The review said "even odds"; a coin between the two labels would break the label swap, so the plan draws the incumbent evenly (plan, open question 2) | 10 Nov | Decided by Ugo; to confirm |
 | 12 | The scaled menu: κ_j(r̄) = κ^S_j × 0.16 / r̄ and ucs_j(r̄) = ucs^S_j − δ (κ_j(r̄) − κ^S_j), with δ = 1/T of the run. A run with an operating cost that is not positive is refused (row 3) | At 0.16 it is Shaikh's table at any T, the menu of every run so far, and unit costs move with T as in v3 | 10 Nov | Settled in the review, accepted by Ugo |
 | 13 | The schedule opens with a start of the period: D_t, deliveries, publication of designs. An entrant of t − 1 has a plant in operation at step 1 of t (row 8) | It decides which prices count in P and in L | 10 Nov | Settled in the review, accepted by Ugo |
@@ -86,9 +86,6 @@ line count of 770.
 
 - The group confirms the decisions above.
 - After E0r: which level of r̄, if any, enters E4 (decision 1).
-- The base of branch `v4` (decision 10): `main`, as decided, or the head of `v3`. The review said
-  `v3` was cut from `main`; it was cut from the head of `v2` and emptied in its first commit
-  (plan, open question 1).
 - Questions for Funalot and Bassi, as in `v3-choices.md`: do references and appendices count
   in the 10 pages, how long is each presentation, is the template layout required?
 
