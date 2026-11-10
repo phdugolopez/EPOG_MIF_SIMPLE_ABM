@@ -81,6 +81,16 @@ numbers are those of the plan and of A13.
 - Questions for Funalot and Bassi: do references and appendices count in the 10 pages, how long
   is each presentation, is the template layout required?
 
+## Analysis variants
+
+Runs made beside the experiments, from a script that patches one rule or changes one parameter.
+No file of the model changes and none of these is a rule of version 3: adopting one is a
+departure, to be decided by the group and entered below.
+
+| What | Why | Date |
+| --- | --- | --- |
+| E0 to E3 repeated under two other price rules (`experiments/price_rules.py`, outputs in `outputs/<rule>/`). `leader_follow`: v2's leader-follow rule with the floor at the unit cost of the firm's best plant, put in place of step 1 from the script. L is the lowest price posted last period by a firm with a plant in operation. A firm alone raises its price by 3 % a period, up to 3 times its floor; after excess demand every firm posts 1.03 L; otherwise every firm posts (1 − c) L, or its floor if that is higher, whatever its utilisation. `systematic`: version 3's own regime in every cell, as a comparison | Asked by Ugo after the comparison of price functions in E0 (`outputs/pricing_compare/`), where this rule comes closest to the thresholds. The proposal replaced its shortage rule and monopoly cap by the common ones ("What to drop"), so this is not systematic cutting as specified | 10 November 2026 |
+
 ## Departures from the specification
 
 | What | Why | Date |

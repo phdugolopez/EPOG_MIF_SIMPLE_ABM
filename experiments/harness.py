@@ -139,8 +139,11 @@ def commit() -> str:
 
 def run_experiment(name: str, seeds: int | None = None, jobs: int = 1, resume: bool = False,
                    keep_periods: tuple = (), folder: pathlib.Path | None = None,
-                   experiments: dict = EXPERIMENTS, quiet: bool = False) -> pathlib.Path:
-    """Run every (cell, population, seed) of the experiment that runs.csv does not hold yet."""
+                   experiments: dict = EXPERIMENTS, quiet: bool = False,
+                   initializer=None) -> pathlib.Path:
+    """Run every (cell, population, seed) of the experiment that runs.csv does not hold yet.
+    `initializer` is called once in each worker: an analysis variant patches its rule there
+    (experiments/price_rules.py)."""
     experiment = experiments[name]
     seeds = seeds or experiment["seeds"]
     folder = pathlib.Path(folder or pathlib.Path("outputs") / name)
@@ -164,7 +167,7 @@ def run_experiment(name: str, seeds: int | None = None, jobs: int = 1, resume: b
         for population in experiment["populations"] if (cell, population) not in held
         for seed in range(seeds)]
     start = time.perf_counter()
-    with multiprocessing.get_context("spawn").Pool(jobs) as pool:
+    with multiprocessing.get_context("spawn").Pool(jobs, initializer) as pool:
         group = []
         for row in pool.imap(run_one, tasks, chunksize=8):
             group.append(row)
