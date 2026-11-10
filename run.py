@@ -1,11 +1,9 @@
-"""One run at the defaults: python3 run.py [seed] -> outputs/periods.csv.
-
-The run row (outputs/run.csv) joins it when experiments/summary.py is written, in stage 3c.
-"""
+"""One run at the defaults: python3 run.py [seed] -> outputs/periods.csv and outputs/run.csv."""
 import csv
 import pathlib
 import sys
 
+from experiments.summary import run_row
 from model.model import run
 
 
@@ -25,4 +23,6 @@ if __name__ == "__main__":
     folder = pathlib.Path("outputs")
     folder.mkdir(exist_ok=True)
     write(folder / "periods.csv", industry.rows)
-    print(f"seed {seed}: {len(industry.rows)} rows in {folder / 'periods.csv'}")
+    write(folder / "run.csv", [run_row(industry.rows, industry.params, seed)])
+    print(f"seed {seed}: {len(industry.rows)} rows in {folder / 'periods.csv'}, "
+          f"1 in {folder / 'run.csv'}")

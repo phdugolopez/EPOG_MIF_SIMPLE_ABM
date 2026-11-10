@@ -4,16 +4,24 @@ A period is the tuple STEPS, run in order, then close_period. Every step compute
 from the state at the start of the step, so the order of industry.firms never matters. The
 run viewer runs the same tuple and reads the firms between two steps.
 
-State of the build: start_period, close_period, check and the end of step 3 are final. The
-six steps are the stubs of stage 2, each with its final signature and a docstring that says
-what it reads and writes; stages 3a to 3d write their bodies.
+State of the build: steps 0, 3 and 4, close_period and check are final. Steps 1, 2, 5 and 6
+are the stubs of stage 2, each with its final signature and a docstring that says what it
+reads and writes; stages 3a, 3b and 3d write their bodies.
 """
 from math import fsum
 
+from equations.accounts_depreciation import depreciation
+from equations.accounts_dividends import dividends
+from equations.accounts_merit_order import dispatch
 from equations.common_regulating_price import price_of_production, regulating_technique
 from equations.common_technique_choice import frontier
 from equations.entry_new_plant_rate import new_plant_rate
-from model.outputs import record_end, record_production
+from equations.scrapping_below_cost import periods_below_cost, scrap_cost
+from equations.scrapping_idle_plants import periods_idle
+from equations.scrapping_retirement import retirement_reason
+from markets.payments import pay
+from markets.plant_market import remove_plant
+from model.outputs import count, record_end, record_production
 from parameters import EPS, LABELS, MONEY_EPS
 
 
@@ -125,16 +133,70 @@ def produce_and_account(industry) -> None:
     Reads sales, price and the offered plants. Writes output, profit, book_value and age of
     each plant; cash through pay; firm.profit, firm.funds, firm.util and firm.active;
     industry.reg, reg_price and r_new; the two rows of the period.
-
-    Stub of stage 2: nothing is produced or paid and no plant ages. Stage 3c writes the body
-    above the two blocks below, which are final.
     """
+    # Each firm produces what it sold at step 2, then settles its accounts.
+    for firm in industry.firms:
+        run_plants(firm, industry.params)
+        settle_accounts(industry, firm)
+
     # Once a period, before any plant leaves, the same for every firm.
     set_regulating_price(industry)
     set_new_plant_rate(industry)
 
     # The two rows of the period.
     record_production(industry)
+
+
+def run_plants(firm, p) -> None:
+    """The production of a firm: the plants it offered run in merit order, overtime
+    included; every plant in operation depreciates and ages, with or without output."""
+    # No plant has run yet this period.
+    for plant in firm.plants:
+        plant.output = 0.0
+
+    # The plants offered at step 2: those whose operating cost the firm's price covers.
+    offered = [plant for plant in firm.plants if plant.technique.ucs <= firm.price]
+    outputs = dispatch(
+        ucs=[plant.technique.ucs for plant in offered],
+        ages=[plant.age for plant in offered],
+        capacity=[plant.capacity for plant in offered],
+        quantity=firm.sales,
+        u_max=p.u_max,
+    )
+    for plant, output in zip(offered, outputs):
+        plant.output = output
+
+    # The profit of a plant is after its depreciation of the period.
+    for plant in firm.plants:
+        charge = depreciation(plant.cost, plant.book_value, p.delta)
+        plant.profit = (firm.price - plant.technique.ucs) * plant.output - charge
+        plant.book_value -= charge
+        plant.age += 1
+
+
+def settle_accounts(industry, firm) -> None:
+    """The accounts of a firm for the period: sales, operating costs, profit, dividends and
+    what joins the funds."""
+    p = industry.params
+
+    # Sales come in and operating costs go out.
+    revenue = firm.price * firm.sales
+    operating_cost = fsum(plant.technique.ucs * plant.output for plant in firm.plants)
+    pay(industry.roe, firm, revenue)
+    pay(firm, industry.roe, operating_cost)
+
+    # A share of a positive profit is paid out; the rest, or a loss, joins the funds.
+    firm.profit = fsum(plant.profit for plant in firm.plants)
+    paid = dividends(firm.profit, p.payout)
+    pay(firm, industry.roe, paid)
+    count(industry, firm, "dividends", paid)
+    firm.funds += firm.profit - paid
+
+    # Utilisation is sales over normal capacity, so it passes 1 with overtime. A firm
+    # without a plant in operation keeps its last utilisation.
+    firm.active = bool(firm.plants)
+    if firm.plants:
+        firm.util = firm.sales / firm.capacity
 
 
 def set_regulating_price(industry) -> None:
@@ -169,9 +231,21 @@ def scrap_plants(industry) -> None:
 
     Reads age, output, the owner's price and r_new. Writes below_cost and idle; plants;
     funds or cash; write_offs.
-
-    Stub of stage 2: no plant leaves. Stage 3c writes the body.
     """
+    p = industry.params
+
+    # Each plant counts its periods below cost and without output, and leaves if a reason
+    # holds. The list is copied because a plant that leaves is taken out of firm.plants.
+    for firm in industry.firms:
+        for plant in list(firm.plants):
+            technique = plant.technique
+            cost = scrap_cost(technique.ucs, technique.kappa, p.delta, p.scrap_cost)
+            plant.below_cost = periods_below_cost(plant.below_cost, firm.price, cost)
+            plant.idle = periods_idle(plant.idle, plant.output)
+            reason = retirement_reason(plant.age, p.plant_life, plant.below_cost, plant.idle,
+                                       p.scrap_periods)
+            if reason is not None:
+                remove_plant(industry, firm, plant, reason)
 
 
 def invest(industry) -> None:
