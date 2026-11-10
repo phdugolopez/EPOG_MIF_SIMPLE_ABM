@@ -6,7 +6,10 @@ from equations.accounts_depreciation import depreciation
 from equations.accounts_dividends import dividends
 from equations.accounts_merit_order import dispatch
 from equations.common_regulating_price import price_of_production, regulating_technique
+from equations.common_unit_cost import unit_cost
 from equations.entry_new_plant_rate import new_plant_rate
+from equations.pricing_floor import price_floor
+from equations.pricing_rule import posted_price
 from equations.scrapping_below_cost import periods_below_cost, scrap_cost
 from equations.scrapping_idle_plants import periods_idle
 from equations.scrapping_retirement import retirement_reason
@@ -53,11 +56,18 @@ def start_period(industry) -> None:
 
 
 def set_prices(industry) -> None:
-    """Step 1, pricing (A5). Reads every firm's price and utilisation of last period, last
-    period's excess demand and the unit cost of each firm's best plant in operation; writes
-    firm.price and firm.cut. Stub of stage 2: prices stay as they are (stage 3a)."""
-    for firm in industry.firms:
-        firm.cut = False
+    """Step 1, pricing (A5). Every firm reads last period's prices, its own utilisation, last
+    period's excess demand and the unit cost of each firm's best plant in operation. Rivals
+    are the other firms with a plant in operation; a firm without one has no spare capacity."""
+    p = industry.params
+    state = [(firm, firm.price, price_floor([unit_cost(q.technique.ucs, q.technique.kappa, p.delta)
+                                             for q in firm.plants])) for firm in industry.firms]
+    for firm, previous, cost in state:
+        rivals = [(price, c) for other, price, c in state if other is not firm and other.plants]
+        firm.price, firm.cut = posted_price(
+            previous, [price for price, _ in rivals], [c for _, c in rivals], cost,
+            bool(firm.plants) and firm.util < p.u_full, industry.excess,
+            p.pricing == "cost_edge", p.price_cut, p.shortage_step)
 
 
 def allocate_demand(industry) -> None:
