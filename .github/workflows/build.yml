@@ -6,14 +6,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  model-and-docs:
+  model:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install dependencies
         run: pip install -r requirements.txt
@@ -21,20 +21,6 @@ jobs:
       - name: Unit tests
         run: python -m unittest discover -s tests
 
-      - name: Run the baseline
+      - name: One run at the defaults
+        if: hashFiles('run.py') != ''
         run: python run.py
-
-      - name: Draw the figures
-        run: python plot_outputs.py
-
-      - name: Compile the documentation
-        uses: xu-cheng/latex-action@v3
-        with:
-          root_file: main.tex
-          working_directory: docs
-
-      - name: Upload the report
-        uses: actions/upload-artifact@v4
-        with:
-          name: main-pdf
-          path: docs/main.pdf

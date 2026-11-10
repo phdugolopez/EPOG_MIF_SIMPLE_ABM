@@ -1,0 +1,57 @@
+# CLAUDE.md
+
+Version 3 of the group's agent-based model (M2 EPOG, MIP1): one industry in which firms that
+choose techniques by the lowest unit cost (Shaikh, h = 0) compete with firms that choose by the
+highest profit rate at an evaluation price (Okishio). It is a rebuild from a clean tree. Version 2
+is in `../ABM-sources`, read-only.
+
+## Authority
+
+- Four documents are authoritative: `docs/design/final-model-proposal.md`,
+  `docs/design/v3-planning-prompt.md`, `docs/design/v3-plan.md` and `docs/design/v3-choices.md`.
+  Everything else in `docs/design/` describes version 2: take no rule, default or file layout from
+  it.
+- Order: a row of `v3-choices.md` wins over the addendum (section 4 of the planning prompt), and
+  the addendum over the proposal. The plan says how each rule is built, and in which stage.
+- The specification is the source of truth. Any departure goes into `docs/design/v3-choices.md`
+  (what, why, date) before the code changes; never diverge silently.
+
+## Rules for the build
+
+- Neutrality: the type label is read only to look up the hurdle rule and in inheritance at
+  entry. Ties are never broken by firm order or id. The label-swap test must always pass.
+- Build nothing outside the specification: no debt, interest or bankruptcy, no overtime, no anchor
+  pricing, no logit demand, no replacement of working plants, no capital advanced (τ), no wage
+  path or labour units (E7 is dropped), no plants without a maximum age, no debug suite, no switch
+  that the proposal does not list.
+- Equation files are named `equations/<step>_<equation>.py`, where `<step>` is the loop step
+  that uses the equation: `setup` (initial population), `pricing`, `demand`, `accounts`
+  (production and accounts), `scrapping`, `investment` (technical change included) and `entry`
+  (entry and exit), plus `common` for a definition several steps use (unit cost, profit rate at
+  a price, hurdle, technique choice, regulating price). Scheduler step functions and test files
+  follow the same step names (`set_prices`, `tests/test_pricing.py`).
+- Equations are pure functions: no state, no random draw. What moves cash, plants or firms is a
+  transaction in `markets/`.
+- Every step computes all firms from the state at the start of the step (simultaneous moves),
+  so the order of firms never matters. Sums over firms or plants use `math.fsum`.
+- One random stream per firm and one for the industry, from `numpy.random.SeedSequence(seed)`;
+  no other source of randomness.
+- Every money flow goes through one payment function; assert money conservation each period.
+- Python 3.12 or later; dependencies numpy, pandas, matplotlib, SALib.
+- Speed: a 200-period run must take no longer than v2's (0.11 s on one core); profile if it does.
+- Line count: the model code (`parameters.py`, `run.py`, `equations/`, `markets/`, `model/`) is
+  counted without blank lines. Target 700, at most 770; `tests/test_budget.py` enforces it.
+- Commit at the end of each stage on branch `v3`; never push.
+
+## Commands
+
+```bash
+python -m unittest discover -s tests     # every test
+python -m unittest discover -s tests -v  # with the line count printed by test_budget
+```
+
+## Where the build stands
+
+The stages are in section 9 of `docs/design/v3-plan.md`. Stage 1 (scaffold) is done: parameters,
+entities, the `common_` and `setup_` equations and their tests. Next is stage 2 (skeleton of the
+period loop).
