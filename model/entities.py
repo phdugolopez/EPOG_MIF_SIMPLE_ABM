@@ -47,6 +47,7 @@ class Firm:
     profit: float = 0.0                # after depreciation
     write_offs: float = 0.0
     cut: bool = False                  # undercut at step 1
+    active: bool = False               # had a plant in operation at step 3 of this period
     plants: list[Plant] = field(default_factory=list)            # in operation
     pending_plants: list[Plant] = field(default_factory=list)    # on order, produce next period
     known: list[Technique] = field(default_factory=list)         # its own designs that are not public

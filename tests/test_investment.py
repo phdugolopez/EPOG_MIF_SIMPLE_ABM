@@ -5,6 +5,7 @@ import unittest
 from helpers import add_firm, cash_total, empty_industry
 from markets.plant_market import buy_plant
 from model.entities import Technique
+from model.outputs import flows
 from model.scheduler import start_period
 
 
@@ -34,8 +35,8 @@ class TestBuyPlant(unittest.TestCase):
     def test_the_tally_separates_orders_from_entry(self):
         buy_plant(self.industry, self.firm, self.d2, "ordered")
         buy_plant(self.industry, self.firm, self.d2, "entry")
-        flows = self.industry.tally["shaikh"]
-        self.assertEqual((flows["cap_ordered"], flows["cap_entry"], flows["orders"]), (20.0, 20.0, 2.0))
+        out = flows(self.industry, "shaikh")
+        self.assertEqual((out["cap_ordered"], out["cap_entry"], out["orders"]), (20.0, 20.0, 2.0))
 
     def test_a_plant_ordered_in_t_is_in_operation_from_t_plus_1(self):
         buy_plant(self.industry, self.firm, self.d2, "ordered")

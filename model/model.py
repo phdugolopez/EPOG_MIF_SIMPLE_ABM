@@ -5,6 +5,7 @@ import numpy as np
 
 from equations.setup_initial_plants import initial_ages
 from model.entities import Industry, Plant, Technique, new_firm
+from model.outputs import reset_tally
 from model.scheduler import period
 from parameters import Parameters
 
@@ -32,6 +33,7 @@ def build(params: Parameters, seed: int) -> Industry:
         firm.sales = firm.share * industry.demand_0
         firm.util = firm.sales / firm.capacity
     industry.roe.cash = -fsum(firm.cash for firm in industry.firms)
+    reset_tally(industry)
     return industry
 
 

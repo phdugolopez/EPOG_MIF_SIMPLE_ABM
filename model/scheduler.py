@@ -2,10 +2,18 @@
 so the order of industry.firms never matters (plan, section 3)."""
 from math import fsum
 
+from equations.accounts_depreciation import depreciation
+from equations.accounts_dividends import dividends
+from equations.accounts_merit_order import dispatch
 from equations.common_regulating_price import price_of_production, regulating_technique
 from equations.entry_new_plant_rate import new_plant_rate
-from model.outputs import record_end, record_production, reset_tally
-from parameters import EPS, LABELS
+from equations.scrapping_below_cost import periods_below_cost, scrap_cost
+from equations.scrapping_idle_plants import periods_idle
+from equations.scrapping_retirement import retirement_reason
+from markets.payments import pay
+from markets.plant_market import remove_plant
+from model.outputs import count, record_end, record_production, reset_tally
+from parameters import LABELS
 
 
 def period(industry) -> None:
@@ -65,12 +73,32 @@ def allocate_demand(industry) -> None:
 
 
 def produce_and_account(industry) -> None:
-    """Step 3, production and accounts. Reads sales, plants and prices; writes plant.output,
-    plant.profit, plant.age, plant.book_value, firm.profit, firm.funds, firm.util, and pays
-    sales, operating costs and dividends. Stub of stage 2: nothing is produced or paid, and
-    plants do not age (stage 3c). The end of the step is final: the regulating price (A8) and
-    r_new (A7, A10) are set once a period, before any plant leaves, the same for every firm."""
+    """Step 3, production and accounts. Plants run cheapest first, then youngest, up to the
+    firm's sales; every plant in operation ages and depreciates. The firm is paid its sales
+    and pays its operating costs and dividends; profit is after depreciation, and retained
+    profit joins the funds. Then the regulating price (A8) and r_new (A7, A10) are set, once a
+    period and before any plant leaves, the same for every firm."""
     p = industry.params
+    for firm in industry.firms:
+        plants = firm.plants
+        outputs = dispatch([q.technique.ucs for q in plants], [q.age for q in plants],
+                           [q.capacity for q in plants], firm.sales)
+        for plant, output in zip(plants, outputs):
+            charge = depreciation(plant.cost, plant.book_value, p.delta)
+            plant.output = output
+            plant.profit = (firm.price - plant.technique.ucs) * output - charge
+            plant.book_value -= charge
+            plant.age += 1
+        pay(industry.roe, firm, firm.price * firm.sales)
+        pay(firm, industry.roe, fsum(q.technique.ucs * q.output for q in plants))
+        firm.profit = fsum(q.profit for q in plants)
+        paid = dividends(firm.profit, p.payout)
+        pay(firm, industry.roe, paid)
+        count(industry, firm, "dividends", paid)
+        firm.funds += firm.profit - paid
+        firm.active = bool(plants)
+        if plants:
+            firm.util = firm.sales / firm.capacity
     plants = [plant for firm in industry.firms for plant in firm.plants]
     if plants:
         industry.reg = regulating_technique([plant.technique for plant in plants], p.delta)
@@ -82,9 +110,19 @@ def produce_and_account(industry) -> None:
 
 
 def scrap_plants(industry) -> None:
-    """Step 4, scrapping. Reads prices, plant.output, plant.age and r_new; writes
-    plant.below_cost and plant.idle, and calls remove_plant for each plant that leaves.
-    Stub of stage 2: no plant leaves (stage 3c)."""
+    """Step 4, scrapping. A plant leaves at age T, after scrap_periods consecutive periods with
+    its owner's price below its scrap cost, or after as many periods without output. Its
+    reserve is released or withdrawn by remove_plant, on the r_new of step 3."""
+    p = industry.params
+    for firm in industry.firms:
+        for plant in list(firm.plants):
+            cost = scrap_cost(plant.technique.ucs, plant.technique.kappa, p.delta, p.scrap_cost)
+            plant.below_cost = periods_below_cost(plant.below_cost, firm.price, cost)
+            plant.idle = periods_idle(plant.idle, plant.output)
+            reason = retirement_reason(plant.age, p.plant_life, plant.below_cost, plant.idle,
+                                       p.scrap_periods)
+            if reason:
+                remove_plant(industry, firm, plant, reason)
 
 
 def invest(industry) -> None:
@@ -107,9 +145,9 @@ def check(industry) -> None:
     t, firms = industry.time, industry.firms
     cash = industry.roe.cash + fsum(firm.cash for firm in firms)
     assert abs(cash) < 1e-6, f"t={t}: all cash sums to {cash}"
-    assert all(firm.cash >= -EPS for firm in firms), f"t={t}: a firm's cash is negative"
+    assert all(firm.cash > -1e-6 for firm in firms), f"t={t}: a firm's cash is negative"
     shares = fsum(firm.share for firm in firms)
-    assert abs(shares - 1.0) < EPS, f"t={t}: shares sum to {shares}"
+    assert abs(shares - 1.0) < 1e-9, f"t={t}: shares sum to {shares}"
     planned = fsum(row["capacity_next"] for row in industry.rows[-len(LABELS):])
     actual = fsum(q.capacity for firm in firms for q in firm.plants + firm.pending_plants)
     assert abs(planned - actual) < 1e-6, f"t={t}: capacity {actual} against {planned} planned"

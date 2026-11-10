@@ -23,12 +23,13 @@ class TestNewPlantRate(unittest.TestCase):
 
 class TestSignal(unittest.TestCase):
     def test_r_new_ignores_plants_older_than_the_window(self):
+        """A plant counts in r_new for the first entry_window periods in which it produces."""
         ind = empty_industry()
-        young, old = add_firm(ind, plants=1, age=5), add_firm(ind, plants=1, age=6)
-        young.plants[0].profit = 0.08 * young.plants[0].cost
-        old.plants[0].profit = 0.50 * old.plants[0].cost
+        young, old = add_firm(ind, plants=1, age=4), add_firm(ind, plants=1, age=5, price=120.0)
+        young.sales = old.sales = 20.0
         produce_and_account(ind)
-        self.assertAlmostEqual(ind.r_new, 0.08, places=12)
+        self.assertEqual([young.plants[0].age, old.plants[0].age], [5, 6])
+        self.assertAlmostEqual(ind.r_new, (100.0 - 78.0) / 137.5, places=12)
 
     def test_r_new_is_none_when_every_plant_is_old(self):
         ind = empty_industry()
