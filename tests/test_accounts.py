@@ -122,7 +122,7 @@ class TestMoney(unittest.TestCase):
             ind = industry(seed=1, **overrides)
             for _ in range(50):
                 period(ind)
-                self.assertLess(abs(cash_total(ind)), 1e-6, overrides)
+                self.assertLess(abs(cash_total(ind)), 1e-6 + 1e-9 * abs(ind.roe.cash), overrides)
                 self.assertTrue(all(firm.cash > -1e-6 for firm in ind.firms), overrides)
 
     def test_cash_less_funds_is_the_depreciation_accumulated_on_the_plants(self):

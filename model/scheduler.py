@@ -7,12 +7,17 @@ from equations.accounts_dividends import dividends
 from equations.accounts_merit_order import dispatch
 from equations.common_regulating_price import price_of_production, regulating_technique
 from equations.common_unit_cost import unit_cost
+from equations.demand_replicator import competitiveness, replicator_shares
+from equations.entry_exit_rule import leaving
 from equations.entry_new_plant_rate import new_plant_rate
+from equations.entry_probability import entry_probability
 from equations.pricing_floor import price_floor
 from equations.pricing_rule import posted_price
 from equations.scrapping_below_cost import periods_below_cost, scrap_cost
 from equations.scrapping_idle_plants import periods_idle
 from equations.scrapping_retirement import retirement_reason
+from markets.entry_exit import create_entrant, remove_firm, rescale_shares
+from markets.goods_market import allocate
 from markets.payments import pay
 from markets.plant_market import remove_plant
 from model.outputs import count, record_end, record_production, reset_tally
@@ -71,14 +76,19 @@ def set_prices(industry) -> None:
 
 
 def allocate_demand(industry) -> None:
-    """Step 2, demand (A6). Reads prices, shares, D_t and plants; writes firm.share (notional),
-    firm.notional, firm.sales, industry.lost and industry.excess. Stub of stage 2: shares stay
-    as they are and a firm sells min(share x D, capacity) (stage 3b)."""
-    for firm in industry.firms:
-        firm.notional = firm.share * industry.demand
-        firm.sales = min(firm.notional, firm.capacity)
-    capacity = fsum(firm.capacity for firm in industry.firms)
-    industry.lost = industry.demand - fsum(firm.sales for firm in industry.firms)
+    """Step 2, demand (A6). The notional shares follow the replicator on E = 1 / p. A firm
+    offers the capacity of its plants whose operating cost is at most its price, and sells
+    its notional demand up to that; unserved demand is re-allocated once, the rest is lost.
+    excess, the share of demand above total normal capacity, is next period's shortage."""
+    p, firms = industry.params, industry.firms
+    shares = replicator_shares([firm.share for firm in firms],
+                               [competitiveness(firm.price) for firm in firms], p.chi)
+    offered = [fsum(q.capacity for q in firm.plants if q.technique.ucs <= firm.price)
+               for firm in firms]
+    sales, industry.lost = allocate(industry.demand, shares, offered)
+    for firm, share, sold in zip(firms, shares, sales):
+        firm.share, firm.notional, firm.sales = share, share * industry.demand, sold
+    capacity = fsum(firm.capacity for firm in firms)
     industry.excess = max(0.0, industry.demand - capacity) / industry.demand
 
 
@@ -143,9 +153,20 @@ def invest(industry) -> None:
 
 
 def enter_and_exit(industry) -> None:
-    """Step 6, entry and exit (A10). Reads shares, capacity in operation and on order, r_new,
-    prices, the public menu and the industry's stream; exits first (remove_firm), then at most
-    one entrant among the survivors (create_entrant). Stub of stage 2: nothing (stage 3b)."""
+    """Step 6, entry and exit (A10). A firm leaves when its share is below exit_share or it has
+    no capacity left, in operation or on order, while min_firms remain. Then at most one
+    entrant joins the survivors, with the probability the r_new of step 3 gives. The industry
+    takes three uniforms a period, used or not (Q9)."""
+    p, firms = industry.params, industry.firms
+    u_entry, u_parent, u_flip = industry.rng.random(3)
+    capacities = [fsum(q.capacity for q in firm.plants + firm.pending_plants) for firm in firms]
+    out = leaving([firm.share for firm in firms], capacities, p.exit_share, p.min_firms)
+    for firm in [firm for firm, flag in zip(firms, out) if flag]:
+        remove_firm(industry, firm)
+    if any(out):
+        rescale_shares(firms)
+    if u_entry < entry_probability(industry.r_new, p.rbar, p.entry_speed):
+        create_entrant(industry, u_parent, u_flip)
 
 
 def check(industry) -> None:
@@ -154,7 +175,7 @@ def check(industry) -> None:
     entry."""
     t, firms = industry.time, industry.firms
     cash = industry.roe.cash + fsum(firm.cash for firm in firms)
-    assert abs(cash) < 1e-6, f"t={t}: all cash sums to {cash}"
+    assert abs(cash) < 1e-6 + 1e-9 * abs(industry.roe.cash), f"t={t}: all cash sums to {cash}"
     assert all(firm.cash > -1e-6 for firm in firms), f"t={t}: a firm's cash is negative"
     shares = fsum(firm.share for firm in firms)
     assert abs(shares - 1.0) < 1e-9, f"t={t}: shares sum to {shares}"

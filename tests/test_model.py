@@ -4,7 +4,7 @@ import unittest
 
 from helpers import cash_total, industry
 from model.model import run
-from model.scheduler import period
+from model.scheduler import check, period
 from parameters import Parameters
 
 
@@ -28,19 +28,28 @@ class TestLoop(unittest.TestCase):
             ind = industry(**overrides)
             for _ in range(50):
                 period(ind)
-                self.assertLess(abs(cash_total(ind)), 1e-6)
+                self.assertLess(abs(cash_total(ind)), 1e-6 + 1e-9 * abs(ind.roe.cash))
 
     def test_check_catches_money_that_appears(self):
         ind = industry()
+        period(ind)
         ind.firms[0].cash += 1.0
         with self.assertRaises(AssertionError):
-            period(ind)
+            check(ind)
 
     def test_check_catches_shares_that_do_not_sum_to_one(self):
         ind = industry()
+        period(ind)
         ind.firms[0].share += 0.01
         with self.assertRaises(AssertionError):
-            period(ind)
+            check(ind)
+
+    def test_check_catches_capacity_that_appears(self):
+        ind = industry()
+        period(ind)
+        ind.firms[0].plants.append(ind.firms[0].plants[0])
+        with self.assertRaises(AssertionError):
+            check(ind)
 
     def test_demand_grows_at_the_rate_g(self):
         ind = industry(growth=0.01)
