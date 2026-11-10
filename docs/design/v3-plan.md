@@ -25,10 +25,11 @@ technique in use), and initial cash is the depreciation already accumulated on t
   were redone on that count: 693 against a target of 700 and a limit of 770.
 - **Pilot.** Its numbers are the reference for E1 and for eight cells of E4 (section 7).
 
-**Still open** (section 10; the plan uses the default of each): the reserve condition under the
-accelerator (Q17), the operating-cost test, which the idle test implies in v3 (Q18, A13 l), and
-the pilot numbers as a reference, not a gate (Q19). The five points explained a second time (Q2,
-Q9, Q12, Q13, A13 d) were confirmed as proposed on 10 November.
+**Status.** Every question of section 10 has Ugo's answer, recorded in `v3-choices.md` on 10
+November; the group still confirms them. The five points explained a second time (Q2, Q9, Q12,
+Q13, A13 d) were confirmed as proposed, and so were the three new ones: the reserve condition
+also holds under the accelerator (Q17), the operating-cost test is kept although the idle test
+implies it in v3 (Q18, A13 l), and the pilot numbers are a reference, not a gate (Q19).
 
 ## Conventions used below
 
@@ -846,9 +847,9 @@ residents of the other, all ten on D1 with 6 plants each (capacity 1,200).
   rate, the share of seeds in which it ends above 0.1 (exact ties apart, as in A11), each against
   the control, where the mutant follows the residents' rule and 0.1 is the expected share.
 
-### New since the specification was revised
+### New since the specification was revised, accepted on 10 November
 
-| # | Question | Proposed default |
+| # | Question | Decision |
 | --- | --- | --- |
 | Q17 | **The reserve condition under the accelerator.** The proposal states it under retained earnings; A7 states it for the funds before it separates the two rules. The accelerator spends cash, not funds, so only the withdrawal matters there. | Step 4 is the same under both investment rules: when r_new < r̄ the reserve is paid out, also under the accelerator. The investment factor of E4 then changes one thing, the number of plants ordered. |
 | Q18 | **The operating-cost test (A13 l).** In the pilot no plant left through it. In v3 it cannot bind alone: A6 does not offer a plant whose operating cost is above the price, so the plant has no output in exactly the periods the cost test counts, and the idle test removes it on the same date. The test changes the reason recorded, not the plant removed. It binds alone only under `scrap_cost="unit_cost"`. | Keep it: it is the group's rule, it costs 6 lines, and the robustness check needs it. `retirement_reason` reports "cost" before "idle"; the run row gives the shares of plants leaving by age, cost and idleness; stage 4 reads them. If "cost" stays at zero, the report says that plants leave by age or idleness at these parameters. |

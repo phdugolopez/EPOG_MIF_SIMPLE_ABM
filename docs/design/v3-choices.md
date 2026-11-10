@@ -36,8 +36,8 @@ confirm them.
 
 ## Decisions on the plan's open questions (10 November 2026)
 
-Taken by Ugo on the first plan (`v3-plan.md` of 9 November, section 10) and, for the last five
-rows, on the second plan after a further explanation; the group still has to confirm them. A row here wins over the addendum, and the addendum over the proposal. Q and letter
+Taken by Ugo on the first plan (`v3-plan.md` of 9 November, section 10) and, for the last eight
+rows, on the second plan of 10 November; the group still has to confirm them. A row here wins over the addendum, and the addendum over the proposal. Q and letter
 numbers are those of the plan and of A13.
 
 | Decision | Why | Status |
@@ -67,14 +67,14 @@ numbers are those of the plan and of A13.
 | Realised rate (Q12): profit after depreciation over the purchase cost of the plants in operation | The base of the hurdle and of r_new; over the book value the rate of an old plant grows without bound | To confirm |
 | Categories rule (Q13): the two categories are defined at the evaluation price p^e, for every firm | "Conflict" then always means refused by the profit-rate rule as the firm applies it; the same as v2 at λ = 0, the only case planned | To confirm |
 | E6 (A13 d): D_0 = (340/383) × 1,200 = 1,065.3; μ = 0; entry as in the base; measures = the mutant label's mean final capacity share against 0.1 and the share of seeds in which it ends above 0.1, each against the control | Same initial utilisation as E1; entry creates no mutant | To confirm |
+| Reserve condition under the accelerator (Q17): step 4 is the same under both investment rules; when r_new < r̄ the reserve is paid out under the accelerator too | A7 states the condition before it separates the two rules; the investment factor of E4 then changes only the number of plants ordered | To confirm |
+| Operating-cost test (Q18, A13 l): kept; "cost" is reported before "idle", and the run row gives the shares of plants leaving by age, cost and idleness | In v3 the idle test implies it, since a plant with ucs above the price is not offered; it binds alone only under scrapping on unit cost, which the robustness check needs | To confirm |
+| Pilot numbers (Q19): a reference, not a gate; only E0 gates the runs | The pilot is not a docking: v2 keeps overtime, its own shortage rule and leader-follow, and leaves the withdrawn reserve in cash | To confirm |
 
 ## Open
 
 - The v2 pilot was run on 10 November (proposal, section "Pilot in v2"): the group reads it before
   the spec is frozen.
-- Waiting for Ugo's answer (`v3-plan.md` of 10 November, section 10): the reserve condition under
-  the accelerator (Q17), the operating-cost test (Q18, A13 l), the pilot numbers as a reference
-  (Q19).
 - Questions for Funalot and Bassi: do references and appendices count in the 10 pages, how long
   is each presentation, is the template layout required?
 
