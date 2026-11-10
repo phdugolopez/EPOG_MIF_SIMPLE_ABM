@@ -869,6 +869,126 @@ measures from period 20, means over 20 seeds (minimum and maximum are those of e
   with it at 0.16. Under systematic cutting at r̄ = 0.16 the profit-rate label wins (pilot:
   0.10–0.19). None of this is a result before the group has decided on the rules.
 
+**E0 to E3 under leader-follow pricing** (10 November; an analysis variant, registered in
+`v3-choices.md`. No file of the model is changed and none of this is a result).
+
+- **The rule.** `python -m experiments.price_rules leader_follow` runs the cells of E0 to E3 on
+  their seeds with v2's leader-follow rule in place of step 1, its floor at the unit cost of
+  the firm's best plant. L is the lowest price posted last period by a firm with a plant in
+  operation. After excess demand every firm posts 1.03 L; otherwise every firm posts 0.98 L,
+  or its floor if that is higher, whatever its utilisation; a firm alone raises its price by
+  3 % a period up to 3 times its floor. It is not v3's systematic cutting, which cuts only
+  with spare capacity, keeps a firm's own price when it is lower and uses the common shortage
+  step. The same script runs systematic cutting in every cell of E0 to E2 (E3 holds it
+  already). The label-swap and firm-order tests pass under the rule, and it returns what v2's
+  function returns.
+- **Runs.** 11,200 under leader-follow in 2 min 15 s and 5,200 under systematic cutting in
+  1 min 27 s, on 10 workers, commit `0c7fa09`, no error. Files in `outputs/leader_follow/` and
+  `outputs/systematic/`; figures `fig2_typical_run_leader_follow` and
+  `fig3_bias_lambda_leader_follow`.
+- **E0** (50 seeds; each cell gives all unit-cost / all profit-rate):
+
+| Measure | Threshold | Cost-edge (stage 5) | Systematic | Leader-follow |
+| --- | --- | --- | --- | --- |
+| Periods in which the price leader has the lowest unit cost | at least 0.9 | 1.00 / 1.00 | 1.00 / 0.98 | 1.00 / 1.00 |
+| Seeds with capacity at the end within 0.9–1.2 of demand | at least 45 of 50 | 0 / 1 | 7 / 2 | 10 / 13 |
+| Capacity over demand at the end, mean (range over seeds) | | 1.57 (1.36–1.75) / 2.35 (1.16–2.85) | 1.95 (0.62–2.70) / 1.91 (0.74–2.82) | 1.06 (0.15–1.90) / 1.12 (0.30–1.81) |
+| Price over the price of production | 0.9–1.2 | 1.16 / 1.37 | 1.57 / 1.54 | 1.15 / 1.13 |
+| Industry profit rate | 0.03–0.10 | 0.044 / 0.072 | 0.143 / 0.155 | 0.078 / 0.077 |
+| Spread of profit rates across firms | above 0 | 0.12 / 0.18 | 0.21 / 0.22 | 0.065 / 0.063 |
+| Seeds ending without capacity | 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| Share of demand lost over the run | for information | 0.000 / 0.006 | 0.042 / 0.041 | 0.140 / 0.128 |
+| Utilisation; periods with a cut; firms at the end | for information | 0.62; 0.01; 43 / 0.51; 0.09; 65 | 0.54; 0.86; 36 / 0.54; 0.85; 35 | 0.77; 0.60; 24 / 0.79; 0.60; 24 |
+
+- **The cycle**, in the measures of the diagnosis (20 seeds, from period 20; minimum and maximum
+  are those of each run; the demand lost is over the whole run):
+
+| Rule | Cell | Capacity / demand, mean (min–max) | Price / price of production, mean (max) | Periods with lost demand | Demand lost | Industry rate |
+| --- | --- | --- | --- | --- | --- | --- |
+| Cost-edge | E0, all unit-cost | 1.62 (1.28–1.93) | 1.16 (1.16) | 0.00 | 0.000 | 0.044 |
+| | mixed, defaults | 1.42 (0.55–2.27) | 1.46 (2.98) | 0.17 | 0.034 | 0.090 |
+| Systematic | E0, all unit-cost | 1.85 (0.46–2.71) | 1.59 (2.91) | 0.12 | 0.042 | 0.139 |
+| | mixed, defaults | 1.50 (0.54–2.32) | 1.49 (3.04) | 0.16 | 0.035 | 0.093 |
+| Leader-follow | E0, all unit-cost | 1.12 (0.27–1.94) | 1.16 (1.54) | 0.40 | 0.140 | 0.078 |
+| | mixed, defaults | 1.07 (0.34–1.69) | 1.15 (1.58) | 0.38 | 0.088 | 0.063 |
+
+- **E1 and E2.** Share of seeds won by the unit-cost label in the mixed population, with its
+  95 % Wilson interval; the last two columns are for leader-follow:
+
+| Experiment | Cell | Cost-edge (stage 5) | Systematic | Leader-follow | Its two controls | Beyond drift |
+| --- | --- | --- | --- | --- | --- | --- |
+| E1, 500 seeds | defaults | 0.98 (0.97–0.99) | 0.56 (0.52–0.61) | 0.49 (0.45–0.53) | 0.49 and 0.52 | no |
+| E2, 200 seeds | β = 0 | 0.58 (0.51–0.64) | 0.52 (0.45–0.59) | 0.49 (0.42–0.56) | 0.48 and 0.47 | no |
+| | β = 0.5 | 0.92 (0.88–0.95) | 0.56 (0.49–0.62) | 0.47 (0.40–0.54) | 0.57 and 0.52 | no |
+| | β = 1.5 | 0.98 (0.95–0.99) | 0.61 (0.54–0.67) | 0.53 (0.46–0.59) | 0.50 and 0.51 | no |
+| | β = 3 | 0.98 (0.96–0.99) | 0.58 (0.51–0.65) | 0.57 (0.49–0.63) | 0.46 and 0.47 | no |
+| | neutral set | 0.82 (0.76–0.87) | 0.67 (0.61–0.73) | 0.51 (0.44–0.58) | 0.51 and 0.53 | no |
+| | no draws | 1.00 (0.98–1.00) | 0.79 (0.73–0.84) | 0.73 (0.67–0.79) | 0.48 and 0.43 | yes |
+
+  Under systematic cutting only the neutral set and "no draws" are beyond drift; E1 is not
+  (controls 0.48 and 0.52). Under leader-follow the mean final capacity share of the
+  unit-cost label in E1 is 0.50.
+- **E3** (200 seeds, mixed population):
+
+| Share won by the unit-cost label | λ = 0 | 0.25 | 0.5 | 0.75 | 1 |
+| --- | --- | --- | --- | --- | --- |
+| Leader-follow, r̄ = 0.05 | 0.53 | 0.47 | 0.46 | 0.50 | 0.51 |
+| Mean hurdle of the profit-rate label, same cells | 0.096 | 0.084 | 0.072 | 0.061 | 0.050 |
+| Leader-follow, r̄ = 0.16 | 0.08 | 0.13 | 0.10 | 0.11 | 0.15 |
+| Mean hurdle of the profit-rate label, same cells | 0.193 | 0.191 | 0.188 | 0.184 | 0.181 |
+| Systematic, r̄ = 0.05 (stage 5) | 0.61 | 0.52 | 0.54 | 0.41 | 0.48 |
+| Systematic, r̄ = 0.16 (stage 5) | 0.04 | 0.03 | 0.03 | 0.06 | 0.12 |
+| Cost-edge, r̄ = 0.05 (stage 5) | 0.98 | 0.98 | 0.93 | 0.84 | 0.68 |
+| Cost-edge, r̄ = 0.16 (stage 5) | 0.88 | 0.94 | 0.95 | 0.96 | 0.97 |
+
+  Under leader-follow no cell is beyond drift at r̄ = 0.05 and all five are at r̄ = 0.16, on
+  the side of the profit-rate label.
+- **Against the pilot** (arm 4, whose systematic cells are this rule in v2):
+
+| Measure | Pilot, arm 4 | v3 under leader-follow |
+| --- | --- | --- |
+| Share won, r̄ = 0.05 | drift | 0.46–0.53, no cell beyond drift |
+| Share won, r̄ = 0.16 | 0.10–0.19 | 0.08–0.15 |
+| Industry profit rate | 0.06 at r̄ = 0.05; 0.14–0.15 at 0.16 | 0.06; 0.14 |
+| Price over the price of production | 0.93–1.11 | 1.13–1.15 at r̄ = 0.05; 1.02 at 0.16 |
+| Capacity over demand | 0.99–1.09 | at the end, 1.01–1.05 at r̄ = 0.05; 1.01–1.09 at 0.16 |
+| Hurdle of the profit-rate label, r̄ = 0.05 | 0.06–0.08 | 0.096 |
+| Its orders that are not the cheapest technique, r̄ = 0.05 | 0.46–0.65 | 0.64 |
+| Entries a run | 47–140 | 126–127; 63–66 at r̄ = 0.16 |
+| Plants whose reserve is released, by label | 0.74 and 0.76 at r̄ = 0.05; 0.38 and 0.40 at 0.16 | 0.68 and 0.68; 0.35 and 0.37 |
+
+- **E0 is met on the price and the profit rate, not on capacity.** The price is within 0.9–1.2
+  of the price of production in 49 and 50 of the 50 seeds and the rate is 0.08. Capacity is
+  right on average (1.06 and 1.12 at the end) but ends within the band in 10 and 13 seeds of
+  50: the industry still cycles, between 0.27 and 1.94 times demand in an average run.
+- **The cycle changes shape: less overcapacity, long shortages.** Demand is lost in 0.40 of
+  periods and 13 to 14 % of it over a run (none under cost-edge cutting in E0, 3 % at the
+  defaults). In the run kept (E0, seed 0) the price falls 2 % a period from 98; at period 6
+  new plants earn less than r̄, the reserves are withdrawn and entry stops, and capacity
+  falls from 1.63 to 0.30 times demand in nine periods. In the shortage the price rises by
+  only 3 % a period, from 77 to 120 over fifteen periods, with up to 70 % of demand lost,
+  while capacity is rebuilt and then overshoots to 1.87.
+- **The headline disappears.** At the defaults the unit-cost label wins 0.49 of seeds, as in
+  the controls, and no E2 cell with draws is beyond drift (0.47 to 0.57). Every firm posts the
+  same price unless its floor binds (in the mixed run kept the two labels' prices are equal in
+  every period), so a cost advantage no longer moves market shares through the price. The
+  price is also lower, so the hurdle of the profit-rate label is 0.096 against 0.205 and 64 %
+  of its orders are not the cheapest technique, against 88 %. Only "no draws" is beyond drift
+  (0.73).
+- **At r̄ = 0.16 the profit-rate label wins** (the unit-cost label wins 0.08 to 0.15 of seeds),
+  as under v3's systematic cutting (0.03 to 0.12) and in the pilot (0.10 to 0.19).
+- **λ moves nothing under this rule.** The share won is flat at both levels of r̄, although
+  the hurdle falls from 0.096 to 0.050 at r̄ = 0.05.
+- **Checks.** Both E1 controls have an interval that contains one half (0.45–0.54 and
+  0.48–0.57), and in each control the reserve is released for the same share of plants under
+  the two labels (0.68 and 0.68).
+- **For the group.** The price rule decides the headline: 0.98 under cost-edge cutting, drift
+  under both versions of systematic cutting at r̄ = 0.05, and a win of the profit-rate label
+  at r̄ = 0.16. Leader-follow brings E0 and the pilot's reference numbers closest, at the cost
+  of long shortages. Adopting it is a departure from the specification (its own shortage
+  rule, a cut without spare capacity, the monopoly cap) and about ten lines in a model that
+  stands at 769 of 770.
+
 What makes 3a–3d independent: `pay`, `buy_plant`, `remove_plant` with the reserve rule, r_new,
 `count` and every dataclass field exist after stage 2, and `parameters.py` is frozen there (a new
 constant is a departure to register in `v3-choices.md`). Stage 4 merges in the order 3c, 3a, 3b,

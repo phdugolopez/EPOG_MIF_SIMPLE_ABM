@@ -62,6 +62,13 @@ The harness (`python -m experiments.harness E1`) writes `outputs/<experiment>/ru
 `cells.csv`; it uses the standard library only. The figure scripts (`python -m figures.fig1_...`)
 need matplotlib and write to `outputs/figures/`. `outputs/` is not versioned.
 
+`python -m experiments.price_rules leader_follow` repeats E0 to E3 under v2's leader-follow rule
+with the unit-cost floor (outputs in `outputs/leader_follow/`), and `systematic` under v3's
+systematic cutting. It is an analysis variant, registered in `docs/design/v3-choices.md`: the
+rule is patched in from the script and the model is not changed. Its read is in the plan,
+section 9: under leader-follow E0 is met on the price and the profit rate but not on capacity,
+and the unit-cost label no longer wins beyond drift at the defaults.
+
 Next is stage 6: the E4 cells, `experiments/e5_channels.py`, `experiments/morris.py` (SALib) and
 figures 4 to 6.
 

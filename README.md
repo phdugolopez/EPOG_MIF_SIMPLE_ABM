@@ -32,7 +32,13 @@ python3 -m venv .venv
 .venv/bin/python -m experiments.harness E1 --jobs 10 --keep-periods 0   # outputs/E1/runs.csv, cells.csv
 .venv/bin/python -m experiments.harness E3 --resume                     # runs what is missing
 .venv/bin/python -m figures.fig3_bias_lambda                            # outputs/figures/*.pdf
+.venv/bin/python -m experiments.price_rules leader_follow E0 E1 E2 E3   # outputs/leader_follow/E1/...
+.venv/bin/python -m figures.fig3_bias_lambda leader_follow              # the same figure for that rule
 ```
+
+`experiments.price_rules` repeats the experiments under another price rule (v2's leader-follow
+rule with the unit-cost floor, or v3's systematic cutting in every cell). It is an analysis
+variant, registered in `docs/design/v3-choices.md`: the model is not changed.
 
 The model, `run.py` and the harness need only numpy; the figures need matplotlib and the
 Morris screening SALib.
@@ -62,7 +68,8 @@ equations/        one rule per file, pure functions, named <step>_<equation>.py
 markets/          the transactions: payments, goods, plants, entry and exit
 model/            entities.py, model.py, scheduler.py, outputs.py (the period table)
 run.py            one run at the defaults
-experiments/      summary.py (the run row), cells.py, stats.py, harness.py; diagnosis.py (throwaway)
+experiments/      summary.py (the run row), cells.py, stats.py, harness.py; price_rules.py (the
+                  experiments under another price rule); diagnosis.py (throwaway)
 tests/            one test file per step
 figures/          style.py and one script per report exhibit (figures 1 to 3 so far)
 docs/design/      specification, plan and decisions

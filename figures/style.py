@@ -21,6 +21,8 @@ LOW, HIGH = "#6da7ec", "#184f95"
 LINE, MARKER, RING = 1.5, 6.5, 1.5        # points: 2 px lines, 8 px markers, 2 px surface ring
 WIDTH = 6.3                               # inches: the text width of the report
 FOLDER = pathlib.Path("outputs/figures")
+PRICING = {"cost_edge": "cost-edge cutting", "systematic": "systematic cutting",
+           "leader_follow": "leader-follow pricing"}     # the price rules, as the figures name them
 
 
 def apply() -> None:
