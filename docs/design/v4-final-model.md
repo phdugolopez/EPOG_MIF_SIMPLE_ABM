@@ -14,22 +14,22 @@ here is a decision until the group records it.
 ## At a glance
 
 - **Three changes to the model.** Overtime comes back, without a premium. The accelerator loses
-  its target utilisation. The default price rule becomes leader-follow with the unit-cost
-  floor, and the price rule becomes the first treatment, with three levels.
-- **Why.** E0 is the gate: without technical change the industry must behave like an industry
-  under real competition. Under v3's default it does not: capacity stays at 1.6 times demand
-  and the price stops falling after two periods. Under leader-follow with overtime, capacity
-  and the price are within 0.9–1.2 of demand and of the price of production, on average over
-  a run, in all 50 seeds of both populations, and E0 as restated below is met.
-- **What E0 still does not show.** The industry cycles: within a run capacity moves between
-  0.4 and 1.7 times demand, so capacity at the last period is in the band in 20 seeds of 50,
-  and 4 to 5 % of demand is lost. E0 is restated on averages over a run, with a ceiling of
-  10 % on the demand lost, and the cycle is reported beside it.
-- **What it does to the answer.** At the default neither rule wins beyond drift (0.50 of
-  seeds). The unit-cost rule wins under cost-edge cutting (0.92), where a cost advantage
-  becomes a lower price; the profit-rate rule wins at r̄ = 0.16 under leader-follow and
-  systematic cutting (the unit-cost rule wins 0.04 to 0.20 of seeds there). The report's
-  answer is "which rule wins depends on whether a cost advantage sets the price".
+  its target utilisation. The default price rule becomes *normal-price cutting*: v3's two
+  regimes joined by the price of production. The price rule is the first treatment, with four
+  levels.
+- **How the default was chosen.** By Ugo's criterion of 10 November: the rule that best fits
+  both E0 (without technical change the industry behaves as under real competition) and the
+  headline (the unit-cost rule wins beyond drift). Fifteen rules were scored on both.
+- **No rule fits both.** Whatever lets firms without a cost advantage cut the price, which E0
+  needs, also takes away the lead of the cost leader, which the headline needs. Leader-follow
+  meets E0 and leaves the contest at drift (0.50). Cost-edge cutting gives the headline (0.92)
+  and fails E0 in every seed.
+- **The default is the best joint fit.** Under normal-price cutting the unit-cost rule wins
+  0.67 of seeds (0.63–0.71, beyond drift), and E0 holds in 43 seeds of 50 in the all-unit-cost
+  population and in 12 of 50 in the all-profit-rate population. E0 is therefore met as far as
+  possible, not met.
+- **What stays true under it.** The advantage grows with the Marx bias (0.50, 0.62, 0.67,
+  0.84) and falls to drift when the profit-rate rule judges at the price of production.
 - **Two constraints on the rebuild.** Readable code comes before the line count: at most 1,000
   lines of model code, comments excluded. And a run viewer, outside that count, runs one set of
   parameters on one seed and plots what explains the run.
@@ -38,19 +38,19 @@ here is a decision until the group records it.
 
 | # | In v3 | In v4 | Why |
 | --- | --- | --- | --- |
-| 1 | No overtime: output stops at normal capacity | Output up to u_max = 1.2 times normal capacity, at the same operating cost (no premium) | Without it 13 to 14 % of demand is lost in E0 under leader-follow; with it 4 to 5 %, and 1 % at the defaults |
-| 2 | Accelerator: desired capacity = the demand addressed to the firm over a target utilisation u* = 0.9 | Desired capacity = the demand addressed to the firm; no target | The target was the buffer of a model without overtime. In E0 with overtime, the demand lost is 2 % without the target against 4 % with it |
-| 3 | Default price rule: cost-edge cutting | Default: leader-follow with the unit-cost floor | The only rule under which E0, as restated, holds |
-| 4 | Two price regimes; systematic cutting stood for leader-follow | Three price rules: leader-follow, cost-edge cutting, systematic cutting | v3's systematic cutting is not leader-follow: it gives the worst E0. The headline depends on the rule, so the rule is a treatment |
-| 5 | Leader-follow's own shortage rule and monopoly cap dropped for the common shortage step | Restored, for leader-follow only: 3 % above the lowest price after a shortage; a firm alone stops at 3 times its floor | They are part of the rule that was run. The common step (half the excess-demand share) sends the price to 3 times the price of production |
-| 6 | One floor: unit cost | The same by default; the operating-cost floor as a robustness option | It moves no share won by more than 0.06 and no verdict, so it is not a treatment |
+| 1 | No overtime: output stops at normal capacity | Output up to u_max = 1.2 times normal capacity, at the same operating cost (no premium) | Without it no rule comes near E0: at the default, capacity is 1.5 times demand and the price 1.3 times the price of production |
+| 2 | Accelerator: desired capacity = the demand addressed to the firm over a target utilisation u* = 0.9 | Desired capacity = the demand addressed to the firm; no target | The target was the buffer of a model without overtime. Without it E0 holds in 50 and 48 seeds of 50 under the accelerator, against 47 and 21 with it |
+| 3 | Default price rule: cost-edge cutting | Default: normal-price cutting. Above its price of production a firm cuts with spare capacity alone; at or below it, it also needs a cost edge | The best joint fit of E0 and the headline among fifteen rules |
+| 4 | Two price regimes; systematic cutting stood for leader-follow | Four price rules: normal-price cutting, cost-edge cutting, leader-follow, systematic cutting | The headline depends on the rule, so the rule is a treatment. v3's systematic cutting is not leader-follow |
+| 5 | Leader-follow's own shortage rule and monopoly cap dropped for the common shortage step | Restored, for the leader-follow option only: 3 % above the lowest price after a shortage; a firm alone stops at 3 times its floor | They are part of the rule that meets E0 |
+| 6 | One floor: unit cost | The same by default; the operating-cost floor as a robustness option | Under leader-follow it moves no share won by more than 0.06 and no verdict |
 | 7 | E0 read at the last period (capacity within a band in 9 seeds of 10) | E0 read on averages over the run, from period 20, with two new lines (the price crosses the price of production; at most 10 % of demand is lost) and the cycle reported beside | A cycle cannot meet a band at one date; gravitation is around a centre |
-| 8 | H1: the unit-cost rule wins under price competition | H1 depends on the price rule; H4 becomes the central test | 0.92 to 0.98 under cost-edge cutting, drift under leader-follow |
-| 9 | E1 to E4 at the default rule; pricing varied in E3 and E4 only | The price rule crossed with E1, E2, E3 and E4 | The effect of the bias and of the evaluation price exists under cost-edge cutting only |
-| 10 | Robustness: u* = 0.8 and 0.95 | Dropped. Added: no overtime (u_max = 1), the operating-cost floor | u* no longer exists; the two new checks are already run in v3 |
+| 8 | H1: the unit-cost rule wins under price competition | H1 depends on the price rule; H4 becomes the central test | 0.92 under cost-edge cutting, 0.67 at the default, drift under leader-follow |
+| 9 | E1 to E4 at the default rule; pricing varied in E3 and E4 only | The price rule crossed with E0 to E4 | The size of every effect depends on it |
+| 10 | Robustness: u* = 0.8 and 0.95 | Dropped. Added: no overtime (u_max = 1), the operating-cost floor | u* no longer exists |
 | 11 | Model code at most 770 lines, blank lines excluded | At most 1,000 lines, comments excluded; readability first | Section "Rebuilding the code" |
 | 12 | Figure 2 from period tables kept by the harness | A run viewer for any parameters and seed | Every diagnosis of v3 needed a trace of one run |
-| 13 | The depreciation reserve is released when r_new ≥ r̄; no other rule in the model | The same by default; an option with two other levels (always released, never released) for a sensitivity check | The reserve sets the profit rate and makes the cycle: 0.5 % and no cycle when always released, 18 % when never released |
+| 13 | The depreciation reserve is released when r_new ≥ r̄; no other rule in the model | The same by default; an option with two other levels (always released, never released) for a sensitivity check | The reserve sets the profit rate and makes the cycle: 1 % and no cycle when always released, 21 % when never released |
 
 Not changed: the one rule that differs between the types, the menu, the replicator, scrapping,
 the default rule of the depreciation reserve, technical change, entry and exit, the winner, the
@@ -58,81 +58,94 @@ populations and controls, and the rules of neutrality.
 
 ## What the v3 experiments showed
 
-### E0 by price rule
+All the runs of this section have overtime.
 
-Single-rule populations without technical change, 50 seeds, measures from period 20. Each cell
-gives the all-unit-cost and the all-profit-rate population. "Seeds in the band" counts the seeds
-whose average over the run is within 0.9–1.2.
+### E0 and the headline, rule by rule
 
-| Rule | Capacity over demand, mean (range within a run) | Seeds in the band | Seeds in the band at the last period | Price over the price of production | Seeds in the band | Times the price crosses the price of production | Profit rate | Demand lost |
+E0: single-rule populations without technical change, 50 seeds, measures from period 20; each
+cell gives the all-unit-cost and the all-profit-rate population. A seed passes when every line
+of E0 (section "Experiments") is true in it. The headline is the share of seeds won by the
+unit-cost label in the mixed population at the defaults, on 500 seeds (200 for systematic
+cutting).
+
+| Rule | Seeds of 50 that pass E0 | Capacity over demand, mean (range within a run) | Price over the price of production | Times it crosses 1 | Profit rate | Demand lost | Share won | Beyond drift |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Leader-follow, overtime | 1.05 (0.39–1.73) / 1.04 (0.30–1.72) | 50 / 50 | 20 / 20 | 1.07 / 1.07 | 50 / 50 | 22 / 22 | 0.067 / 0.069 | 0.041 / 0.053 |
-| Leader-follow | 1.13 (0.28–1.95) / 1.11 (0.20–1.92) | 50 / 50 | 10 / 13 | 1.16 / 1.14 | 48 / 50 | 13 / 14 | 0.078 / 0.077 | 0.140 / 0.128 |
-| Cost-edge, overtime | 1.63 (1.26–1.93) / 1.52 (0.87–1.92) | 0 / 0 | 0 / 3 | 1.16 / 1.13 | 50 / 43 | 0 / 1 | 0.043 / 0.047 | 0.000 / 0.000 |
-| Cost-edge (v3 default) | 1.63 (1.28–1.93) / 2.16 (0.98–2.57) | 0 / 0 | 0 / 1 | 1.16 / 1.40 | 50 / 11 | 0 / 0 | 0.044 / 0.072 | 0.000 / 0.006 |
-| Systematic, overtime | 1.43 (0.51–2.43) / 1.44 (0.44–2.60) | 0 / 0 | 6 / 15 | 1.27 / 1.30 | 11 / 14 | 16 / 17 | 0.100 / 0.115 | 0.013 / 0.015 |
-| Systematic | 1.86 (0.46–2.74) / 1.85 (0.44–2.84) | 0 / 0 | 7 / 2 | 1.61 / 1.58 | 0 / 0 | 7 / 8 | 0.143 / 0.155 | 0.042 / 0.041 |
+| Leader-follow | 50 / 49 | 1.05 (0.39–1.73) / 1.04 (0.30–1.72) | 1.07 / 1.07 | 22 / 22 | 0.067 / 0.069 | 0.041 / 0.053 | 0.50 (0.45–0.54) | no |
+| Normal-price cutting (default) | 43 / 12 | 1.15 (0.71–1.79) / 1.29 (0.57–2.12) | 1.08 / 1.17 | 30 / 23 | 0.063 / 0.088 | 0.002 / 0.008 | 0.67 (0.63–0.71) | yes |
+| Cost-edge cutting | 0 / 0 | 1.63 (1.26–1.93) / 1.52 (0.87–1.92) | 1.16 / 1.13 | 0 / 1 | 0.043 / 0.047 | 0.000 / 0.000 | 0.92 (0.89–0.94) | yes |
+| Systematic cutting | 0 / 0 | 1.43 (0.51–2.43) / 1.44 (0.44–2.60) | 1.27 / 1.30 | 16 / 17 | 0.100 / 0.115 | 0.013 / 0.015 | 0.57 (0.50–0.64) | no |
 
-In every row the price leader has the lowest unit cost in at least 0.98 of periods, profit rates
-are unequal and no seed ends without capacity.
-
+- **At the default E0 fails on capacity.** In the all-unit-cost population the average of
+  capacity over demand is outside 0.9–1.2 in 7 seeds of 50; every other line holds in all 50.
+  In the all-profit-rate population capacity passes in 12 seeds, the price in 37 and the
+  profit rate in 42: firms there hold different techniques, so cost-edge wars start and the
+  cycle is wider.
 - **Cost-edge cutting cannot meet E0.** Without technical change every firm ends on the same
   technique after two periods, no firm has a cost edge, and nothing lowers the price while
-  capacity is idle: the price never crosses the price of production, and entry absorbs the
-  profit above r̄ through idle capacity.
-- **Systematic cutting overshoots.** Firms cut, but after a shortage the common step raises
-  the price by half the excess-demand share in one period, up to 2.5 to 3 times the price of
-  production.
-- **Leader-follow gravitates.** The price falls 2 % a period while capacity is not short and
-  rises 3 % a period after a shortage; it crosses the price of production 22 times in a run,
-  and the two populations give the same industry.
+  capacity is idle: the price never crosses the price of production.
+- **Leader-follow meets E0 and gives no headline.** Every firm posts the same price in every
+  period, so the price moves no market share.
 
-### The headline by price rule
+### No rule fits both, and why
 
-Share of seeds won by the unit-cost label in the mixed population. E1 has 500 seeds; the cells at
-r̄ = 0.16 and systematic cutting with overtime have 200.
+- **The headline needs the cost leader to cut alone.** Under cost-edge cutting a follower is
+  one step of 2 % behind the leader during every price war, and the replicator moves 0.18 of
+  the market to the unit-cost label. A lower unit cost is not a higher profit rate: the
+  unit-cost label earns 0.063 against 0.065.
+- **E0 needs someone to cut when no firm has a cost edge.** Otherwise the price stays where
+  the last war left it and entry fills the industry with idle capacity.
+- **Each way of meeting the second weakens the first.** Share won on 100 seeds unless marked:
 
-| Rule | Defaults | With overtime | r̄ = 0.16 | r̄ = 0.16 with overtime |
-| --- | --- | --- | --- | --- |
-| Leader-follow | 0.49 (0.45–0.53) | 0.50 (0.45–0.54) | 0.08 | 0.20 |
-| Cost-edge cutting | 0.98 (0.97–0.99) | 0.92 (0.89–0.94) | 0.88 | 0.95 |
-| Systematic cutting | 0.56 (0.52–0.61) | 0.57 (0.50–0.64) | 0.04 | 0.05 |
+| What lets firms without a cost edge cut | Seeds of 50 that pass E0 | Share won |
+| --- | --- | --- |
+| Nothing (cost-edge cutting) | 0 / 0 | 0.92 (500 seeds) |
+| A price above the firm's price of production; the cut stops above it | 0 / 12 | 0.69 (500 seeds) |
+| The same; the cut may end up to 2 % below it (the default) | 43 / 12 | 0.67 (500 seeds) |
+| A price above the regulating price of production | 43 / 8 | 0.63 (500 seeds) |
+| The same, with a shortage step of 0.25 instead of 0.5 | 50 / 35 | 0.56 |
+| Entrants post 2 % below the lowest price | 48 / 5 | 0.68; a quarter of demand is lost in the mixed population |
+| The default with leader-follow's rise of 3 % after a shortage | 50 / 50 | 0.51 |
+| The default with the accelerator | 50 / 48 | 0.52 |
+| Every firm cuts (leader-follow) | 50 / 49 | 0.50 (500 seeds) |
 
-The controls of the cells with 500 seeds are between 0.47 and 0.54. Under leader-follow and
-systematic cutting the cells at r̄ = 0.05 are within drift and those at r̄ = 0.16 are beyond it,
-on the side of the profit-rate label.
+- **The price level works the same way.** E0 asks for a price near the price of production.
+  There the hurdle of the profit-rate rule is near r̄ and the two rules choose alike: 0.07
+  under leader-follow against 0.10 at the default. The headline of v3 (0.98) came with a price
+  at 1.37 times the price of production.
 
-- **The bias of technical change matters under cost-edge cutting only.** With overtime the
-  share won is 0.57, 0.75, 0.89 and 0.96 for β = 0, 0.5, 1.5 and 3; under leader-follow it is
-  0.43 to 0.48 at every β. Without draws the unit-cost label wins under both (0.99 and 0.73).
-- **So does the evaluation price.** Under cost-edge cutting with overtime the share won falls
-  from 0.89 to 0.71 as λ goes to 1 at r̄ = 0.05; under leader-follow it is flat.
+### What holds at the default
 
-### Why the price rule decides
+Mixed population, 500 seeds at the defaults and 200 in the other cells.
 
-- **A lower unit cost is not a higher profit rate.** Under cost-edge cutting the unit-cost
-  label wins 0.98 of seeds while earning 0.079 against 0.099.
-- **It wins through the price.** With cost-edge cutting the two labels post different prices
-  in 0.81 of periods and the replicator moves 0.27 of the market to the unit-cost label (0.18
-  with overtime). Under leader-follow every firm posts the same price in every period, and
-  that term is exactly zero.
-- **Nothing else carries a cost advantage.** A market share moves only through a price
-  difference or through entry and exit; capacity beyond a firm's share stays idle and is
-  scrapped; entrants copy a label in proportion to market shares.
-- **At r̄ = 0.16 the profit-rate label wins by accumulation.** Without overtime the price never
-  comes within 13 % of a unit cost, so that label earns the higher rate at every date, and its
-  plants cost less per unit of capacity.
+| Measure | Normal-price cutting | Cost-edge cutting | Leader-follow |
+| --- | --- | --- | --- |
+| Share won at the defaults | 0.67 (0.63–0.71) | 0.92 (0.89–0.94) | 0.50 (0.45–0.54) |
+| Final capacity share of the unit-cost label | 0.60 | 0.78 | 0.49 |
+| Share won for β = 0, 0.5, 1.5, 3 | 0.50, 0.62, 0.67, 0.84 | 0.57, 0.75, 0.89, 0.96 | 0.48, 0.43, 0.47, 0.47 |
+| Share won with the neutral set; without draws | 0.59; 0.95 | 0.69; 0.99 | 0.47; 0.73 |
+| Share won for λ = 0, 0.25, 0.5, 0.75, 1 at r̄ = 0.05 | 0.67, 0.61, 0.66, 0.59, 0.49 | 0.89, 0.90, 0.87, 0.79, 0.71 | 0.47, 0.50, 0.42, 0.41, 0.48 |
+| Share won at r̄ = 0.16, λ = 0 | 0.44 | 0.95 | 0.20 |
+| Change in sales share through the price | +0.06 | +0.18 | 0.00 |
+| Hurdle of the profit-rate label; its orders that are not the cheapest | 0.101; 0.67 | 0.105; 0.69 | 0.068; 0.47 |
+| Price over the price of production; demand lost | 1.14; 0.005 | 1.14; 0.005 | 1.05; 0.011 |
+
+- **The bias of technical change matters.** At the default the share won is beyond drift from
+  β = 1.5.
+- **So does the evaluation price.** At r̄ = 0.05 the advantage is gone at λ = 1.
+- **At r̄ = 0.16 the default is at drift** at every λ (0.44 to 0.61). The unit-cost label wins
+  there under cost-edge cutting and loses under leader-follow and systematic cutting (0.05).
 - **Not explained.** Under leader-follow without draws the unit-cost label wins 0.73, through
   entry, exit and retirements. The cause is not isolated.
 
 ### What does not matter
 
-- **The floor.** With the operating-cost floor the runs of leader-follow are identical in 34
-  to 96 % of cases, by experiment, and no verdict changes: the shortage turns the price up
-  before either floor is reached.
+- **The floor.** Under leader-follow, with the operating-cost floor the runs are identical in
+  34 to 96 % of cases, by experiment, and no verdict changes: the shortage turns the price up
+  before either floor is reached. Not run under the default.
 - **The pilot.** Leader-follow with overtime is the rule of the pilot's systematic cells, and
   cost-edge cutting with overtime that of its cost-edge cells. Both are close to its headline
-  (drift and 0.16–0.20 against drift and 0.10–0.19; 0.92 against 0.94–0.97).
+  (drift and 0.16–0.20 against drift and 0.10–0.19; 0.92 against 0.94–0.97). The default has
+  no counterpart in the pilot.
 
 ## Research questions and hypotheses
 
@@ -147,13 +160,13 @@ on the side of the profit-rate label.
 
 | # | Hypothesis | Experiment | v3 evidence (provisional) |
 | --- | --- | --- | --- |
-| H1 | The unit-cost rule wins where the lowest-cost firm sets the price | E1 by price rule | Met under cost-edge cutting (0.92); not under leader-follow, where no firm's cost sets the price (0.50) |
-| H1′ | The profit-rate rule cannot lose systematically | E1 | Fails under cost-edge cutting; holds under the other two rules |
-| H2 | The advantage grows with the Marx bias | E2 by price rule | Met under cost-edge cutting (0.57 to 0.96); no effect under leader-follow |
-| H3 | Where selection runs through accumulation it can favour the profit-rate rule | E3, E4 | Met at r̄ = 0.16 under leader-follow (0.08–0.20) and systematic cutting (0.03–0.12) |
-| H4 | When every firm cuts, the margin, the hurdle and the conflict zone narrow and the advantage shrinks | E1, E3 by price rule | Met, and more: with overtime the hurdle falls from 0.105 to 0.068 (0.205 to 0.096 without) and the advantage vanishes, because prices are also equal across firms |
-| H5 | Judged at the price of production, the hurdle falls to r̄ or just above it and the advantage shrinks | E3 | Met under cost-edge cutting at r̄ = 0.05 (0.89 → 0.71); not at r̄ = 0.16; no effect under leader-follow |
-| H6 | The profit-rate adopter does not realise the rate it maximises | E1, E5 | Not met in v3: the profit-rate label realises the higher rate under every rule (0.099 against 0.079; 0.056 against 0.055) |
+| H1 | The unit-cost rule wins where the lowest-cost firm sets the price | E1 by price rule | Met in proportion: 0.92 when only the cost leader cuts, 0.67 at the default, 0.50 when every firm cuts |
+| H1′ | The profit-rate rule cannot lose systematically | E1 | Fails at the default and under cost-edge cutting; holds under leader-follow and systematic cutting |
+| H2 | The advantage grows with the Marx bias | E2 by price rule | Met at the default (0.50 to 0.84) and under cost-edge cutting (0.57 to 0.96); no effect under leader-follow |
+| H3 | Where selection runs through accumulation it can favour the profit-rate rule | E3, E4, reserve | Met at r̄ = 0.16 under leader-follow (0.20) and systematic cutting (0.05), and when the reserve is never released (0.01 at the default); at the default r̄ = 0.16 gives drift |
+| H4 | The more firms cut, the smaller the margin, the hurdle and the advantage | E1, E3 by price rule | Met: 0.92, 0.67, 0.50 as cutting spreads; under leader-follow prices are also equal across firms |
+| H5 | Judged at the price of production, the hurdle falls to r̄ or just above it and the advantage shrinks | E3 | Met at r̄ = 0.05: 0.67 → 0.49 at the default, 0.89 → 0.71 under cost-edge cutting; not at r̄ = 0.16 |
+| H6 | The profit-rate adopter does not realise the rate it maximises | E1, E5 | Not met in v3: the profit-rate label realises the higher rate under every rule (0.066 against 0.062 at the default) |
 
 Not tested, as in v3: Okishio's theorem about the general rate, and the emergence of the bias
 at a rising wage.
@@ -165,7 +178,8 @@ Six steps a period and one rule that differs between the types.
 **Setting.** One industry in a given economy. The money wage is the numéraire and capital goods
 are priced 1. Demand is exogenous, D_t = D_0(1 + g)^t, and so is the general rate r̄. A technique j
 is a pair (ucs_j, κ_j): operating cost and capital per unit of normal output, with unit cost
-uc_j = ucs_j + δκ_j and δ = 1/T. Plants have one technique and a normal capacity S = 20.
+uc_j = ucs_j + δκ_j and δ = 1/T. Its price of production is uc_j + r̄κ_j. Plants have one technique
+and a normal capacity S = 20.
 
 **Initial industry.** Shaikh's three techniques (2016, Tables 7.10–7.11): C (64.25, 137.50), D1
 (61.77, 142.31), D2 (59.21, 157.89), each given to one unit-cost and one profit-rate firm. Six
@@ -191,19 +205,24 @@ the firm's own price; λ = 1 at the price of production of R.
 
 1. **Pricing.** Every firm reads last period's prices and last period's excess demand. A
    shortage is last period's demand above total normal capacity. The floor is the unit cost
-   of the firm's best plant in operation. A firm without a plant in operation keeps its price.
-   One option, `pricing`, chooses among three rules.
-   - *Leader-follow* (default). L is the lowest price posted last period by a firm with a
-     plant in operation. After a shortage every firm posts (1 + z)L, z = 0.03. Otherwise every
-     firm posts (1 − c)L, c = 0.02, or its floor if that is higher, whatever its utilisation.
-     A firm that is alone with a plant in operation raises its price by z a period, up to 3
-     times its floor.
-   - *Cost-edge cutting.* R is the lowest price of the firm's rivals. After a shortage the
-     firm moves up to the next higher rival price, or, with no rival above, raises its price
-     by 0.5 times the excess-demand share. Otherwise it undercuts to (1 − c)R if it has spare
-     capacity (last utilisation below 1) and a unit-cost edge over a rival posting R; else it
-     follows R. Its price rises only after a shortage or to reach its floor.
-   - *Systematic cutting.* The same, with spare capacity alone.
+   of the firm's best plant in operation, the one with the lowest unit cost. A firm without a
+   plant in operation keeps its price. One option, `pricing`, chooses among four rules. In the
+   three cutting rules P is the lowest price of the firm's rivals; after a shortage the firm
+   moves up to the next higher rival price, or, with no rival above, raises its price by 0.5
+   times the excess-demand share; otherwise it undercuts to (1 − c)P, c = 0.02, when the rule
+   entitles it to, and else follows P. Its price rises only after a shortage or to reach its
+   floor.
+   - *Normal-price cutting* (default). A firm with spare capacity (last utilisation below 1)
+     is entitled to cut while P is above its own price of production, that of its best plant.
+     At or below it, it also needs a unit-cost edge over a rival posting P. A cut can end up
+     to c below the price of production.
+   - *Cost-edge cutting.* Spare capacity and a unit-cost edge over a rival posting P, at any
+     price.
+   - *Systematic cutting.* Spare capacity alone, at any price.
+   - *Leader-follow.* L is the lowest price posted last period by a firm with a plant in
+     operation. After a shortage every firm posts (1 + z)L, z = 0.03. Otherwise every firm
+     posts (1 − c)L, or its floor if that is higher, whatever its utilisation. A firm that is
+     alone with a plant in operation raises its price by z a period, up to 3 times its floor.
 2. **Demand.** Market shares follow the replicator below, with E = 1/p and χ = 1. A firm offers
    its plants whose operating cost is at most its price and can sell up to u_max = 1.2 times
    their normal capacity. Sales are the smaller of share × D and that limit; unserved demand
@@ -249,6 +268,11 @@ ucs_n = (1-a)\,ucs_o, \quad \kappa_n = (1+k\,a)\,\kappa_o, \quad a \sim U(0, A],
 \Pr(\text{entry}_t) = \min\Big\{1,\ \theta\,\frac{\max(0,\ r^{new}_t - \bar r)}{\bar r}\Big\}
 ```
 
+**The default price rule in one sentence.** Competition for sales brings the price down to the
+price of production; below it only a cost leader cuts. It is v3's two regimes and no new
+constant: systematic cutting above the firm's price of production, cost-edge cutting at or
+below it.
+
 **Technical change.** Each period a firm with a plant in operation draws, with probability
 π = 0.2, one design from its best known technique o (A = 0.05, σ = 0.8, β = 1.5). It keeps the
 design if its own rule prefers it to o. A design is public 2 periods after its first plant
@@ -256,9 +280,9 @@ produces. The neutral set, the categories rule (with its two categories defined 
 evaluation price) and "no draws" are options.
 
 **Overtime, in one place.** Utilisation is sales over normal capacity and can exceed 1. The
-shortage signal, the spare-capacity test of the two cutting rules, the idle test and
-depreciation by time are those of v3: only the sales limit of step 2 and the production order of
-step 3 change. u_max = 1 gives v3 back.
+shortage signal, the spare-capacity test of the cutting rules, the idle test and depreciation by
+time are those of v3: only the sales limit of step 2 and the production order of step 3 change.
+u_max = 1 gives v3 back.
 
 **Randomness and neutrality.** One random stream per firm and one for the industry, from the
 run seed. Every firm takes four uniforms and one normal a period, and the industry three
@@ -274,14 +298,13 @@ disjoint from those of the two controls (both labels on one rule, same seeds).
 
 | Parameter | Symbol | Default | Varied in | Against v3 |
 | --- | --- | --- | --- | --- |
-| Price rule | — | leader-follow | E1 to E4: cost-edge, systematic | New default; three levels |
+| Price rule | — | normal-price cutting | E0 to E4: cost-edge, leader-follow; E0 and E1: systematic | New default; four levels |
 | Overtime limit | u_max | 1.2 | Robustness: 1 (none); Morris 1–1.4 | New |
-| Rise after a shortage (leader-follow) | z | 0.03 | Morris 0.01–0.06 | New |
-| Cap of a firm alone (leader-follow) | — | 3 × floor | Fixed | New |
-| Price floor | — | unit cost | Robustness: operating cost | Option added |
 | Price cut | c | 0.02 | Morris 0.01–0.05 | — |
-| Shortage step (the two cutting rules) | — | 0.5 | Fixed | No longer in the default |
-| Spare-capacity threshold (the two cutting rules) | u_full | 1 | Fixed | — |
+| Shortage step (the three cutting rules) | — | 0.5 | Morris 0.1–0.5 | Now screened: it trades E0 against the headline |
+| Spare-capacity threshold (the three cutting rules) | u_full | 1 | Fixed | — |
+| Rise after a shortage; cap of a firm alone (leader-follow) | z; — | 0.03; 3 × floor | Fixed | New, for that option |
+| Price floor | — | unit cost | Robustness: operating cost | Option added |
 | Bias of technical change | β | 1.5 | E2: 0, 0.5, 1.5, 3, neutral set, none; Morris 0.5–3 | — |
 | Evaluation-price weight | λ | 0 | E3: 0, 0.25, 0.5, 0.75, 1 | — |
 | Investment rule | — | retained earnings | E4: accelerator | Accelerator without u* |
@@ -289,7 +312,7 @@ disjoint from those of the two controls (both labels on one rule, same seeds).
 | Demand growth | g | 0 | E4: 0.01 | — |
 | Largest operating-cost cut per design | A | 0.05 | Morris 0.02–0.10 | — |
 | Draw probability | π | 0.2 | Morris 0.1–0.4 | — |
-| Selection intensity | χ | 1 | Morris 0.25–4 | Nearly inert under leader-follow: prices are equal |
+| Selection intensity | χ | 1 | Morris 0.25–4 | — |
 | Payout ratio | d | 0.5 | Morris 0.25–0.75 | — |
 | Plant life | T | 10 | Morris 7–19 | — |
 | Plant size | S | 20 | Morris 10–40 | — |
@@ -306,83 +329,81 @@ disjoint from those of the two controls (both labels on one rule, same seeds).
 
 Each cell is a mixed population run against its two controls on the same seeds.
 
-**E0, the gate.** Single-rule populations, no draws, 50 seeds, at the default; the same under
-the two cutting rules for the sensitivity panel. Measures over periods 20 to 199. E0 holds when
-each line below is true in at least 9 seeds of 10 in both populations. Two lines are new. The
-threshold on the crossings is proposed here. The ceiling on the demand lost was set at 0.10 by
-Ugo on 10 November, after the runs; 0.05 was proposed first.
+**E0, the gate.** Single-rule populations, no draws, 50 seeds, under each price rule. Measures
+over periods 20 to 199. E0 holds when each line below is true in at least 9 seeds of 10 in both
+populations. Two lines are new. The threshold on the crossings is proposed here. The ceiling on
+the demand lost was set at 0.10 by Ugo on 10 November, after the runs; 0.05 was proposed first.
 
-| Fact | Measure | Threshold | Default, v3 runs |
+| Fact | Measure | Threshold | Default, v3 runs: mean; seeds of 50 that pass |
 | --- | --- | --- | --- |
-| The lowest-cost firm leads the price | Periods in which a firm posting the lowest price has the lowest unit cost | at least 0.9 | 1.00 |
-| The price gravitates around the price of production | Mean of price over price of production; times it crosses 1 | 0.9–1.2; at least 5 | 1.07; 22 |
-| Capacity follows demand | Mean of capacity over demand | 0.9–1.2 | 1.05 and 1.04 |
-| The profit rate gravitates around r̄ | Industry rate at r̄ = 0.05 | 0.03–0.10 | 0.067 and 0.069 |
-| Profit rates stay unequal | Mean spread of rates across firms | above 0 | 0.08 |
-| Demand is served | Share of demand lost | at most 0.10 | 0.041 and 0.053 on average; 50 and 49 seeds of 50 |
-| The industry survives | Seeds ending without capacity | 0 | 0 |
+| The lowest-cost firm leads the price | Periods in which a firm posting the lowest price has the lowest unit cost | at least 0.9 | 1.00 and 0.99; 50 and 50 |
+| The price gravitates around the price of production | Mean of price over price of production | 0.9–1.2 | 1.08 and 1.17; 50 and 37 |
+| | Times it crosses 1 | at least 5 | 30 and 23; 50 and 50 |
+| Capacity follows demand | Mean of capacity over demand | 0.9–1.2 | 1.15 and 1.29; 43 and 12 |
+| The profit rate gravitates around r̄ | Industry rate at r̄ = 0.05 | 0.03–0.10 | 0.063 and 0.088; 50 and 42 |
+| Profit rates stay unequal | Mean spread of rates across firms | above 0 | 0.09 and 0.12; 50 and 50 |
+| Demand is served | Share of demand lost | at most 0.10 | 0.002 and 0.008; 50 and 50 |
+| The industry survives | Capacity at the last period | above 0 | 50 and 50 |
 
-E0 is met at the default. Every line holds in all 50 seeds of both populations, except the
-demand lost, which is at most 0.10 in 50 and 49 seeds; the price crosses the price of
-production 16 to 30 times in a run. With a ceiling of 0.05 the demand lost would pass in 37 and
-25 seeds, where 45 are needed. No other rule meets E0: the two cutting rules fail on capacity,
-and leader-follow without overtime loses 13 to 14 % of demand. Reported beside E0, and not part
-of it: capacity at the last period within 0.9–1.2 of demand (20 seeds of 50), and the range of
-capacity within a run (0.39 to 1.73).
+E0 is not met at the default: 43 and 12 seeds of 50 pass every line, where 45 are needed. It is
+met under leader-follow (50 and 49), and at the default with the accelerator (50 and 48), in
+both cases without the headline. Reported beside E0, and not part of it: capacity at the last
+period within 0.9–1.2 of demand (27 and 22 seeds of 50 at the default), and the range of
+capacity within a run (0.71 to 1.79 and 0.57 to 2.12).
 
 | # | Question | Design | Seeds | Runs |
 | --- | --- | --- | --- | --- |
-| E0 | Does the industry behave as under real competition? | No draws, two controls, 3 price rules | 50 | 300 |
-| E1 | Which rule wins, by price rule? | Defaults, 3 price rules | 500 | 4,500 |
+| E0 | Does the industry behave as under real competition? | No draws, two controls, 4 price rules | 50 | 400 |
+| E1 | Which rule wins, by price rule? | Defaults, 4 price rules | 500 | 6,000 |
 | E2 | Does the advantage grow with the Marx bias? | β = 0, 0.5, 1.5, 3; neutral set; none; 3 price rules | 200 | 10,800 |
 | E3 | How much comes from the evaluation price? | λ (5) × price rule (3) × r̄ (0.05, 0.16) | 200 | 18,000 |
 | E4 | Where does each rule win? | Price rule (3) × investment rule (2) × r̄ (2) × g (0, 1 %), then under the categories rule | 200 | 28,800 |
 | E5 | Through which channel? | Decomposition of E4; regression of the profit-rate gap on the dearer orders | — | 0 |
-| E6 | Can one firm of a rule invade the other? | 1 among 9, both ways, with a one-rule control; leader-follow and cost-edge | 500 | 4,000 |
+| E6 | Can one firm of a rule invade the other? | 1 among 9, both ways, with a one-rule control; the default and cost-edge cutting | 500 | 4,000 |
 
-About 66,400 runs: a quarter of an hour on 10 workers at v3's speed with overtime (11,200
-runs in 2 min 23 s under leader-follow, 17,200 in 4 min 12 s under the cutting rules). E6
-keeps v3's design: ten firms on D1, D_0 = 1,065.3, μ = 0.
+The three price rules of E2 to E4 are the default, cost-edge cutting and leader-follow. About
+68,000 runs: 20 minutes on 10 workers at v3's speed with overtime (11,200 runs in 2 min 23 s
+under leader-follow, 3 min 22 s at the default). E6 keeps v3's design: ten firms on D1,
+D_0 = 1,065.3, μ = 0.
 
 ## Sensitivity analysis
 
-- **Morris screening.** The ten parameters of v3 plus z and u_max: 10 trajectories on a 4-level
-  grid, 130 points × 3 populations × 100 seeds = 39,000 runs. Run once at the default and
-  once under cost-edge cutting, since the headline to defend differs between them. Outcomes:
-  the share won less the controls' mean, and the mean final capacity share.
+- **Morris screening.** The ten parameters of v3 plus u_max and the shortage step: 10
+  trajectories on a 4-level grid, 130 points × 3 populations × 100 seeds = 39,000 runs, at
+  the default. Outcomes: the share won less the controls' mean, the mean final capacity
+  share, and the share of E0's lines that hold.
 - **Sensitivity over the reserve** (asked by Ugo, 10 November). The rule of the depreciation
   reserve gets three levels: released if r_new ≥ r̄ (default), always released, never
   released. These are arms 4, 2 and 1 of the v2 pilot. Cells: E0 and E1 at each of the two
-  other levels, under leader-follow and under cost-edge cutting: 6,400 runs. A first look on
-  v3's code with overtime (E0 on 50 seeds, all-unit-cost population, from period 20; share won
-  on 100 seeds of the mixed population):
+  other levels, under the default, cost-edge cutting and leader-follow: 9,600 runs. A first
+  look on v3's code (E0 at the default on 50 seeds, all-unit-cost population, from period
+  20; share won on 100 seeds of the mixed population):
 
-| Reserve | Capacity over demand under leader-follow, mean (range within a run) | Price over the price of production | Profit rate | Demand lost | Entries a run | Share won, leader-follow | Share won, cost-edge |
+| Reserve | Capacity over demand, mean (range within a run) | Price over the price of production | Profit rate | Demand lost | Share won, default | Share won, cost-edge | Share won, leader-follow |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Released if r_new ≥ r̄ | 1.05 (0.39–1.73) | 1.07 | 0.067 | 0.041 | 125 | 0.45 | 0.86 |
-| Always released | 1.04 (0.98–1.29) | 0.92 | 0.005 | 0.000 | 7 | 0.49 | 0.82 |
-| Never released | 1.11 (0.50–1.73) | 1.35 | 0.183 | 0.049 | 199 | 0.05 | 0.80 |
+| Released if r_new ≥ r̄ | 1.15 (0.71–1.79) | 1.08 | 0.063 | 0.002 | 0.69 | 0.86 | 0.45 |
+| Always released | 1.29 (1.22–1.39) | 0.99 | 0.012 | 0.000 | 0.68 | 0.82 | 0.49 |
+| Never released | 1.37 (0.64–2.03) | 1.53 | 0.212 | 0.011 | 0.01 | 0.80 | 0.05 |
 
-  - **The reserve sets the profit rate.** Always released, the rate falls to 0.5 % and the
-    price stays 8 % below the price of production; never released, the rate is 18 % and the
-    price a third above it. Only the condition puts the rate near r̄. E0 fails on the profit
-    rate at both other levels.
+  - **The reserve sets the profit rate.** Always released, the rate falls to 1 %; never
+    released, it is 21 % and the price half as high again as the price of production. Only
+    the condition puts the rate near r̄. E0 fails in every seed at both other levels.
   - **The condition makes the cycle.** With the reserve always released capacity stays between
-    0.98 and 1.29 times demand, no demand is lost and entry almost stops. That is the one
-    setting in which capacity at the last period is in the band (50 and 40 seeds of 50).
-  - **Under cost-edge cutting the verdict does not depend on it** (0.80 to 0.86), though the
-    final capacity share of the unit-cost label falls to 0.58 when the reserve is always
-    released, since the hurdle is then 0.02 and the two rules nearly coincide.
-  - **Under leader-follow it depends on it at one end.** Never released, the profit-rate label
-    wins (the unit-cost label wins 0.05 of seeds), as at r̄ = 0.16: the price stays in the
-    conflict zone and accumulation selects.
+    1.22 and 1.39 times demand and no demand is lost; the price settles just below the price
+    of production and never crosses it.
+  - **The headline does not need the condition, but it needs a reserve.** Always released,
+    the unit-cost label still wins at the default (0.68) and under cost-edge cutting (0.82).
+    Never released, the profit-rate label wins at the default (the unit-cost label takes
+    0.01 of seeds) and under leader-follow (0.05): the price stays far above the price of
+    production and accumulation selects. Under cost-edge cutting the unit-cost label still
+    wins (0.80).
 
 - **Robustness checks.**
 
 | Check | Cells | Seeds | v3 result |
 | --- | --- | --- | --- |
-| No overtime (u_max = 1) | E1 under the 3 price rules | 500 | 0.49, 0.98, 0.56: the verdicts of the runs with overtime |
-| Operating-cost floor | E1 at the default | 500 | 0.49 against 0.50 |
+| No overtime (u_max = 1) | E0 and E1 under the 4 price rules | 500 | At the default, 100 seeds: 0.70, and E0 holds in no seed. Others: 0.98 (cost-edge), 0.49 (leader-follow), 0.56 (systematic) |
+| Operating-cost floor | E1 at the default and under leader-follow | 500 | Under leader-follow 0.49 against 0.50; not run at the default |
 | Scrapping on unit cost | E1 and the marx cells of E4 | 200 | Under v3's default, 20 seeds: the same runs under either cost, since no plant leaves through the cost test |
 | Private diffusion (L = none) | E1 | 200 | Not run |
 | Homogeneous start (six firms on D1) | The 6 cells of E2 | 200 | Not run |
@@ -413,7 +434,7 @@ outside, by patching functions from a script. Version 4 is rebuilt for a reader.
   letters are kept for the symbols of this document (`p`, `c`, `z`) and loop indices.
 - Each equation file opens with its formula and its source in this document.
 
-**Rules as options, not patches.** The three price rules are three pure functions in
+**Rules as options, not patches.** The price rules are pure functions in
 `equations/pricing_*.py`, chosen in one place by `params.pricing`; the floor by
 `params.price_floor`; overtime by `params.u_max`; the reserve by `params.reserve`. No
 experiment replaces a function of the model.
@@ -464,12 +485,13 @@ the three levels of the reserve; the viewer on a short run.
 
 ## What the other sections of the v3 proposal need
 
-- **Report.** Section 3 presents three price rules and overtime. Section 5.1 shows E0 on
-  averages with the cycle, and the headline by price rule; 5.4 treats the price rule as the
-  first condition. Figure 2 is a run of the viewer. Figure 3 gets one curve per price rule.
-- **Presentation.** Slide 6 ("the unit-cost rule wins") becomes "it wins where a cost advantage
-  sets the price"; slide 9 (realised rates) reports that H6 is not met; slides 10 and 11 open
-  with the price rule.
+- **Report.** Section 3 presents four price rules and overtime. Section 5.1 shows E0 on
+  averages with the cycle, the headline by price rule, and the trade-off between them; 5.4
+  treats the price rule as the first condition. Figure 2 is a run of the viewer. Figure 3 gets
+  one curve per price rule.
+- **Presentation.** Slide 6 ("the unit-cost rule wins") becomes "it wins as far as the cost
+  leader sets the price"; slide 9 (realised rates) reports that H6 is not met; slides 10 and
+  11 open with the price rule.
 - **Timeline.** The dates stand. v3 was built on 10 November, so the rebuild fits before the
   runs of 17 to 19 November.
 - **Literature.** Unchanged.
@@ -478,17 +500,16 @@ the three levels of the reserve; the viewer on a short run.
 
 | Decision | Options | Recommendation | Why |
 | --- | --- | --- | --- |
-| Default price rule | Leader-follow; cost-edge cutting | Leader-follow | It is the only rule that meets E0. The cost is the headline: at the default neither rule wins |
+| Default price rule | Normal-price cutting; cost-edge cutting; leader-follow | **Set by Ugo's criterion, 10 Nov:** normal-price cutting | The best joint fit: the only rule with a headline beyond drift (0.67) and E0 in most seeds of one population. Cost-edge cutting gives 0.92 and no E0; leader-follow E0 and no headline |
+| E0 at the default | Report it as not met; make the accelerator the default investment rule | Report it as not met | E0 holds in 43 and 12 seeds of 50. With the accelerator it holds in 50 and 48, and the headline goes to drift (0.52) |
 | What E0 checks | The last period; averages over the run | Averages, with the cycle reported | Under every rule tried the industry cycles; no rule puts capacity in the band at one date in 9 seeds of 10 |
-| Ceiling on the demand lost in E0 | 5 %; 10 % | **Decided by Ugo, 10 Nov:** 10 % | At 5 % the default passes in 37 and 25 seeds of 50; at 10 % in 50 and 49, and leader-follow without overtime still fails. The ceiling was set after the runs, which the report should say |
-| The cycle | Accept it; look for a rule that damps it | Accept it for the report | It comes from the reserve condition, which the pilot settled; overtime halves the periods with lost demand. The sensitivity over the reserve shows the alternative: no cycle, and a profit rate of 0.5 % |
+| Ceiling on the demand lost in E0 | 5 %; 10 % | **Decided by Ugo, 10 Nov:** 10 % | Under leader-follow the 5 % ceiling passes in 37 and 25 seeds of 50, the 10 % ceiling in 50 and 49. The ceiling was set after the runs, which the report should say. At the default less than 1 % is lost |
+| The cycle | Accept it; look for a rule that damps it | Accept it for the report | It comes from the reserve condition, which the pilot settled. The sensitivity over the reserve shows the alternative: no cycle, and a profit rate of 1 % |
 | Overtime premium | None; a premium on overtime output | None | Asked by Ugo; the runs have none |
-| Floor after a shortage (leader-follow) | As run: (1 + z)L even below the floor; never below the floor | As run | It happens in at most 0.01 % of periods in the cells checked; changing it would need a rerun |
 | What counts in the 1,000 lines | Comments excluded; comments and docstrings excluded | Both excluded | A docstring is a comment for this purpose; to confirm |
-| Morris | At the default only; also under cost-edge cutting | Both | The headline to defend is under cost-edge cutting, the default is leader-follow |
 | "No draws" under leader-follow | Leave it; isolate it before the report | Isolate it | The unit-cost label wins 0.73 there and the cause is not known |
 | Where version 4 is built | A clean tree beside v3; a branch of this one | A clean tree, v3 read-only beside it | As v3 did with v2: the unchanged equations are ported, not inherited |
 
 Not run in v3, so unknown under the new default: E4, E6, Morris and the robustness checks marked
-"not run". The accelerator without a target was run on E0 and on 100 seeds of the mixed
-population only (the unit-cost label wins 0.44).
+"not run". The reserve, the accelerator and the run without overtime were looked at on 50 seeds
+of E0 and 100 seeds of the mixed population only.

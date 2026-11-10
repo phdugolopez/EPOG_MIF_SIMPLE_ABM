@@ -1311,6 +1311,57 @@ variant, `python -m experiments.price_rules overtime`).
   under cost-edge cutting is the price that stops falling without technical change
   (diagnosis, point 1). Capacity, the price and the hurdle stay above the pilot's ranges.
 
+**The rule that best fits both E0 and the headline** (10 November; asked by Ugo for the default
+of version 4. The same analysis variant; the full read is in `v4-final-model.md`).
+
+- **What was scored.** Fifteen price rules with overtime, each on E0 (two single-rule
+  populations, 50 seeds, the eight lines of `v4-final-model.md` on averages from period 20)
+  and on the headline (mixed population against its controls, 100 seeds, then 500 for the
+  best). Ten are not in `price_rules.py`: they were tried from a scratch script and are
+  described in the table.
+- **No rule fits both.**
+
+| What lets firms without a cost edge cut | Seeds of 50 that pass E0, all unit-cost / all profit-rate | Share won |
+| --- | --- | --- |
+| Nothing (cost-edge cutting) | 0 / 0 | 0.92 (500 seeds) |
+| A price above the firm's price of production; the cut stops above it | 0 / 12 | 0.69 (500 seeds) |
+| The same; the cut may end up to 2 % below it (`normal_price_overtime`) | 43 / 12 | 0.67 (500 seeds) |
+| A price above the regulating price of production | 43 / 8 | 0.63 (500 seeds) |
+| The same, with a shortage step of 0.25 | 50 / 35 | 0.56 |
+| Entrants post 2 % below the lowest price | 48 / 5 | 0.68; a quarter of demand lost in the mixed population |
+| Normal-price cutting with leader-follow's rise of 3 % after a shortage | 50 / 50 | 0.51 |
+| Normal-price cutting with the accelerator without a target | 50 / 48 | 0.52 |
+| Every firm cuts (leader-follow) | 50 / 49 | 0.50 (500 seeds) |
+| Spare capacity alone (systematic cutting) | 0 / 0 | 0.57 (200 seeds) |
+
+- **Why.** The headline needs the cost leader to cut alone: a follower is then one step of
+  2 % behind it in every price war, which moves 0.18 of the market. E0 needs someone to cut
+  when no firm has a cost edge. Each way of allowing the second removes part of the first.
+- **Normal-price cutting** (`normal_price_overtime`) is v3's two regimes joined by the firm's
+  price of production: systematic cutting above it, cost-edge cutting at or below it. E0 to
+  E3: 11,200 runs in 3 min 22 s, commit `94eb655`, no error; figures
+  `fig2_typical_run_normal_price_overtime` and `fig3_bias_lambda_normal_price_overtime`.
+
+| Measure | Normal-price cutting | Cost-edge cutting | Leader-follow |
+| --- | --- | --- | --- |
+| E1, share won (500 seeds) | 0.67 (0.63–0.71) | 0.92 (0.89–0.94) | 0.50 (0.45–0.54) |
+| Its two controls | 0.50 and 0.54 | 0.51 and 0.47 | 0.54 and 0.51 |
+| Final capacity share of the unit-cost label | 0.60 | 0.78 | 0.49 |
+| E2, β = 0, 0.5, 1.5, 3 | 0.50, 0.62, 0.67, 0.84 | 0.57, 0.75, 0.89, 0.96 | 0.48, 0.43, 0.47, 0.47 |
+| E2, neutral set; no draws | 0.59; 0.95 | 0.69; 0.99 | 0.47; 0.73 |
+| E3, r̄ = 0.05, λ = 0 to 1 | 0.67, 0.61, 0.66, 0.59, 0.49 | 0.89, 0.90, 0.87, 0.79, 0.71 | 0.47, 0.50, 0.42, 0.41, 0.48 |
+| E3, r̄ = 0.16, λ = 0 to 1 | 0.44, 0.48, 0.49, 0.50, 0.61 | 0.95, 0.95, 0.96, 0.97, 0.96 | 0.20, 0.16, 0.16, 0.18, 0.17 |
+| Change in sales share through the price | +0.06 | +0.18 | 0.00 |
+
+- **Beyond drift under normal-price cutting:** E1; β = 1.5 and 3 and "no draws" in E2; λ = 0
+  and 0.5 at r̄ = 0.05 in E3; no cell at r̄ = 0.16.
+- **E0 under it** holds in 43 seeds of 50 in the all-unit-cost population (capacity over
+  demand averages 1.15 and is outside 0.9–1.2 in 7 seeds) and in 12 in the all-profit-rate
+  population (capacity passes in 12 seeds, the price in 37, the profit rate in 42).
+- **The reserve under it** (50 seeds of E0, 100 of the mixed population): always released,
+  a profit rate of 1 % and a share won of 0.68; never released, 21 % and 0.01.
+- **Without overtime** E0 holds in no seed under it, and the share won is 0.70 (100 seeds).
+
 What makes 3a–3d independent: `pay`, `buy_plant`, `remove_plant` with the reserve rule, r_new,
 `count` and every dataclass field exist after stage 2, and `parameters.py` is frozen there (a new
 constant is a departure to register in `v3-choices.md`). Stage 4 merges in the order 3c, 3a, 3b,
