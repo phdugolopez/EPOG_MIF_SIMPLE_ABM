@@ -21,8 +21,8 @@ no rule below is the default of version 3. Each runs the cells of cells.py on th
                      overtime: systematic cutting above it, cost-edge cutting below it
   v4_cost_edge, v4_normal_price, v4_leader_follow, v4_systematic
                      the settings proposed for version 4 under each price rule: overtime, a
-                     general rate of 0.16 in every cell that does not set it, and an entrant
-                     that posts c below the lowest price
+                     general rate of 0.16 and a shortage step of 0.25 in every cell that does
+                     not set them, and an entrant that posts c below the lowest price
 
 E3 keeps its ten cost-edge cells (lambda x rbar), renamed after the rule. The files are those of
 the harness, in outputs/<rule>/<experiment>/.
@@ -46,6 +46,7 @@ RISE = 0.03          # version 2's LEADER_RISE: the rise after excess demand, an
 MONOPOLY_CAP = 3.0   # version 2's MONOPOLY_CAP: a firm alone stops at this multiple of its floor
 U_MAX = 1.2          # overtime: output up to this multiple of normal capacity, without a premium
 V4_RBAR = 0.16       # general rate proposed for version 4: the initial menu earns it at a price of 100
+V4_STEP = 0.25       # shortage step proposed for version 4, in place of 0.5
 
 
 def leader_follow_price(previous: float, leader: float, floor: float, excess: float, alone: bool,
@@ -219,11 +220,12 @@ def experiments(rule: str) -> dict:
     """The experiments of cells.py under the rule, named <experiment>_<rule>. A cell that sets
     systematic cutting is left out; the others lose their `pricing` and take the rule's name.
     Under "overtime" the pricing is version 3's, so the cells stay as they are. A v4 rule sets
-    the general rate of version 4 in every cell that does not set its own."""
+    the general rate and the shortage step of version 4 in every cell that does not set its
+    own."""
     if rule == "overtime":
         return {f"{name}_{rule}": experiment for name, experiment in EXPERIMENTS.items()}
     regime = {"pricing": "systematic"} if rule in ("systematic", "v4_systematic") else {}
-    rate = {"rbar": V4_RBAR} if rule.startswith("v4_") else {}
+    rate = {"rbar": V4_RBAR, "shortage_step": V4_STEP} if rule.startswith("v4_") else {}
     return {
         f"{name}_{rule}": {**experiment, "cells": {
             cell.replace("cost_edge", rule): {

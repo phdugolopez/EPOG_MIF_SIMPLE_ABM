@@ -9,7 +9,7 @@ from unittest import mock
 
 from experiments.cells import EXPERIMENTS
 from experiments.harness import run_experiment
-from experiments.price_rules import (MONOPOLY_CAP, RISE, RULES, U_MAX, V4_RBAR,
+from experiments.price_rules import (MONOPOLY_CAP, RISE, RULES, U_MAX, V4_RBAR, V4_STEP,
                                      allocate_with_overtime, dispatch_with_overtime,
                                      entrant_undercuts, experiments, install_leader_follow,
                                      install_v4, install_v4_leader_follow, install_v4_normal_price,
@@ -264,15 +264,17 @@ class TestVersion4Settings(unittest.TestCase):
                 self.assertIs(scheduler.create_entrant, entrant_undercuts)
                 self.assertIs(scheduler.allocate, allocate_with_overtime)
 
-    def test_the_cells_take_the_general_rate_of_version_4_unless_they_set_their_own(self):
+    def test_the_cells_take_the_rate_and_the_step_of_version_4_unless_they_set_their_own(self):
+        v4 = {"rbar": V4_RBAR, "shortage_step": V4_STEP}
         cells = experiments("v4_cost_edge")
-        self.assertEqual(cells["E1_v4_cost_edge"]["cells"], {"defaults": {"rbar": V4_RBAR}})
-        self.assertEqual(cells["E0_v4_cost_edge"]["cells"], {"no_draws": {"rbar": V4_RBAR, "tech_change": "none"}})
+        self.assertEqual(cells["E1_v4_cost_edge"]["cells"], {"defaults": v4})
+        self.assertEqual(cells["E0_v4_cost_edge"]["cells"], {"no_draws": {**v4, "tech_change": "none"}})
         e3 = cells["E3_v4_cost_edge"]["cells"]
         self.assertEqual(len(e3), 10)
-        self.assertEqual(e3["lam_0.5_v4_cost_edge_rbar_0.05"], {"rbar": 0.05, "lam": 0.5})
+        self.assertEqual(e3["lam_0.5_v4_cost_edge_rbar_0.05"],
+                         {"rbar": 0.05, "shortage_step": V4_STEP, "lam": 0.5})
         self.assertEqual(experiments("v4_systematic")["E1_v4_systematic"]["cells"],
-                         {"defaults": {"rbar": V4_RBAR, "pricing": "systematic"}})
+                         {"defaults": {**v4, "pricing": "systematic"}})
 
     def test_swapped_labels_give_the_same_trajectories_under_the_settings_of_version_4(self):
         changes = dict(allocate=allocate_with_overtime, dispatch=dispatch_with_overtime,
@@ -281,7 +283,7 @@ class TestVersion4Settings(unittest.TestCase):
             extra = {"set_prices": step} if step else {}
             for name, population in POPULATIONS.items():
                 with self.subTest(step=step, population=name), mock.patch.multiple(scheduler, **changes, **extra):
-                    params = replace(Parameters(), rbar=V4_RBAR, **population)
+                    params = replace(Parameters(), rbar=V4_RBAR, shortage_step=V4_STEP, **population)
                     states, rows = trajectory(params, 4, 200)
                     swapped_states, swapped_rows = trajectory(swapped(params), 4, 200)
                     self.assertEqual(states, swapped_states)
