@@ -4,11 +4,13 @@
                                                     [--resume] [--keep-periods 0,1]
 
 An analysis variant, registered in docs/design/v3-choices.md: no file of the model changes and
-neither rule below is the default of version 3. Each runs the cells of cells.py on their seeds:
+no rule below is the default of version 3. Each runs the cells of cells.py on their seeds:
 
-  systematic     version 3's own regime, pricing = "systematic" in every cell
-  leader_follow  version 2's leader-follow rule with the floor at the unit cost of the firm's
-                 best plant, put in place of step 1 in every worker
+  systematic         version 3's own regime, pricing = "systematic" in every cell
+  leader_follow      version 2's leader-follow rule with the floor at the unit cost of the
+                     firm's best plant, put in place of step 1 in every worker
+  leader_follow_ucs  the same rule with version 2's operating-cost floor: the operating cost
+                     ucs of the dearest plant the firm ran last period
 
 E3 keeps its ten cost-edge cells (lambda x rbar), renamed after the rule. The files are those of
 the harness, in outputs/<rule>/<experiment>/.
@@ -22,6 +24,7 @@ from equations.pricing_floor import price_floor
 from experiments.cells import EXPERIMENTS
 from experiments.harness import run_experiment
 from model import scheduler
+from parameters import EPS
 
 RISE = 0.03          # version 2's LEADER_RISE: the rise after excess demand, and of a firm alone
 MONOPOLY_CAP = 3.0   # version 2's MONOPOLY_CAP: a firm alone stops at this multiple of its floor
@@ -42,22 +45,37 @@ def leader_follow_price(previous: float, leader: float, floor: float, excess: fl
     return (target, True) if target >= floor else (floor, False)
 
 
-def set_prices_leader_follow(industry) -> None:
+def unit_cost_floor(firm, delta: float) -> float:
+    """Version 3's floor: the unit cost ucs + delta kappa of the firm's best plant."""
+    return price_floor([unit_cost(q.technique.ucs, q.technique.kappa, delta) for q in firm.plants])
+
+
+def operating_cost_floor(firm, delta: float) -> float:
+    """Version 2's LEADER_FOLLOW_FLOOR = "operating_cost" (the floor of version 1): the
+    operating cost ucs of the dearest plant the firm ran last period, or of its cheapest plant
+    if none ran. Depreciation is sunk, so it is left out."""
+    ran = [q.technique.ucs for q in firm.plants if q.output > EPS]
+    return max(ran) if ran else min(q.technique.ucs for q in firm.plants)
+
+
+def set_prices_leader_follow(industry, floor=unit_cost_floor) -> None:
     """Step 1 under the leader-follow rule, with version 3's conventions: every firm is computed
-    from the state at the start of the step, the firms that count are those with a plant in
-    operation, and the floor is the unit cost of the firm's best plant. A firm without a plant
-    keeps its price."""
+    from the state at the start of the step, and the firms that count are those with a plant in
+    operation. A firm without a plant keeps its price."""
     p = industry.params
     active = [firm for firm in industry.firms if firm.plants]
     leader = min((firm.price for firm in active), default=0.0)
-    posted = [leader_follow_price(
-        firm.price, leader,
-        price_floor([unit_cost(q.technique.ucs, q.technique.kappa, p.delta) for q in firm.plants]),
-        industry.excess, len(active) == 1, p.price_cut) for firm in active]
+    posted = [leader_follow_price(firm.price, leader, floor(firm, p.delta), industry.excess,
+                                  len(active) == 1, p.price_cut) for firm in active]
     for firm in industry.firms:
         firm.cut = False
     for firm, (price, cut) in zip(active, posted):
         firm.price, firm.cut = price, cut
+
+
+def set_prices_leader_follow_ucs(industry) -> None:
+    """The same step with the floor at the operating cost."""
+    set_prices_leader_follow(industry, operating_cost_floor)
 
 
 def install_leader_follow() -> None:
@@ -65,7 +83,12 @@ def install_leader_follow() -> None:
     scheduler.set_prices = set_prices_leader_follow
 
 
-RULES = {"systematic": None, "leader_follow": install_leader_follow}
+def install_leader_follow_ucs() -> None:
+    scheduler.set_prices = set_prices_leader_follow_ucs
+
+
+RULES = {"systematic": None, "leader_follow": install_leader_follow,
+         "leader_follow_ucs": install_leader_follow_ucs}
 
 
 def experiments(rule: str) -> dict:

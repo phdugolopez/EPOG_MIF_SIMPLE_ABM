@@ -10,7 +10,9 @@ from unittest import mock
 from experiments.cells import EXPERIMENTS
 from experiments.harness import run_experiment
 from experiments.price_rules import (MONOPOLY_CAP, RISE, RULES, experiments, install_leader_follow,
-                                     leader_follow_price, set_prices_leader_follow)
+                                     install_leader_follow_ucs, leader_follow_price,
+                                     operating_cost_floor, set_prices_leader_follow,
+                                     set_prices_leader_follow_ucs, unit_cost_floor)
 from experiments.summary import run_row
 from helpers import add_firm, empty_industry
 from model import scheduler
@@ -22,8 +24,8 @@ from test_neutrality import POPULATIONS, mirror, swapped, trajectory
 V2_RULE = pathlib.Path(__file__).resolve().parents[2] / "ABM-sources/equations/leader_follow_price.py"
 
 
-def patched():
-    return mock.patch.object(scheduler, "set_prices", set_prices_leader_follow)
+def patched(step=set_prices_leader_follow):
+    return mock.patch.object(scheduler, "set_prices", step)
 
 
 class TestLeaderFollowPrice(unittest.TestCase):
@@ -109,6 +111,42 @@ class TestStep(unittest.TestCase):
         self.assertAlmostEqual(self.firms[0].price, 103.0, places=9)
 
 
+class TestFloors(unittest.TestCase):
+    def setUp(self):
+        self.industry = empty_industry()
+        menu = self.industry.public                   # operating costs 64.25, 61.77 and 59.21
+        self.firm = add_firm(self.industry, technique=menu[2], plants=2, price=90.0)
+        self.firm.plants += add_firm(self.industry, technique=menu[0]).plants
+        self.industry.firms.pop()                     # one firm: two plants on D2, one on C
+
+    def test_the_unit_cost_floor_is_that_of_the_best_plant(self):
+        self.assertAlmostEqual(unit_cost_floor(self.firm, 0.1), 59.21 + 15.789, places=9)
+
+    def test_the_operating_cost_floor_is_that_of_the_dearest_plant_that_ran(self):
+        for plant, output in zip(self.firm.plants, (20.0, 5.0, 0.0)):
+            plant.output = output
+        self.assertEqual(operating_cost_floor(self.firm, 0.1), 59.21)
+        self.firm.plants[2].output = 1.0
+        self.assertEqual(operating_cost_floor(self.firm, 0.1), 64.25)
+
+    def test_without_output_it_is_the_operating_cost_of_the_cheapest_plant(self):
+        self.assertEqual(operating_cost_floor(self.firm, 0.1), 59.21)
+
+    def test_the_step_stops_at_the_operating_cost(self):
+        rival = add_firm(self.industry, technique=self.industry.public[1], price=60.0)
+        set_prices_leader_follow_ucs(self.industry)
+        self.assertEqual((self.firm.price, self.firm.cut), (59.21, False))    # 0.98 x 60 = 58.8
+        self.assertEqual((rival.price, rival.cut), (61.77, False))
+
+    def test_each_rule_installs_its_step(self):
+        for install, step in ((install_leader_follow, set_prices_leader_follow),
+                              (install_leader_follow_ucs, set_prices_leader_follow_ucs)):
+            with mock.patch.object(scheduler, "set_prices"):
+                install()
+                self.assertIs(scheduler.set_prices, step)
+        self.assertEqual(set(RULES), {"systematic", "leader_follow", "leader_follow_ucs"})
+
+
 class TestNeutrality(unittest.TestCase):
     def test_swapped_labels_give_the_same_trajectories_under_the_rule(self):
         for name, population in POPULATIONS.items():
@@ -118,6 +156,16 @@ class TestNeutrality(unittest.TestCase):
                 swapped_states, swapped_rows = trajectory(swapped(params), 4, 200)
                 self.assertEqual(states, swapped_states)
                 self.assertEqual(rows, mirror(swapped_rows))
+
+    def test_swapped_labels_give_the_same_trajectories_with_the_operating_cost_floor(self):
+        for name, population in POPULATIONS.items():
+            with self.subTest(population=name), patched(set_prices_leader_follow_ucs):
+                params = replace(Parameters(), **population)
+                states, rows = trajectory(params, 4, 200)
+                swapped_states, swapped_rows = trajectory(swapped(params), 4, 200)
+                self.assertEqual(states, swapped_states)
+                self.assertEqual(rows, mirror(swapped_rows))
+                self.assertEqual(trajectory(params, 7, 120), trajectory(params, 7, 120, reverse=True))
 
     def test_the_order_of_firms_changes_nothing_under_the_rule(self):
         with patched():
