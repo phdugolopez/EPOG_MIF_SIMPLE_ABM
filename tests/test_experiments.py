@@ -304,7 +304,37 @@ class TestCells(unittest.TestCase):
     def test_the_experiments_have_the_runs_of_section_9_of_the_plan(self):
         counts = {name: runs(experiment) for name, experiment in EXPERIMENTS.items()}
         self.assertEqual(counts, {"E0": 400, "E0r": 3200, "reruns": 12500, "homogeneous": 3600,
-                                  "E1": 6000, "E2": 14400, "E3": 9000})
+                                  "E1": 6000, "E2": 14400, "E3": 9000, "E4": 28800,
+                                  "E6": 4000, "reserve": 3200, "robustness": 25200,
+                                  "fixed_menu": 1600})
+
+    def test_e4_crosses_price_rule_investment_growth_technical_change_and_rate(self):
+        e4 = EXPERIMENTS["E4"]
+        self.assertEqual(len(e4), 3 * 2 * 2 * 2 * 2)
+        self.assertEqual(e4["categories_universal_accelerator_g0.01_rbar0.1"]["overrides"],
+                         {"tech_change": "categories", "pricing": "universal",
+                          "investment": "accelerator", "growth": 0.01, "rbar": 0.10})
+
+    def test_e6_is_one_mutant_among_nine_against_the_residents_control(self):
+        e6 = EXPERIMENTS["E6"]
+        self.assertEqual(list(e6), ["invader_shaikh_cost_edge", "invader_okishio_cost_edge",
+                                    "invader_shaikh_universal", "invader_okishio_universal"])
+        self.assertEqual(e6["invader_shaikh_cost_edge"]["populations"],
+                         ("mixed", "all_profit_rate"))
+        self.assertEqual(e6["invader_okishio_universal"]["populations"],
+                         ("mixed", "all_unit_cost"))
+        for mutant, cell in zip(("shaikh", "okishio") * 2, e6.values()):
+            self.assertEqual(cell["mutant"], mutant)
+            self.assertEqual(cell["overrides"]["mutation"], 0.0)
+
+    def test_the_robustness_checks_have_the_runs_of_the_plan(self):
+        checks = {"no_overtime": 4800, "operating_cost_floor": 3000, "entry_label_even": 3000,
+                  "scrap_cost_unit_cost": 7800, "private_designs": 600,
+                  "firms_per_pair": 6000}
+        for check, expected in checks.items():
+            part = {name: cell for name, cell in EXPERIMENTS["robustness"].items()
+                    if name.replace("no_draws_", "").startswith(check)}
+            self.assertEqual(runs(part), expected, check)
 
     def test_e0_is_the_two_controls_without_draws_under_the_four_price_rules(self):
         e0 = EXPERIMENTS["E0"]
@@ -319,7 +349,7 @@ class TestCells(unittest.TestCase):
                 if name.startswith("no_draws"):
                     self.assertEqual(cell["overrides"]["tech_change"], "none", name)
                     self.assertEqual((cell["populations"], cell["seeds"]), (CONTROLS, 50))
-                else:
+                elif "mutant" not in cell:
                     self.assertEqual(cell["populations"], ALL, name)
 
     def test_cell_names_say_what_they_change(self):
