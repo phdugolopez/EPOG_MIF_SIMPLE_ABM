@@ -22,8 +22,9 @@ here is a decision until the group records it.
   and the price are within 0.9–1.2 of demand and of the price of production, on average over
   a run, in all 50 seeds of both populations.
 - **What E0 still does not show.** The industry cycles: within a run capacity moves between
-  0.4 and 1.7 times demand, so capacity at the last period is in the band in 20 seeds of 50.
-  E0 is restated on averages over a run, and the cycle is reported beside it.
+  0.4 and 1.7 times demand, so capacity at the last period is in the band in 20 seeds of 50,
+  and more than 5 % of demand is lost in a quarter to a half of the seeds. E0 is restated on
+  averages over a run, and the cycle is reported beside it.
 - **What it does to the answer.** At the default neither rule wins beyond drift (0.50 of
   seeds). The unit-cost rule wins under cost-edge cutting (0.92), where a cost advantage
   becomes a lower price; the profit-rate rule wins at r̄ = 0.16 under leader-follow and
@@ -314,12 +315,14 @@ crossings and on the demand lost are new and proposed here; the others are v3's.
 | Capacity follows demand | Mean of capacity over demand | 0.9–1.2 | 1.05 and 1.04 |
 | The profit rate gravitates around r̄ | Industry rate at r̄ = 0.05 | 0.03–0.10 | 0.067 and 0.069 |
 | Profit rates stay unequal | Mean spread of rates across firms | above 0 | 0.08 |
-| Demand is served | Share of demand lost | at most 0.05 | 0.041 and 0.053 |
+| Demand is served | Share of demand lost | at most 0.05 | 0.041 and 0.053 on average; 37 and 25 seeds of 50 |
 | The industry survives | Seeds ending without capacity | 0 | 0 |
 
-Reported beside it, and not met: capacity at the last period within 0.9–1.2 of demand (20 seeds
-of 50), and the range of capacity within a run (0.39 to 1.73). The demand lost is at the
-threshold in one population and just above it in the other.
+Not met at the default: the demand lost, which is at most 0.05 in 37 and 25 seeds of 50 where
+45 are needed (it is below 0.10 in 50 and 49). The other lines hold in all 50 seeds of both
+populations; the price crosses the price of production 16 to 30 times in a run. Reported beside
+E0: capacity at the last period within 0.9–1.2 of demand (20 seeds of 50), and the range of
+capacity within a run (0.39 to 1.73).
 
 | # | Question | Design | Seeds | Runs |
 | --- | --- | --- | --- | --- |
