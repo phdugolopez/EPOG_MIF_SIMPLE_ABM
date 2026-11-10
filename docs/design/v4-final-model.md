@@ -13,8 +13,9 @@ here is a decision until the group records it.
 
 ## At a glance
 
-- **Five changes to the model.** Overtime comes back, without a premium. The general rate is
-  0.16 by default, the rate of the menu. An entrant posts one cut below the lowest price. The
+- **Six changes to the model.** Overtime comes back, without a premium. The general rate is
+  0.16 by default, the rate of the menu, and at any other rate the menu's capital is scaled
+  so that Shaikh's table still holds at the price of 100 (not run). An entrant posts one cut below the lowest price. The
   shortage step is 0.25 instead of 0.5. The accelerator loses its target utilisation. The
   default price rule stays cost-edge cutting, and the price rule is the first treatment, with
   four levels.
@@ -57,8 +58,9 @@ here is a decision until the group records it.
 | 12 | Figure 2 from period tables kept by the harness | A run viewer for any parameters and seed | Every diagnosis of v3 needed a trace of one run |
 | 13 | The depreciation reserve is released when r_new ≥ r̄; no other rule in the model | The same by default; an option with two other levels (always released, never released) for a sensitivity check | The reserve sets the profit rate: 6 % when always released, 20 % when never released, against 13 % |
 | 14 | After a shortage a firm with no rival above raises its price by 0.5 times the excess-demand share | By 0.25 times that share | It halves the price peaks of the mixed population (1.9 against 3.7 times the price of production) and keeps E0 and the headline |
+| 15 | One menu at every r̄: Shaikh's (ucs, κ) | Capital scaled by 0.16 / r̄, operating cost = unit cost − δκ; unit costs (78, 76, 75) and the price of 100 kept | At 0.05 the fixed menu starts 18 % above the price of production and the two rules agree on D2 at that price. Scaled, the table holds at any r̄. Not run |
 
-Not changed: the one rule that differs between the types, the menu, the replicator, the
+Not changed: the one rule that differs between the types, the replicator, the
 default price rule, scrapping, the default rule of the depreciation reserve, technical change,
 exit, the winner, the populations and controls, and the rules of neutrality.
 
@@ -210,13 +212,39 @@ technique j is a pair (ucs_j, κ_j): operating cost and capital per unit of norm
 unit cost uc_j = ucs_j + δκ_j and δ = 1/T. Its price of production is uc_j + r̄κ_j. Plants have
 one technique and a normal capacity S = 20.
 
-**Initial industry.** Shaikh's three techniques (2016, Tables 7.10–7.11): C (64.25, 137.50), D1
-(61.77, 142.31), D2 (59.21, 157.89), each given to one unit-cost and one profit-rate firm. Their
-unit costs are 78.0, 76.0 and 75.0 and their prices of production 100.0, 98.8 and 100.3. Six
-firms, identical within pairs, with 6, 6 and 7 plants: capacity 760 against D_0 = 674.7. Every
-price is 100 and every share is the capacity share. Plant k of a firm's n plants has age
-floor(kT/n), so retirements spread over the first T periods. A firm's cash is the depreciation
-already accumulated on its plants, which backs the reserves they release.
+**Initial industry.** Shaikh's three techniques (2016, Tables 7.10–7.11), with their capital
+scaled to the general rate, so that his table holds at any r̄. The unit costs and the initial
+price do not move: 78, 76 and 75 for C, D1 and D2, and every price is 100. Capital and operating
+cost follow r̄:
+
+```latex
+\kappa_j(\bar r) = \kappa^{S}_j\,\frac{0.16}{\bar r}, \qquad ucs_j(\bar r) = uc_j - \delta\,\kappa_j(\bar r), \qquad \big(\kappa^{S}_{C},\ \kappa^{S}_{D1},\ \kappa^{S}_{D2}\big) = (137.50,\ 142.31,\ 157.89)
+```
+
+| r̄ | C (ucs, κ) | D1 (ucs, κ) | D2 (ucs, κ) | Cost of a plant of C |
+| --- | --- | --- | --- | --- |
+| 0.16 (default; Shaikh's table) | (64.25, 137.50) | (61.77, 142.31) | (59.21, 157.89) | 2,750 |
+| 0.10 | (56.00, 220.00) | (53.23, 227.70) | (49.74, 252.62) | 4,400 |
+| 0.05 | (34.00, 440.00) | (30.46, 455.39) | (24.48, 505.25) | 8,800 |
+
+- **The same at every r̄.** The prices of production are 100.0, 98.8 and 100.3. At the price
+  of 100 the three techniques earn r̄, 1.054 r̄ and 0.990 r̄: C earns the general rate, D1 has
+  a lower cost and a higher rate, D2 the lowest cost and a lower rate than C. The two rules
+  part on D2 when the hurdle is above 0.92 r̄.
+- **Limit.** r̄ must be above 0.034, where the operating cost of D2 reaches zero. The code
+  refuses a lower rate.
+- **What moves with r̄.** A plant costs 0.16 / r̄ times as much, and depreciation is 18 % of
+  the unit cost of C at 0.16 and 56 % at 0.05. A design drawn from C is then kept by the
+  unit-cost rule if k < 0.77 at r̄ = 0.05 (20 % of draws at β = 1.5), against k < 4.67 at 0.16
+  (92 %). β is not rescaled here: see "Decisions for the group".
+- **Not run.** Every number of this document at r̄ = 0.05 comes from the fixed menu of v3,
+  the row of 0.16 used at every rate.
+
+Each technique is given to one unit-cost and one profit-rate firm. Six firms, identical within
+pairs, with 6, 6 and 7 plants: capacity 760 against D_0 = 674.7. Every share is the capacity
+share. Plant k of a firm's n plants has age floor(kT/n), so retirements spread over the first T
+periods. A firm's cash is the depreciation already accumulated on its plants, which backs the
+reserves they release.
 
 **The one rule that differs.** At every order, for investment or entry, a firm picks
 
@@ -352,6 +380,7 @@ disjoint from those of the two controls (both labels on one rule, same seeds).
 | Depreciation reserve | — | released if r_new ≥ r̄ | Sensitivity: always released; never released | Option added |
 | Scrap cost | — | operating cost | Robustness: unit cost | — |
 | Initial firms per pair | — | 1 | Robustness: 2 and 5 | — |
+| Initial menu | — | Shaikh's table with κ × 0.16 / r̄ | Robustness: the fixed menu of v3 | New |
 | Target utilisation | u* | — | — | Removed |
 
 ## Experiments
@@ -531,6 +560,8 @@ accelerator without a target; the three levels of the reserve; the viewer on a s
 | Ceiling on the demand lost in E0 | 5 %; 10 % | **Decided by Ugo, 10 Nov:** 10 % | Set after the runs, which the report should say. At the default less than 1 % is lost in E0 |
 | Overtime premium | None; a premium on overtime output | None | Asked by Ugo; the runs have none |
 | What counts in the 1,000 lines | Comments excluded; comments and docstrings excluded | Both excluded | A docstring is a comment for this purpose; to confirm |
+| Initial menu at r̄ ≠ 0.16 | The fixed menu of v3; capital scaled by 0.16 / r̄ at the price of 100; margins scaled by r̄ / 0.16 at the price of production of C | **Asked by Ugo, 10 Nov:** capital scaled, price kept at 100 | Shaikh's table holds at any r̄. Not run: the results at 0.05 must be redone |
+| β at r̄ ≠ 0.16, under the scaled menu | Keep 1.5; rescale it so that the same share of designs is kept | To decide after a first run at 0.05 | With β = 1.5 the unit-cost rule keeps 20 % of the designs drawn from C at 0.05, against 92 % at 0.16: technical change slows, and the two rates are no longer compared on the same bias |
 | Where version 4 is built | A clean tree beside v3; a branch of this one | A clean tree, v3 read-only beside it | As v3 did with v2: the unchanged equations are ported, not inherited |
 
 Not run with these settings: E3 under the three other price rules, E4, E6, Morris and the
