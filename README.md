@@ -29,7 +29,13 @@ python3 -m venv .venv
 .venv/bin/python -m unittest discover -s tests
 .venv/bin/python run.py                  # one run at the defaults -> outputs/periods.csv, run.csv
 .venv/bin/python run.py 7                # another seed
+.venv/bin/python -m experiments.harness E1 --jobs 10 --keep-periods 0   # outputs/E1/runs.csv, cells.csv
+.venv/bin/python -m experiments.harness E3 --resume                     # runs what is missing
+.venv/bin/python -m figures.fig3_bias_lambda                            # outputs/figures/*.pdf
 ```
+
+The model, `run.py` and the harness need only numpy; the figures need matplotlib and the
+Morris screening SALib.
 
 Windows: replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
 
@@ -56,8 +62,8 @@ equations/        one rule per file, pure functions, named <step>_<equation>.py
 markets/          the transactions: payments, goods, plants, entry and exit
 model/            entities.py, model.py, scheduler.py, outputs.py (the period table)
 run.py            one run at the defaults
-experiments/      summary.py, the run row; cells, harness, Morris screening     (from stage 5)
+experiments/      summary.py (the run row), cells.py, stats.py, harness.py; diagnosis.py (throwaway)
 tests/            one test file per step
-figures/          one script per report exhibit                                  (from stage 5)
+figures/          style.py and one script per report exhibit (figures 1 to 3 so far)
 docs/design/      specification, plan and decisions
 ```

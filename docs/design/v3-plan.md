@@ -711,8 +711,10 @@ touches only its own files and the body of its own step functions in `scheduler.
 | 6 E4, E5, Morris | E4 cells, read beside the pilot; `e5_channels.py`, `morris.py`; `fig4` to `fig6`. | Jake (E4), Ugo (Morris) | 4 h | 21–23 Nov |
 | 7 E6, robustness | `populations.py`, the E6 and robustness cells, `tab3_robustness.py`. | Pierre-Loup (E6), Vincent (robustness) | 3 h | 24–25 Nov |
 
-**Built so far:** stages 1 to 4. The four parts of stage 3 were written in one tree, so
-stage 4 had no merge to do. Next is stage 5, the harness; the read of E0 below comes first.
+**Built so far:** stages 1 to 5. The four parts of stage 3 were written in one tree, so
+stage 4 had no merge to do. Stage 5 built the harness, the cells of E0 to E3 and the first
+three figures; its runs are at the end of this section and are provisional, since E0 is not
+met. Next are stage 6 (E4, E5, Morris) and the group's decision on the rules.
 
 **First read after stage 3** (20 seeds a cell, 10 November; a look, not a result):
 
@@ -825,6 +827,47 @@ measures from period 20, means over 20 seeds (minimum and maximum are those of e
   (about 8 lines, with the model at 769 of 770, and a reversal of the decision of 9 November);
   what E0 should check, since under cost-edge cutting the price cannot reach the price of
   production; and whether a cycle of this size is acceptable if no rule changes.
+
+**Stage 5** (10 November).
+
+- **Harness.** `experiments/harness.py` uses the standard library only (`csv`, not pandas), so
+  it runs wherever the model does. `runs.csv` and `cells.csv` are as section 7 describes; the
+  number of workers does not change a row, and a run stopped and resumed gives the same file.
+  A run that raises is reported in its row and counts in no share.
+- **Figures.** `figures/style.py` and the scripts of figures 1 to 3 write a PDF and a PNG to
+  `outputs/figures/`. They need matplotlib. Blue is the unit-cost label in every figure and
+  orange the profit-rate label; two levels of r̄ take two steps of one blue.
+- **Runs of E0 to E3** (17,200 runs in 4 min 36 s on 10 workers, commit `ab52ab5` plus the
+  harness). Share of seeds won by the unit-cost label, with its 95 % Wilson interval:
+
+| Experiment | Cell | Mixed | Control, all unit-cost | Control, all profit-rate | Beyond drift |
+| --- | --- | --- | --- | --- | --- |
+| E0, 50 seeds | no technical change | | 0.52 (0.39–0.65) | 0.42 (0.29–0.56) | |
+| E1, 500 seeds | defaults | 0.98 (0.97–0.99) | 0.52 (0.47–0.56) | 0.50 (0.46–0.54) | yes |
+| E2, 200 seeds | β = 0 | 0.58 (0.51–0.64) | 0.45 | 0.49 | no |
+| | β = 0.5 | 0.92 (0.88–0.95) | 0.49 | 0.50 | yes |
+| | β = 1.5 | 0.98 (0.95–0.99) | 0.52 | 0.49 | yes |
+| | β = 3 | 0.98 (0.96–0.99) | 0.47 | 0.47 | yes |
+| | neutral set | 0.82 (0.76–0.87) | 0.47 | 0.52 | yes |
+| | no draws | 1.00 (0.98–1.00) | 0.46 | 0.49 | yes |
+
+| E3, 200 seeds, mixed | λ = 0 | 0.25 | 0.5 | 0.75 | 1 |
+| --- | --- | --- | --- | --- | --- |
+| Cost-edge cutting, r̄ = 0.05 | 0.98 | 0.98 | 0.93 | 0.84 | 0.68 |
+| Mean hurdle of the profit-rate label, same cells | 0.204 | 0.157 | 0.121 | 0.084 | 0.050 |
+| Systematic cutting, r̄ = 0.05 | 0.61 | 0.52 | 0.54 | 0.41 | 0.48 |
+| Cost-edge cutting, r̄ = 0.16 | 0.88 | 0.94 | 0.95 | 0.96 | 0.97 |
+| Systematic cutting, r̄ = 0.16 | 0.04 | 0.03 | 0.03 | 0.06 | 0.12 |
+
+- **The two statistical checks of section 8 hold.** Both controls of E1 have an interval that
+  contains one half. In each control the reserve is released for the same share of plants
+  under the two labels (0.80 and 0.80, then 0.82 and 0.82).
+- **What stands out, for the group.** The mixed population is beyond drift at the defaults,
+  with a mean final capacity share of 0.89 (pilot: 0.94–0.97 and 0.72–0.79). Without draws
+  the unit-cost label wins every seed, where v2 found drift (0.51): the price stays above 85,
+  where the profit-rate rule prefers D1. The share won falls with λ at r̄ = 0.05 and rises
+  with it at 0.16. Under systematic cutting at r̄ = 0.16 the profit-rate label wins (pilot:
+  0.10–0.19). None of this is a result before the group has decided on the rules.
 
 What makes 3a–3d independent: `pay`, `buy_plant`, `remove_plant` with the reserve rule, r_new,
 `count` and every dataclass field exist after stage 2, and `parameters.py` is frozen there (a new

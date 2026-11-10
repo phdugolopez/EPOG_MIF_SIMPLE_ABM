@@ -52,16 +52,22 @@ python run.py                            # one run at the defaults -> outputs/pe
 
 ## Where the build stands
 
-The stages are in section 9 of `docs/design/v3-plan.md`. Stages 1 to 4 are done: the whole model
+The stages are in section 9 of `docs/design/v3-plan.md`. Stages 1 to 5 are done: the whole model
 is written and every test passes (`python -m unittest discover -s tests`), the label-swap and
 firm-order tests included. A run at the defaults takes 0.09 s. The model code counts 769 lines
 without blank lines, against a limit of 770: a change that adds a line has to remove one.
 `parameters.py` is frozen: a new constant is a departure to register.
 
-Next is stage 5: `experiments/stats.py`, `cells.py`, `harness.py`, then E0 to E3.
+The harness (`python -m experiments.harness E1`) writes `outputs/<experiment>/runs.csv` and
+`cells.csv`; it uses the standard library only. The figure scripts (`python -m figures.fig1_...`)
+need matplotlib and write to `outputs/figures/`. `outputs/` is not versioned.
 
-Known after stage 4 (plan, section 9, "First read after stage 3" and "Stage 4"): E0 is not met.
-At the defaults the industry cycles between a deep shortage and a long overcapacity, and
-without technical change capacity ends at 1.6 to 2.5 times demand. The rules are those of the
-specification. Do not tune a rule to remove this without a decision recorded in
-`docs/design/v3-choices.md`, and do not read E1 to E6 as results before the group has decided.
+Next is stage 6: the E4 cells, `experiments/e5_channels.py`, `experiments/morris.py` (SALib) and
+figures 4 to 6.
+
+Known after stage 5 (plan, section 9): E0 is not met. At the defaults the industry cycles
+between a deep shortage and a long overcapacity, and without technical change cost-edge cutting
+stops after two periods, so capacity ends at 1.6 to 2.5 times demand. The diagnosis is in the
+plan and in `experiments/diagnosis.py`. The rules are those of the specification. Do not tune a
+rule without a decision recorded in `docs/design/v3-choices.md`, and do not present E1 to E6 as
+results before the group has decided: the runs of stage 5 are provisional.
