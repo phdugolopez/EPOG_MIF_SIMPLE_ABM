@@ -12,7 +12,8 @@ from experiments.harness import run_experiment
 from experiments.price_rules import (MONOPOLY_CAP, RISE, RULES, U_MAX, allocate_with_overtime,
                                      dispatch_with_overtime, experiments, install_leader_follow,
                                      install_leader_follow_overtime, install_leader_follow_ucs,
-                                     install_leader_follow_ucs_overtime, leader_follow_price,
+                                     install_leader_follow_ucs_overtime, install_overtime,
+                                     leader_follow_price,
                                      operating_cost_floor, set_prices_leader_follow,
                                      set_prices_leader_follow_ucs, unit_cost_floor)
 from experiments.summary import run_row
@@ -21,14 +22,15 @@ from model import scheduler
 from model.model import run
 from parameters import Parameters
 from test_experiments import read
-from test_neutrality import POPULATIONS, mirror, swapped, trajectory
+from test_neutrality import ANOTHER_CELL, POPULATIONS, mirror, swapped, trajectory
 
 V2_RULE = pathlib.Path(__file__).resolve().parents[2] / "ABM-sources/equations/leader_follow_price.py"
 
 
 def patched(step=set_prices_leader_follow, overtime=False):
-    """The scheduler with the step in place of step 1 and, if asked, overtime in steps 2 and 3."""
-    changes = {"set_prices": step}
+    """The scheduler with the step in place of step 1 (None: version 3's own) and, if asked,
+    overtime in steps 2 and 3."""
+    changes = {"set_prices": step} if step else {}
     if overtime:
         changes.update(allocate=allocate_with_overtime, dispatch=dispatch_with_overtime)
     return mock.patch.multiple(scheduler, **changes)
@@ -151,7 +153,8 @@ class TestFloors(unittest.TestCase):
                 install()
                 self.assertIs(scheduler.set_prices, step)
         self.assertEqual(set(RULES), {"systematic", "leader_follow", "leader_follow_ucs",
-                                      "leader_follow_overtime", "leader_follow_ucs_overtime"})
+                                      "leader_follow_overtime", "leader_follow_ucs_overtime",
+                                      "overtime"})
 
 
 class TestOvertime(unittest.TestCase):
@@ -180,6 +183,26 @@ class TestOvertime(unittest.TestCase):
                 self.assertIs(scheduler.set_prices, step)
                 self.assertIs(scheduler.allocate, allocate_with_overtime)
                 self.assertIs(scheduler.dispatch, dispatch_with_overtime)
+
+    def test_overtime_alone_leaves_the_pricing_of_version_3(self):
+        step = scheduler.set_prices
+        with mock.patch.multiple(scheduler, allocate=None, dispatch=None):
+            install_overtime()
+            self.assertIs(scheduler.set_prices, step)
+            self.assertIs(scheduler.allocate, allocate_with_overtime)
+            self.assertIs(scheduler.dispatch, dispatch_with_overtime)
+        self.assertIs(RULES["overtime"], install_overtime)
+
+    def test_swapped_labels_give_the_same_trajectories_with_overtime_and_the_pricing_of_version_3(self):
+        for cell, periods in (({}, 200), (ANOTHER_CELL, 80)):
+            for name, population in POPULATIONS.items():
+                with self.subTest(cell=cell, population=name), patched(None, overtime=True):
+                    params = replace(Parameters(), **cell, **population)
+                    states, rows = trajectory(params, 4, periods)
+                    swapped_states, swapped_rows = trajectory(swapped(params), 4, periods)
+                    self.assertEqual(states, swapped_states)
+                    self.assertEqual(rows, mirror(swapped_rows))
+                    self.assertEqual(trajectory(params, 7, 80), trajectory(params, 7, 80, reverse=True))
 
     def test_overtime_raises_utilisation_and_lowers_the_demand_lost(self):
         params = replace(Parameters(), tech_change="none", rule_okishio="unit_cost")
@@ -244,6 +267,11 @@ class TestCells(unittest.TestCase):
         e3 = cells["E3_leader_follow"]["cells"]
         self.assertEqual(len(e3), 10)
         self.assertEqual(e3["lam_0.25_leader_follow_rbar_0.16"], {"lam": 0.25, "rbar": 0.16})
+
+    def test_under_overtime_the_cells_are_those_of_the_experiments(self):
+        cells = experiments("overtime")
+        self.assertEqual(cells, {name + "_overtime": experiment for name, experiment in EXPERIMENTS.items()})
+        self.assertEqual(len(cells["E3_overtime"]["cells"]), 20)
 
     def test_the_systematic_cells_set_the_regime(self):
         cells = experiments("systematic")

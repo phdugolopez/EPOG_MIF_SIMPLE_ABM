@@ -14,6 +14,8 @@ no rule below is the default of version 3. Each runs the cells of cells.py on th
   leader_follow_overtime, leader_follow_ucs_overtime
                      the two rules above with overtime: output up to 1.2 times normal
                      capacity at the same operating cost (no premium)
+  overtime           version 3's own pricing with the same overtime: the cells of cells.py
+                     as they are, E3 with its two regimes
 
 E3 keeps its ten cost-edge cells (lambda x rbar), renamed after the rule. The files are those of
 the harness, in outputs/<rule>/<experiment>/.
@@ -129,12 +131,16 @@ def install_leader_follow_ucs_overtime() -> None:
 RULES = {"systematic": None, "leader_follow": install_leader_follow,
          "leader_follow_ucs": install_leader_follow_ucs,
          "leader_follow_overtime": install_leader_follow_overtime,
-         "leader_follow_ucs_overtime": install_leader_follow_ucs_overtime}
+         "leader_follow_ucs_overtime": install_leader_follow_ucs_overtime,
+         "overtime": install_overtime}
 
 
 def experiments(rule: str) -> dict:
     """The experiments of cells.py under the rule, named <experiment>_<rule>. A cell that sets
-    systematic cutting is left out; the others lose their `pricing` and take the rule's name."""
+    systematic cutting is left out; the others lose their `pricing` and take the rule's name.
+    Under "overtime" the pricing is version 3's, so the cells stay as they are."""
+    if rule == "overtime":
+        return {f"{name}_{rule}": experiment for name, experiment in EXPERIMENTS.items()}
     regime = {"pricing": "systematic"} if rule == "systematic" else {}
     return {
         f"{name}_{rule}": {**experiment, "cells": {

@@ -25,7 +25,8 @@ PRICING = {"cost_edge": "cost-edge cutting", "systematic": "systematic cutting",
            "leader_follow": "leader-follow pricing",
            "leader_follow_ucs": "leader-follow pricing, operating-cost floor",
            "leader_follow_overtime": "leader-follow pricing with overtime",
-           "leader_follow_ucs_overtime": "leader-follow pricing with overtime, operating-cost floor"}
+           "leader_follow_ucs_overtime": "leader-follow pricing with overtime, operating-cost floor",
+           "overtime": "with overtime"}
 
 
 def apply() -> None:

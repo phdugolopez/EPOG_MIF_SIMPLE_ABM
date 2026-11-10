@@ -5,8 +5,9 @@
     python -m experiments.harness E3
     python -m figures.fig3_bias_lambda [rule]
 
-With a rule (leader_follow), the same cells as experiments.price_rules runs them, read from
-outputs/<rule>/: E3 then has one regime, and the figure takes the rule's name. Dots are the mixed population with 95 % Wilson intervals; the grey band is the range of the
+With a rule (leader_follow, overtime), the same cells as experiments.price_rules runs them,
+read from outputs/<rule>/, and the figure takes the rule's name; under a price rule E3 has one
+regime. Dots are the mixed population with 95 % Wilson intervals; the grey band is the range of the
 intervals of the two controls. Below the two lambda panels, the mean hurdle of the profit-rate
 label in the same cells.
 """
@@ -40,7 +41,7 @@ def band(axis, cells: dict, groups: list[list[str]], x: list[float]) -> None:
 def main(rule: str = ""):
     style.apply()
     folder = pathlib.Path("outputs") / rule
-    regimes = (rule,) if rule else ("cost_edge", "systematic")
+    regimes = ("cost_edge", "systematic") if rule in ("", "overtime") else (rule,)
     e2, e3 = by_cell(folder / "E2/cells.csv"), by_cell(folder / "E3/cells.csv")
     figure = plt.figure(figsize=(style.WIDTH, 4.3), constrained_layout=True)
     grid = figure.add_gridspec(2, 1 + len(regimes), height_ratios=[1.35, 1],
