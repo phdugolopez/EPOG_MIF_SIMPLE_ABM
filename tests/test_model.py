@@ -1,16 +1,28 @@
-"""The whole loop. Stage 2 tests the skeleton, in which the six steps are stubs: nothing
-random happens yet, so "another seed, another table" comes with stage 4, with the label swap,
-the decompositions of the run row and the run of every option."""
+"""The whole loop: the steps of a period, reproducibility, the checks of every period, every
+option at every level, and the two decompositions of the run row."""
 import unittest
 from dataclasses import replace
+from unittest import mock
 
+from experiments.summary import run_row
 from helpers import cash_total, industry
 from model.model import build, run
 from model.outputs import KEYS
 from model.scheduler import STEPS, check, close_period, period
-from parameters import Parameters
+from parameters import OPTIONS, Parameters
 
 POPULATIONS = ({}, {"rule_okishio": "unit_cost"}, {"rule_shaikh": "profit_rate"})
+# Every option that takes a name at every level, then the options that take a number.
+LEVELS = [{name: level} for name, levels in OPTIONS.items() for level in levels]
+NUMBERS = [{"u_max": 1.0}, {"u_max": 1.4}, {"public_lag": None}, {"lam": 0.5}, {"lam": 1.0},
+           {"growth": 0.01}, {"firms_per_pair": 2}, {"firms_per_pair": 5}, {"rbar": 0.10},
+           {"rbar": 0.05}, {"rbar": 0.05, "menu_scaling": "fixed"}, {"shortage_step": 0.5},
+           {"bias": 0.0}, {"bias": 3.0}, {"plant_life": 7}, {"plant_life": 19},
+           {"plant_size": 10.0}, {"plant_size": 40.0}, {"mutation": 0.0}, {"chi": 4.0}]
+CELLS = ({}, {"rule_okishio": "unit_cost"}, {"rule_shaikh": "profit_rate"},
+         {"pricing": "systematic", "investment": "accelerator", "growth": 0.01},
+         {"pricing": "universal"}, {"pricing": "normal_price", "tech_change": "categories"},
+         {"tech_change": "neutral"}, {"tech_change": "none"}, {"rbar": 0.05})
 
 
 class TestSteps(unittest.TestCase):
@@ -47,8 +59,55 @@ class TestLoop(unittest.TestCase):
         self.assertEqual([row["t"] for row in ind.rows[:4]], [0, 0, 1, 1])
         self.assertEqual([row["label"] for row in ind.rows[:2]], ["shaikh", "okishio"])
 
-    def test_same_seed_same_table(self):
+    def test_same_seed_same_table_another_seed_another_table(self):
         self.assertEqual(run(seed=3).rows, run(seed=3).rows)
+        self.assertNotEqual(run(seed=3).rows, run(seed=4).rows)
+
+    def test_a_run_at_the_defaults_ends_with_capacity(self):
+        for seed in range(3):
+            ind = run(seed=seed)
+            row = run_row(ind.rows, ind.params, seed)
+            self.assertGreater(row["capacity_end"], 0.0)
+            self.assertIn(row["outcome"], ("win", "loss", "tie"))
+
+    def test_every_option_at_every_level_runs_and_passes_the_checks_of_every_period(self):
+        for overrides in LEVELS + NUMBERS:
+            with self.subTest(**overrides):
+                params = replace(Parameters(), periods=120, **overrides)
+                self.assertEqual(len(run(params, seed=1).rows), 240)
+
+    def test_the_terms_of_the_two_decompositions_sum_to_the_change_in_the_share(self):
+        """Capacity share: ordered, retired, entry, exit. Sales share: price, entry and exit,
+        rationing. Both residuals are zero up to rounding."""
+        for overrides in CELLS:
+            for seed in (0, 1):
+                params = replace(Parameters(), **overrides)
+                row = run_row(run(params, seed).rows, params, seed)
+                self.assertLess(abs(row["dk_resid"]), 1e-9, (overrides, seed))
+                self.assertLess(abs(row["ds_resid"]), 1e-9, (overrides, seed))
+
+    def test_dropping_beaten_techniques_from_the_public_menu_changes_no_run(self):
+        """The frontier of start_period is for speed only: without it the table is the same."""
+        for overrides in CELLS[:7]:
+            params = replace(Parameters(), periods=150, **overrides)
+            pruned = run(params, seed=5).rows
+            with mock.patch("model.scheduler.frontier", lambda menu, delta: menu):
+                self.assertEqual(run(params, seed=5).rows, pruned, overrides)
+
+    def test_an_industry_can_be_left_with_no_plant_in_operation(self):
+        """Every plant retired and none delivered yet: the period closes, the rows have no
+        price and no rate, and the next period goes on."""
+        ind = industry(tech_change="none")
+        for firm in ind.firms:
+            firm.pending_plants = firm.plants[:1]
+            firm.plants = []
+        ind.time = 1
+        for step in STEPS[1:]:
+            step(ind)
+        self.assertIsNone(ind.rows[0]["price_over_reg"])
+        self.assertIsNone(ind.rows[0]["low_price"])
+        self.assertEqual(ind.rows[0]["leader_cheapest"], 0)
+        self.assertEqual(ind.lost, ind.demand)
 
     def test_every_row_has_the_same_columns(self):
         rows = run().rows

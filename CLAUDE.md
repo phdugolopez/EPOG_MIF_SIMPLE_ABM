@@ -80,23 +80,17 @@ python3 run.py 7                          # another seed
 
 ## Where the build stands
 
-The stages are in section 13 of `docs/design/v4-plan.md`. Stages 1 (scaffold) and 2
-(skeleton) are done: 130 tests pass and the model code counts 450 lines of the 1,000.
+The stages are in section 13 of `docs/design/v4-plan.md`. Stages 1 to 4 are done: the whole
+model is written and every test passes (343 tests), the label swap and the firm order under
+each of the 4 × 2 price and investment rules included. The model code counts 954 lines of the
+1,000: a change that adds lines has little room. A run at the defaults takes 0.05 s.
 
-The loop of `model/scheduler.py` runs and passes its checks, with the six step functions as
-stubs: each has its final signature and a docstring that says what it reads and writes.
-Shared and final: `model.build` with the scaled menu and the check of the options, `pay`,
-`buy_plant`, `remove_plant` with the three levels of the reserve, `start_period`,
-`close_period`, `check`, the end of step 3 (`set_regulating_price`, `set_new_plant_rate`),
-`count` and the tally by firm, `record_end`, and `tests/helpers.py`.
+`parameters.py` is frozen: a new constant is a departure to register. What the stages built
+that the plan did not say is listed at the end of its section 13.
 
-`parameters.py` is frozen: a new constant is a departure to register. It has two constants
-more than section 7 of the plan first listed, `OPTIONS` (the levels of every option) and
-`MONEY_EPS` (the tolerance of `check`); the plan now lists them, with the three other points
-on which stages 1 and 2 differ from it (end of section 13).
+Parts 3a to 3d were built one after the other on `v4`, in the plan's merge order (3c, 3a,
+3b, 3d), one commit each, not on four branches.
 
-Next are the four parallel parts, each on its own branch cut from the stage 2 commit, on its
-own files and the body of its own step functions: 3a pricing (`set_prices`), 3b demand,
-entry and exit (`allocate_demand`, `enter_and_exit`), 3c accounts, scrapping and outputs
-(`produce_and_account` above its two last blocks, `scrap_plants`, `record_production`),
-3d technical change and investment (`invest`).
+Next is stage 5: `stats.py`, `harness.py`, `cells.py`, `populations.py`, `e0_gate.py`, then
+the runs in the plan's order: E0 read with the gate, E0r, the reruns and the homogeneous
+start. Nothing is a result before E0 holds at the default on this code.
