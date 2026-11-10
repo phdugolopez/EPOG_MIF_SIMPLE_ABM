@@ -1404,6 +1404,42 @@ the rate of the menu. The same analysis variant; the full read is in `v4-final-m
   (0.46–0.55 and 0.43–0.51), and in each control the reserve is released for the same share
   of plants under the two labels (0.25 and 0.25; 0.28 and 0.29).
 
+**The same settings with a shortage step of 0.25** (10 November; set by Ugo. The runs of the
+block above, made with a step of 0.5, are kept in `outputs/v4_step_0.5_*`).
+
+- **Runs.** 26,800 again, commit `90942ad`, no error: E0 to E3 at the default (11,200 runs in
+  2 min 27 s) and E0 to E2 under the three other rules. Leader-follow has no shortage step, so
+  its runs are the same.
+
+| Measure | Cost-edge (default) | Normal-price | Systematic | Leader-follow |
+| --- | --- | --- | --- | --- |
+| Seeds of 50 that pass E0, all unit-cost / all profit-rate | 50 / 49 | 50 / 50 | 2 / 0 | 46 / 44 |
+| E1, share won (500 seeds) | 0.92 (0.90–0.94) | 0.92 (0.89–0.94) | 0.76 (0.72–0.80) | 0.23 (0.19–0.27) |
+| Its two controls | 0.46 and 0.46 | 0.47 and 0.48 | 0.47 and 0.51 | 0.49 and 0.51 |
+| Final capacity share of the unit-cost label | 0.86 | 0.86 | 0.75 | 0.45 |
+| E2, β = 0, 0.5, 1.5, 3 | 0.52, 0.88, 0.93, 0.82 | 0.55, 0.91, 0.94, 0.88 | 0.39, 0.77, 0.78, 0.60 | 0.50, 0.36, 0.21, 0.17 |
+| E2, neutral set; no draws | 0.66; 0.98 | 0.66; 0.97 | 0.59; 0.72 | 0.52; 0.39 |
+| E3, r̄ = 0.16, λ = 0 to 1 | 0.93, 0.86, 0.83, 0.62, 0.61 | | | |
+| E3, r̄ = 0.05, λ = 0 to 1 | 0.57, 0.61, 0.51, 0.52, 0.49 | | | |
+| Change in sales share through the price | +0.21 | +0.21 | +0.05 | 0.00 |
+| Realised profit rate, unit-cost / profit-rate label | 0.148 / 0.151 | 0.149 / 0.152 | 0.164 / 0.156 | 0.133 / 0.135 |
+| Demand lost in the mixed population | 0.069 | 0.073 | 0.111 | 0.032 |
+
+- **Beyond drift at the default:** E1; β = 0.5, 1.5 and 3 and "no draws" in E2, not β = 0 or
+  the neutral set; λ = 0 to 0.5 at r̄ = 0.16; no cell at r̄ = 0.05, where 17 to 23 % of demand
+  is lost.
+- **Against the step of 0.5:** the price of the mixed population peaks at 1.9 times the price
+  of production instead of 3.7 and capacity falls to 0.29 of demand instead of 0.22; the
+  demand lost is the same. The two labels now realise the same profit rate.
+- **The default with one setting changed** (E0 on 50 seeds; share won on 100 seeds): the
+  entrant at the lowest price, E0 in no seed and 0.94; no overtime, 26 and 27 seeds and 0.78;
+  r̄ = 0.05, 50 and 31 seeds and 0.51; the accelerator without a target, 44 and 48 seeds and
+  0.56, within drift; growth of 1 %, 48 and 49 seeds and 0.97; the reserve always released,
+  no seed and 0.80; never released, 50 and 35 seeds and 0.42.
+- **The checks of section 8 hold:** both E1 controls have an interval that contains one half
+  (0.42–0.51 and 0.42–0.50), and in each control the reserve is released for the same share
+  of plants under the two labels (0.27 and 0.28; 0.30 and 0.30).
+
 What makes 3a–3d independent: `pay`, `buy_plant`, `remove_plant` with the reserve rule, r_new,
 `count` and every dataclass field exist after stage 2, and `parameters.py` is frozen there (a new
 constant is a departure to register in `v3-choices.md`). Stage 4 merges in the order 3c, 3a, 3b,
