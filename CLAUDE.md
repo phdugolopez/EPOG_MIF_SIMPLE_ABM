@@ -80,8 +80,8 @@ without), the demand lost falls from 3.2 to 0.5 %, and E0 is still not met.
 
 `docs/design/v4-final-model.md` (10 November) is the proposal for version 4: overtime, the
 accelerator without a target utilisation, leader-follow as the default price rule with the two
-cutting rules as options, E0 read on averages, a budget of 1,000 lines with comments excluded and
-a run viewer. It is not the specification of this tree: version 3's four documents stay
+cutting rules as options, E0 read on averages, a sensitivity over the reserve, a budget of 1,000
+lines with comments excluded and a run viewer. It is not the specification of this tree: version 3's four documents stay
 authoritative here until the group decides, and version 4 is a rebuild.
 
 Next is stage 6: the E4 cells, `experiments/e5_channels.py`, `experiments/morris.py` (SALib) and
