@@ -1167,3 +1167,98 @@ trajectories; the mean of the outcome over the 130 points is in the header.
 - **The method.** The screening is written with numpy: SALib is not installed beside this
   tree, and no package was installed during the build. With 10 trajectories the intervals
   are wide: the ranking of the first three and of the last two is firm, the middle is not.
+
+## 18. The runs of stage 9
+
+Run on 10 November, after E4: E6 (4,000 runs), the reserve under universal undercutting
+(3,200), the robustness checks (25,200) and the fixed menu (1,600), on commits `2da30de`
+and `9ae5c26`, whose model code is that of `06e2fbb`. No run failed and none is undecided.
+`python3 -m figures.tab3_robustness` writes the table of every check beside the cell it
+varies, in `outputs/figures/tab3_robustness.md`.
+
+**E6: can one firm of a rule invade the other?** Ten firms on D1, one of the mutant label;
+its capacity share starts at 0.10. The control puts the mutant on the residents' rule.
+
+| Price rule | Mutant | Final capacity share: mixed; control | Seeds in which it ends above 0.10: mixed; control |
+| --- | --- | --- | --- |
+| Cost-edge | Unit-cost firm among profit-rate firms | 0.33; 0.10 | 0.86; 0.39 |
+| Cost-edge | Profit-rate firm among unit-cost firms | 0.003; 0.10 | 0.01; 0.38 |
+| Universal undercutting | Unit-cost firm among profit-rate firms | 0.10; 0.10 | 0.37; 0.41 |
+| Universal undercutting | Profit-rate firm among unit-cost firms | 0.17; 0.10 | 0.87; 0.38 |
+
+- **Under cost-edge cutting the unit-cost rule invades and resists invasion.** One unit-cost
+  firm triples its share among profit-rate firms; one profit-rate firm among unit-cost
+  firms is driven out.
+- **Under universal undercutting it is the profit-rate rule that invades**, and a unit-cost
+  mutant does no better than a firm on the residents' rule.
+
+**The reserve under universal undercutting** (the default is in section 15).
+
+| Reserve | Seeds of 50 that pass E0 | Share won | Controls | Realised rates |
+| --- | --- | --- | --- | --- |
+| Released if r_new ≥ r̄ (E0 and E1) | 46 / 43 | 0.23 (0.19–0.27) | 0.50 and 0.51 | 0.133 / 0.135 |
+| Always released | 0 / 0 | 0.56 (0.51–0.61), within drift | 0.48 and 0.49 | 0.010 / 0.010 |
+| Never released | 0 / 0 | 0.15 (0.12–0.19) | 0.51 and 0.47 | 0.189 / 0.193 |
+
+- **The reserve sets the profit rate under this rule too**: 1 % when always released, 19 %
+  when never released. E0 fails in every seed at both levels: the price stays a quarter
+  below the price of production in the first case, capacity at 0.8 of demand in the second.
+- **The profit-rate label's advantage needs the condition or no reserve**: always released,
+  the contest is at drift.
+
+**The robustness checks.** "Base" is the cell the check varies; shares on 500 seeds for the
+checks on E1, 200 for those on E4.
+
+| Check | Cell | Share won | Base | Verdict |
+| --- | --- | --- | --- | --- |
+| No overtime | Cost-edge (reruns) | 0.77 | 0.92 | Smaller; E0 in 26 and 27 seeds |
+| | Normal-price | 0.74 | 0.92 | Smaller; E0 in 50 and 50 |
+| | Systematic | (0.47) | 0.76 | To drift; E0 in no seed |
+| | Universal undercutting | 0.07 | 0.23 | The profit-rate label wins more; E0 in no seed |
+| Entrant at the lowest price | Default | 0.93 | 0.92 | Same; E0 in no seed |
+| Shortage step of 0.5 | Default | 0.94 | 0.92 | Same; E0 in 50 and 50 |
+| | Accelerator | 0.78 | 0.63 | Larger |
+| Entrant's parent drawn evenly | Default | 0.90 | 0.92 | Same |
+| | Universal undercutting | 0.21 | 0.23 | Same |
+| Operating-cost floor | Default | 0.93 | 0.92 | Same |
+| | Universal undercutting | 0.23 | 0.23 | Same |
+| Fixed menu at r̄ = 0.10 | Default | 0.83 | 0.80 on the scaled menu | Same; E0 in 50 and 49 |
+| Private designs (L = none) | Default | (0.62) | 0.92 | To drift |
+| Scrapping on unit cost | Default and the 12 Marx cells of E4 | within 0.03 of the base | | No verdict changes |
+| 12 firms | Default | 0.97 | 0.92 | Larger |
+| | Cost-edge, accelerator, g = 1 % | 0.89 | 0.78 | Larger |
+| | Universal, retained and accelerator, g = 1 % | 0.25; 0.32 | 0.23; 0.30 | Same |
+| 30 firms | Default | 0.98 | 0.92 | Larger |
+| | Cost-edge, accelerator, g = 1 % | 0.95 | 0.78 | Larger |
+| | Universal, retained and accelerator, g = 1 % | 0.22; (0.41) | 0.23; 0.30 | One cell to drift |
+
+- **Three checks move a verdict.** Without diffusion of designs the headline falls to
+  drift (0.62). Why is not established: no cell isolates it, and it is one cell on 200
+  seeds. Without
+  overtime the industry is no longer that of E0 under three rules of four. With 30 firms
+  the cell under universal undercutting with the accelerator goes to drift.
+- **Five checks move nothing**: the entrant at the lowest price (for the headline; it does
+  fail E0), the shortage step, the entrant's parent drawn evenly, the operating-cost floor
+  and scrapping on unit cost.
+- **The entrant's label is not what carries the headline.** Drawn evenly instead of by
+  market share, the unit-cost label still wins 0.90.
+- **More firms strengthen the headline**: 0.97 with 12 firms and 0.98 with 30, and under
+  the accelerator with growth 0.89 and 0.95 against 0.78.
+- **Without overtime normal-price cutting still meets E0**, in 50 and 50 seeds, where the
+  default meets it in 26 and 27: the one case in which the two rules part.
+
+**Where the hypotheses stand on the new code.**
+
+| # | Hypothesis | Verdict | Evidence |
+| --- | --- | --- | --- |
+| H1 | The unit-cost rule wins where the lowest-cost firm sets the price | Met | E1: 0.92, 0.92, 0.76 under the cutting rules, 0.23 under universal undercutting; E6: it invades and resists under cost-edge cutting |
+| H1′ | The profit-rate rule cannot lose systematically | Fails under the cutting rules; holds under universal undercutting | E1, E6 |
+| H2 | The advantage grows with the Marx bias | In part | E2: it needs the bias (drift at β = 0) and does not grow with it (0.89, 0.93, 0.82) |
+| H3 | Where selection runs through accumulation it can favour the profit-rate rule | Met | E4: universal undercutting, and systematic cutting with the accelerator (0.11) |
+| H4 | The more firms cut, the smaller the advantage | Met | E1: 0.92, 0.76, 0.23 |
+| H5 | Judged at the price of production the advantage shrinks, because the hurdle falls | Outcome met; mechanism not | E3: 0.93 to 0.61 while the hurdle rises; E5: the spread of hurdles across firms falls from 0.016 to 0.001, a candidate not yet tested |
+| H6 | The profit-rate adopter does not realise the rate it maximises | Not met | E1: 0.148 against 0.151; E5: the gap falls as its dearer orders rise |
+
+**For the group**, beside the three points of section 15: whether private designs, which
+take the headline to drift, belong in the report as a condition of the result; and whether
+a cell should vary the spread of hurdles alone, to test the candidate mechanism of H5.

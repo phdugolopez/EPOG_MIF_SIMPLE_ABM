@@ -93,6 +93,11 @@ line count of 770.
 - The group confirms the decisions above.
 - The group confirms the level of r̄ in E4 (decision 29), and says whether the homogeneous
   start should also have a public menu of D1 alone (plan, section 15).
+- After stages 7 to 9 (plan, sections 16 to 18): whether the diffusion of designs is stated
+  as a condition of the headline, which falls to drift when designs stay private; whether a
+  cell varies the spread of hurdles alone, to test the candidate mechanism of H5; and how
+  H1 is worded, the price being set by an entrant in most periods in which the cost leader
+  does not post the lowest price.
 - Questions for Funalot and Bassi, as in `v3-choices.md`: do references and appendices count
   in the 10 pages, how long is each presentation, is the template layout required?
 

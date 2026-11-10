@@ -9,9 +9,10 @@ the course template
 Version 4 is the second rebuild from a clean tree. It is written for a reader: at most 1,000
 lines of model code, comments and docstrings excluded, and every rule that varies is an option
 of `parameters.py`. It is being built in stages (section 13 of `docs/design/v4-plan.md`);
-**stages 1 to 6 are done**: the model, the harness with the E0 gate, the run viewer and
-figures 1 to 3. E0 holds at the default on this code (`docs/design/v4-plan.md`, section 15);
-E1 to E3 are stage 7 and are not run yet.
+**the nine stages are done**: the model, the harness with the E0 gate, the run viewer, the
+experiments E0 to E6, the Morris screening, the robustness checks and figures 1 to 6. E0
+holds at the default on this code, and the reads of every experiment are in sections 15 to
+18 of `docs/design/v4-plan.md`.
 
 - Specification: `docs/design/v4-final-model.md`.
 - Decisions and departures: `docs/design/v4-choices.md`.

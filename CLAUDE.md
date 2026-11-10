@@ -90,24 +90,22 @@ The harness starts its workers by `spawn`: call it from a module or a script fil
 
 ## Where the build stands
 
-The stages are in section 13 of `docs/design/v4-plan.md`. Stages 1 to 6 are done: the model,
-the harness and the gate, the run viewer and figures 1 to 3. 405 tests pass, five of them
-only where matplotlib is installed. The model code counts 954 lines of the 1,000: a change
-that adds lines has little room. A run at the defaults takes 0.05 s.
+The nine stages of section 13 of `docs/design/v4-plan.md` are done. Stages 1 to 6 are on
+branch `v4`; stages 7 to 9 are on branch `v4-experiments`, cut from it: the cells of E4, E6,
+the reserve, the robustness checks and the fixed menu, the Morris screening, the read of E5,
+figures 4 to 6 and the robustness table, and every run. 427 tests pass, eight of them only
+where matplotlib is installed. The model code counts 954 lines of the 1,000 and has not
+changed since stage 4. A run at the defaults takes 0.05 s.
 
 `parameters.py` is frozen: a new constant is a departure to register. What the stages built
-that the plan did not say is listed at the end of its section 13.
+that the plan did not say is listed at the end of its section 13; the Morris screening is
+written with numpy, since SALib is not installed beside this tree.
 
-The runs of stage 5 are read in section 15 of the plan (commit `d58d9c0`): E0 holds at the
-default, in 50 and 49 seeds of 50, so the gate is open; on the scaled menu E0 holds at 0.10
-and at 0.05; the reruns confirm the proposal's provisional numbers, but for the accelerator
-(0.63, beyond drift by a narrow margin). `outputs/` is not versioned.
+The reads are in the plan: section 15 (E0, E0r, the reruns, the homogeneous start), 16
+(E1 to E3), 17 (E4, E5, Morris) and 18 (E6, the reserve, the robustness checks, and where
+each hypothesis stands). 150,900 runs in all, none failed. `outputs/` is not versioned: a
+rerun of an experiment with the harness gives the same files.
 
-Three points wait for the group, none of which blocks stage 7: the level of r̄ in E4
-(register, decision 29: 0.10, by the rule of decision 1); whether the homogeneous start
-should also have a public menu of D1 alone, since without draws it does not tell the bias
-from the initial menu; and the reading of the accelerator cell.
-
-Next is stage 7: E1, E2 and E3, E0's lines on the controls of E1, the two statistical
-checks, and figure 3 on those runs. Figure 3 has only been drawn on 20 seeds, to check the
-script: that drawing is not kept.
+What waits for the group is in the register, under "Open": the level of r̄ in E4 (decision
+29), the homogeneous start, the accelerator cell, private designs as a condition of the
+headline, a test of the candidate mechanism of H5, and the wording of H1.
