@@ -1043,3 +1043,127 @@ from those of the two controls.
   winning throughout, while its hurdle rises from 0.142 to 0.183.
 
 Figure 3 is drawn on these runs (`outputs/figures/fig3_bias_lambda`).
+
+**Who posts the lowest price when it is not the cost leader** (open question 6). Read on 30
+runs of the viewer in each control of E1 at the defaults, periods 20 to 199, among the
+firms with a plant in operation.
+
+| | All-unit-cost | All-profit-rate |
+| --- | --- | --- |
+| Periods in which a firm posting the lowest price has the lowest unit cost | 0.69 | 0.73 |
+| Otherwise, the price leader entered the period before | 0.59 | 0.57 |
+| Otherwise, it is 2 to 5 periods old | 0.06 | 0.07 |
+| Otherwise, it is older | 0.35 | 0.36 |
+| Its unit cost above the lowest unit cost | 0.9 % | 1.8 % |
+| The cost leader's price above the lowest price | 27 % | 16 % |
+
+- **It is the entrant, most of the time.** In three cases of five the firm posting the
+  lowest price entered the period before: it posts one cut below the lowest price, as the
+  rule says, and its plants are almost as cheap as the best.
+- **The cost leader is then a firm whose price is still high**, 16 to 27 % above the
+  lowest: a firm that holds the newest design does not post the lowest price at once.
+- **For the wording of H1**: with draws, "the lowest-cost firm sets the price" holds in
+  two periods of three; in the others the price is set by a firm whose cost is within 2 %
+  of the lowest. The report can say that the price is set at the lowest costs, not by the
+  one firm that has the lowest.
+
+## 17. The runs of stage 8
+
+Run on 10 November: E4 (28,800 runs, commit `06e2fbb`) and the Morris screening (39,000
+runs, commit `2da30de`), side by side on 10 workers in 16 minutes. No run failed; one seed
+of the screening is undecided. E5 has no run: `python3 -m experiments.e5_channels` reads E4
+and E3 into `outputs/E5/`. Figures 4, 5 and 6 are drawn on these runs.
+
+**E4: where each rule wins** (200 seeds; a share in brackets is within drift).
+
+| Price rule, investment rule | r̄ = 0.16, g = 0 | r̄ = 0.16, g = 1 % | r̄ = 0.10, g = 0 | r̄ = 0.10, g = 1 % |
+| --- | --- | --- | --- | --- |
+| *Marx-biased set* | | | | |
+| Cost-edge, retained earnings | 0.93 | 0.96 | 0.78 | 0.93 |
+| Cost-edge, accelerator | (0.59) | 0.78 | (0.54) | (0.52) |
+| Systematic, retained earnings | 0.78 | (0.55) | (0.58) | (0.56) |
+| Systematic, accelerator | 0.11 | 0.12 | 0.29 | 0.33 |
+| Universal, retained earnings | 0.21 | 0.23 | 0.34 | (0.37) |
+| Universal, accelerator | 0.12 | 0.30 | (0.32) | (0.43) |
+| *Categories rule* | | | | |
+| Cost-edge, retained earnings | 0.79 | 0.77 | (0.68) | 0.77 |
+| Cost-edge, accelerator | (0.63) | 0.77 | (0.48) | (0.55) |
+| Systematic, retained earnings | (0.57) | 0.30 | (0.43) | (0.43) |
+| Systematic, accelerator | 0.16 | 0.27 | 0.34 | (0.42) |
+| Universal, retained earnings | (0.30) | 0.34 | (0.41) | (0.37) |
+| Universal, accelerator | 0.18 | 0.35 | (0.35) | (0.48) |
+
+- **The unit-cost rule wins where a cost leader sets the price and firms grow out of
+  profits**: cost-edge cutting with retained earnings, 0.78 to 0.96 in seven cells of eight.
+- **H3 is met.** The profit-rate label wins beyond drift under universal undercutting at
+  0.16 and under systematic cutting with the accelerator (0.11 and 0.12). There the change
+  in the unit-cost label's capacity share through accumulation is −0.30 and −0.17, against
+  +0.32 at the default.
+- **The accelerator takes the headline to drift at the default** on 200 seeds (0.59); on
+  500 seeds it is 0.63, beyond drift by a narrow margin (section 15). With growth it is
+  0.78.
+- **At 0.10 most cells are within drift**: 15 of 24, against 5 of 24 at 0.16. The unit-cost
+  label still wins under cost-edge cutting with retained earnings (0.78 and 0.93).
+- **The categories rule gives the same map with smaller shares.**
+
+**E5: the channels.**
+
+- **The decompositions** (figure 5, the twelve Marx cells at 0.16). Under cost-edge cutting
+  the unit-cost label gains through the price (+0.17 to +0.24) in the four cells; under
+  universal undercutting the price moves nothing (0.00) and the label loses through
+  accumulation. Rationing moves no share anywhere.
+- **The regression of the gap in rates.** In the 9,600 mixed runs of E4, with an effect for
+  each cell, the gap in realised rates (unit-cost less profit-rate label) falls by 0.024
+  (standard error 0.003) per unit of the share of the profit-rate label's orders that are
+  not the cheapest: −0.029 at 0.16, −0.021 at 0.10, −0.069 under the Marx-biased set and
+  0.001 (0.004) under the categories rule. Where the profit-rate label orders more of the
+  dearer techniques it realises more, not less: H6 is not met here either.
+- **E3 at λ = 0 and 1** (`outputs/E5/lambda.csv`; the spread is read on 20 runs of the
+  viewer in each cell).
+
+| Cell | Share won | Dearer orders | Realised rates | Mean hurdle | Spread of hurdles across firms |
+| --- | --- | --- | --- | --- | --- |
+| Cost-edge, λ = 0 | 0.93 | 0.80 | 0.148 / 0.151 | 0.170 | 0.016 |
+| Cost-edge, λ = 1 | 0.61 | 0.73 | 0.153 / 0.159 | 0.183 | 0.001 |
+| Systematic, λ = 0 | 0.78 | 0.78 | 0.162 / 0.156 | 0.171 | 0.026 |
+| Systematic, λ = 1 | 0.12 | 0.58 | 0.158 / 0.179 | 0.174 | 0.001 |
+| Universal, λ = 0 | 0.21 | 0.74 | 0.133 / 0.135 | 0.142 | 0.001 |
+| Universal, λ = 1 | 0.13 | 0.78 | 0.132 / 0.134 | 0.183 | 0.001 |
+
+- **A candidate for the mechanism of H5: the spread of hurdles, not their mean.** At λ = 0
+  under a cutting rule the firms of the profit-rate label judge at their own prices, which
+  differ, and their hurdles differ with them (0.016 and 0.026); at λ = 1 they judge at one
+  price and have one hurdle. Under universal undercutting every firm posts the same price,
+  the hurdles do not differ at either λ, and λ moves the outcome little. This is a reading
+  of three pairs of cells, not a test: no cell varies the spread alone.
+
+**The Morris screening** (figure 6; `outputs/morris/morris.csv`). mu* is the mean absolute
+effect of moving a parameter across its range, with its 95 % interval over the 10
+trajectories; the mean of the outcome over the 130 points is in the header.
+
+| Parameter | Share won less the controls' mean (0.17) | Final capacity share (0.61) | Demand lost (0.11) | E0's lines that hold (0.67) | Gap in realised rates (−0.007) |
+| --- | --- | --- | --- | --- | --- |
+| Selection intensity χ | 0.42 (0.23–0.60) | 0.26 | 0.19 | 0.13 | 0.010 |
+| Payout d | 0.37 (0.15–0.59) | 0.21 | 0.06 | 0.11 | 0.013 |
+| Price cut c | 0.35 (0.22–0.48) | 0.21 | 0.23 | 0.18 | 0.013 |
+| Entry speed θ | 0.21 (0.11–0.31) | 0.14 | 0.08 | 0.09 | 0.009 |
+| Plant life T | 0.21 (0.11–0.31) | 0.13 | 0.04 | 0.19 | 0.012 |
+| Bias β | 0.19 (0.08–0.30) | 0.07 | 0.01 | 0.03 | 0.018 |
+| Plant size S | 0.17 (0.09–0.25) | 0.06 | 0.03 | 0.05 | 0.007 |
+| Shortage step | 0.14 (0.07–0.22) | 0.10 | 0.07 | 0.11 | 0.017 |
+| Overtime limit | 0.12 (0.08–0.16) | 0.11 | 0.15 | 0.16 | 0.020 |
+| Design step A | 0.11 (0.03–0.19) | 0.10 | 0.11 | 0.13 | 0.014 |
+| Draw probability π | 0.08 (0.04–0.12) | 0.05 | 0.02 | 0.03 | 0.002 |
+| Mutation μ | 0.04 (0.02–0.05) | 0.04 | 0.00 | 0.01 | 0.016 |
+
+- **The headline depends most on how the market selects and on what firms retain**: the
+  selection intensity, the payout ratio and the price cut. The advantage rises with χ and
+  with the cut, and falls as firms pay out more.
+- **The parameters of technical change matter less than those of competition**: the bias,
+  the design step and the draw probability rank sixth, tenth and eleventh.
+- **Over the grid the industry is often not that of E0**: on average 0.67 of E0's lines
+  hold and 11 % of demand is lost, up to 73 % at one point. The screening moves parameters
+  far from the defaults, and its effects are means over that grid.
+- **The method.** The screening is written with numpy: SALib is not installed beside this
+  tree, and no package was installed during the build. With 10 trajectories the intervals
+  are wide: the ranking of the first three and of the last two is firm, the middle is not.

@@ -75,6 +75,13 @@ class TestFigures(unittest.TestCase):
         self.assert_drawn(fig6_morris.main(self.base))
         self.assertEqual(set(fig6_morris.WORDS), set(NAMES))
 
+    def test_labels_that_fall_too_close_are_moved_apart(self):
+        from figures.fig3_bias_lambda import spread
+        heights = spread({"a": 0.61, "b": 0.13, "c": 0.12}, gap=0.07)
+        self.assertEqual((heights["c"], heights["a"]), (0.12, 0.61))
+        self.assertAlmostEqual(heights["b"], 0.19, places=12)
+        self.assertEqual(spread({"a": 0.2, "b": 0.8}, gap=0.07), {"a": 0.2, "b": 0.8})
+
     def test_the_rules_of_figure_3_have_a_colour_each(self):
         from figures import style
         self.assertEqual(set(style.RULE_COLOUR), set(style.PRICING))

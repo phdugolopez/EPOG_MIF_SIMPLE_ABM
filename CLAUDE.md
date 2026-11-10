@@ -80,6 +80,9 @@ python3 -m experiments.e0_gate outputs/E0        # does E0 hold, cell by cell; s
 python3 -m experiments.show_run --seed 7 pricing=universal population=all_unit_cost
 ../ABM-sources/.venv/bin/python -m experiments.show_run --seed 7      # with its figure
 ../ABM-sources/.venv/bin/python -m figures.fig2_typical_run 0         # outputs/figures/
+python3 -m experiments.morris --jobs 10          # outputs/morris/morris.csv; numpy alone
+python3 -m experiments.e5_channels               # outputs/E5/, after E3 and E4
+python3 -m figures.tab3_robustness               # outputs/figures/tab3_robustness.md
 ```
 
 The harness starts its workers by `spawn`: call it from a module or a script file with a

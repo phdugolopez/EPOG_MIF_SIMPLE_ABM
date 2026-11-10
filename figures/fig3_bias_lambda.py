@@ -48,6 +48,19 @@ def band(axis, cells: dict, groups: list[list[str]], x: list[float], label=None)
                       label=label)
 
 
+def spread(values: dict, gap: float) -> dict:
+    """Heights for labels set beside the values: the same, moved apart where two values
+    are closer than `gap`, so that no label sits on another."""
+    heights = {}
+    floor = None
+    # From the lowest value up, each label at least `gap` above the one below it.
+    for key in sorted(values, key=lambda key: values[key]):
+        height = values[key] if floor is None else max(values[key], floor + gap)
+        heights[key] = height
+        floor = height
+    return heights
+
+
 def main(folder: str = "outputs"):
     style.apply()
     folder = pathlib.Path(folder)
@@ -86,6 +99,7 @@ def main(folder: str = "outputs"):
     band(won, e3, [[cells[rule][i] for rule in THREE_RULES] for i in range(len(LAMBDAS))],
          list(LAMBDAS))
     won.axhline(0.5, color=style.AXIS, linewidth=0.8)
+    ends = {}
     for rule in THREE_RULES:
         rows = [e3[name, "mixed"] for name in cells[rule]]
         colour = style.RULE_COLOUR[rule]
@@ -94,9 +108,11 @@ def main(folder: str = "outputs"):
         style.dots(hurdle, LAMBDAS, column(rows, "hurdle_okishio", rbar), colour,
                    column(rows, "hurdle_okishio_low", rbar),
                    column(rows, "hurdle_okishio_high", rbar))
-        # Each curve is named at its end in the upper panel; the lower one shares its colours.
-        won.annotate(SHORT[rule], (1.0, style.number(rows[-1]["share_won"])), xytext=(7, 0),
-                     textcoords="offset points", va="center", fontsize=7, color=style.INK)
+        ends[rule] = style.number(rows[-1]["share_won"])
+    # Each curve is named at its end in the upper panel; the lower one shares its colours.
+    for rule, height in spread(ends, gap=0.07).items():
+        won.annotate(SHORT[rule], (1.0, ends[rule]), xytext=(1.06, height), va="center",
+                     fontsize=7, color=style.INK)
     won.set_title("Share won, by the weight λ of the\nprice of production")
     won.set_ylim(0.0, 1.02)
     won.tick_params(labelbottom=False)

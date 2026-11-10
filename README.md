@@ -61,6 +61,17 @@ python3 -m venv .venv
 .venv/bin/python -m figures.fig1_conflict_zone   # outputs/figures/
 .venv/bin/python -m figures.fig2_typical_run 0
 .venv/bin/python -m figures.fig3_bias_lambda     # after E2 and E3
+.venv/bin/python -m figures.fig4_heatmaps        # after E4
+.venv/bin/python -m figures.fig5_decomposition   # after E4
+.venv/bin/python -m figures.fig6_morris          # after the Morris screening
+```
+
+The Morris screening, the read of E5 and the robustness table need numpy at most:
+
+```bash
+python3 -m experiments.morris --jobs 10          # outputs/morris/morris.csv
+python3 -m experiments.e5_channels               # outputs/E5/: three tables, after E3 and E4
+python3 -m figures.tab3_robustness               # outputs/figures/tab3_robustness.md and .csv
 ```
 
 ## Layout
@@ -73,8 +84,9 @@ model/            entities.py, model.py (the industry at t = 0, one run), schedu
                   period: STEPS and close_period), outputs.py (the tally, the period table)
 run.py            one run at the defaults
 experiments/      summary.py (the run row, with the measures of E0), cells.py,
-                  populations.py, stats.py, harness.py, e0_gate.py, show_run.py (the viewer)
-figures/          style.py and one script per exhibit (figures 1 to 3 so far)
+                  populations.py, stats.py, harness.py, e0_gate.py, show_run.py (the viewer),
+                  morris.py (the screening), e5_channels.py (the reads of E5)
+figures/          style.py, figures 1 to 6 and tab3_robustness.py, one script per exhibit
 tests/            one test file per step; test_budget.py and test_readability.py
 docs/design/      the specification of version 4 and the records of versions 2 and 3
 ```

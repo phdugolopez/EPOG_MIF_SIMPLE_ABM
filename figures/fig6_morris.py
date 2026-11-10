@@ -53,7 +53,8 @@ def main(folder: str = "outputs"):
         axis.set_xlim(left=0.0)
         axis.grid(axis="y", visible=False)
     panels[0].set_yticks(places, [WORDS[parameter] for parameter in order])
-    panels[-1].legend(loc="lower right", handlelength=1.0, borderaxespad=0.2)
+    # The first panel has an empty corner below its smallest effects.
+    panels[0].legend(loc="lower right", handlelength=1.0, borderaxespad=0.2)
     figure.supxlabel("Effect of moving the parameter across its range", fontsize=8.0,
                      color=style.SECONDARY)
     return style.save(figure, "fig6_morris")

@@ -44,7 +44,7 @@ def main(folder: str = "outputs"):
                 if cell["beyond_drift"] != "True":
                     text = f"({text})"
                 axis.text(j, i, text, ha="center", va="center", fontsize=7.5, color=style.INK)
-        axis.set_title(f"Share won by the unit-cost label, {title}")
+        axis.set_title(title[0].upper() + title[1:])
         axis.set_xticks(range(len(columns)),
                         [f"r̄ = {name(rbar)}\ng = {name(g)}" for rbar, g in columns])
         axis.set_yticks(range(len(rows)),
@@ -59,6 +59,8 @@ def main(folder: str = "outputs"):
         axis.tick_params(which="minor", length=0)
         for side in axis.spines.values():
             side.set_visible(False)
+    figure.suptitle("Share of seeds won by the unit-cost label in each cell of E4", x=0.01,
+                    ha="left", fontsize=8.5)
     bar = figure.colorbar(image, ax=panels, location="bottom", shrink=0.4, aspect=30, pad=0.04)
     bar.set_label("share of seeds won by the unit-cost label; in brackets: within drift")
     bar.set_ticks([0.0, 0.25, 0.5, 0.75, 1.0])
