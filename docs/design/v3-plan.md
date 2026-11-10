@@ -25,15 +25,10 @@ technique in use), and initial cash is the depreciation already accumulated on t
   were redone on that count: 693 against a target of 700 and a limit of 770.
 - **Pilot.** Its numbers are the reference for E1 and for eight cells of E4 (section 7).
 
-**Waiting for a confirmation** (section 10; the plan uses the default of each):
-
-1. The floor against "a price never rises" (Q2).
-2. Five random numbers per firm and period, used or not (Q9).
-3. Profit after depreciation, and the base of the realised rate (Q12).
-4. The price that defines the categories (Q13).
-5. E6: demand, mutation and measure (A13 d).
-6. New: the reserve condition under the accelerator (Q17), the operating-cost test, which the idle
-   test implies in v3 (Q18, A13 l), and the pilot numbers as a reference, not a gate (Q19).
+**Still open** (section 10; the plan uses the default of each): the reserve condition under the
+accelerator (Q17), the operating-cost test, which the idle test implies in v3 (Q18, A13 l), and
+the pilot numbers as a reference, not a gate (Q19). The five points explained a second time (Q2,
+Q9, Q12, Q13, A13 d) were confirmed as proposed on 10 November.
 
 ## Conventions used below
 
@@ -58,7 +53,7 @@ technique in use), and initial cash is the depreciation already accumulated on t
 - **Random numbers.** Industry stream: `default_rng(SeedSequence(seed, spawn_key=(0,)))`. Firm
   stream: `default_rng(SeedSequence(seed, spawn_key=(1, firm.id)))`, keyed by the firm's serial
   number and not by its place in the list. Each firm takes four uniforms and one normal from its
-  stream in every period, and the industry three uniforms, used or not (Q9, to confirm).
+  stream in every period, and the industry three uniforms, used or not (Q9).
 - **Lines.** Counted without blank lines; comments and docstrings count (Q1). Target 700, limit
   770.
 
@@ -383,7 +378,7 @@ Three remarks on the ports:
 - `posted_price`: "entitled to cut" = spare capacity, and under cost-edge cutting a unit cost
   below that of at least one rival posting the lowest rival price (strict inequality, so equal
   costs give no edge). v2's second condition, own cost below the cut price, is replaced by the
-  floor: price = max(min(previous, target), floor) (Q2, to confirm). The returned `cut` is true
+  floor: price = max(min(previous, target), floor) (Q2). The returned `cut` is true
   when the firm was entitled and its price is below the lowest rival price. Two prices are "equal"
   by `math.isclose`.
 - `plants_affordable` adds 1e-9 before the floor: after T charges of δ × cost a book value can be
@@ -626,7 +621,7 @@ earnings beside the others. A reference, not a gate (Q19).
 | Entries a run | 47–140 | `entries` |
 | Plants whose reserve is released, by label | 0.74 and 0.76 at r̄ = 0.05; 0.38 and 0.40 at 0.16 | `released_shaikh`, `released_okishio` |
 
-**E6** (to confirm, A13 d). `populations.invasion(resident)` gives ten firms on D1 with 6 plants
+**E6** (A13 d). `populations.invasion(resident)` gives ten firms on D1 with 6 plants
 (120 of capacity) each, nine with the resident label and one with the other; D_0 = (340/383) ×
 1,200 = 1,065.3 and μ = 0. Direction 1: residents `"shaikh"` on the unit-cost rule, mutant
 `"okishio"` on the profit-rate rule; its control sets `rule_okishio="unit_cost"`. Direction 2 is
@@ -744,9 +739,10 @@ them. The decision is the first plan's default unless the row says otherwise.
 | j | Withdrawn reserve | Paid to the rest-of-economy account, as far as the firm's cash allows. |
 | k | Initial cash | The depreciation accumulated on the initial plants (section 3). |
 
-### Waiting for a confirmation
+### Confirmed on 10 November after a second explanation
 
-Five points Ugo asked to have explained again. Each ends with the default the plan uses.
+Five points Ugo asked to have explained again, then confirmed as proposed; each has a row in
+`v3-choices.md`. The explanations stay here for the group.
 
 **Q2. The floor against "a price never rises".** A5 states two rules that can disagree: a price
 never rises except after a shortage, and a price is never below the unit cost of the firm's best
@@ -765,7 +761,7 @@ plant in operation.
 - **Option B, the price never rises.** The firm stays at 75.5 and sells every unit below its unit
   cost. It keeps its demand, books losses, and its funds shrink: the accumulation channel
   punishes it, slowly. Nothing brings the price back above cost before the next shortage.
-- **Default: A**, price = max(min(previous, target), floor). It is what the pilot's reference
+- **Decided: A**, price = max(min(previous, target), floor). It is what the pilot's reference
   numbers were produced with, and "no price below the floor" can be asserted every period.
 
 **Q9. Random numbers: five per firm and period.** Each firm has its own stream of random numbers.
@@ -786,7 +782,7 @@ plant in operation.
 - **Who draws.** A9 says "each firm with plants": read as a firm that had a plant in operation in
   the period, even if step 4 has just removed its last one. An entrant does not draw in the
   period it enters.
-- **Default: five per firm and period, three for the industry.** The alternative is to take a
+- **Decided: five per firm and period, three for the industry.** The alternative was to take a
   number only when it is used.
 
 **Q12. Profit after depreciation, and the base of the realised rate.** The plant is paid once, in
@@ -808,7 +804,7 @@ payment is charged to the T periods in which the plant runs.
     5 %. Before depreciation it would be 15.1 % and comparable with none of them.
 - **Where "the plant is paid" does apply.** In running and scrapping a plant that exists: capital
   is sunk, so the price is compared with the operating cost ucs alone (A6, step 4).
-- **What Q12 asked** is only the denominator of the realised rate reported by label. **Default:**
+- **What Q12 asked** is only the denominator of the realised rate reported by label. **Decided:**
   profit after depreciation over the purchase cost of the plants in operation, the base of the
   hurdle and of r_new. Over the book value, the rate of an old plant would grow without bound as
   its book value goes to zero.
@@ -830,19 +826,19 @@ probability q = 0.5, "conflict", which only the unit-cost rule adopts.
   applies it", whatever λ.
 - **What depends on it.** Nothing planned: the categories rule runs only in E4, where λ = 0 and
   the two prices are the same. It matters only if categories are later crossed with λ.
-- **Default: p^e**, computed for every firm in the same way, whatever its rule.
+- **Decided: p^e**, computed for every firm in the same way, whatever its rule.
 
 **A13 d. E6: demand, mutation and measure.** E6 puts one mutant firm of one rule among nine
 residents of the other, all ten on D1 with 6 plants each (capacity 1,200).
 
 - **Demand.** The base has capacity 760 and demand 674.7, a ratio of 340/383: firms start at
-  0.888 of capacity, with room to cut prices. **Default:** the same ratio, D_0 = 1,065.3, so that
+  0.888 of capacity, with room to cut prices. **Decided:** the same ratio, D_0 = 1,065.3, so that
   E6 differs from E1 by its population only. With 674.7 firms would start at 0.56 and plants
   would be scrapped as idle within two periods; with 1,200 there would be no spare capacity and no
   price cutting at the start.
 - **Mutation.** An entrant copies the rule of an incumbent drawn by market share, and with
   probability μ = 0.02 takes the other rule. With 47 to 140 entries a run, μ = 0.02 creates one
-  to three mutants out of nothing, in the control as well. **Default:** μ = 0 in E6, so the
+  to three mutants out of nothing, in the control as well. **Decided:** μ = 0 in E6, so the
   mutant label grows only through the mutant's own growth and through entrants that copy it.
 - **Entry.** It stays as in the base, so a mutant with a larger share has more entrants copying
   it. That is selection, and the control has it too.
