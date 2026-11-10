@@ -46,6 +46,12 @@ findings.
 | 27 | Numbers at r̄ = 0.05 are marked "fixed menu", shares from the script outside the tree "100 seeds", and the rest "not run". The first runs of version 4 redo them (rows 24 to 26) | Nothing provisional is read as a result | 10 Nov | Settled in the review, accepted by Ugo |
 | 28 | The report presents as devices of the model: the scaled menu, the reserve condition, idle scrapping, the shortage step, the cap of a firm alone, the value of u_max, the weight of market share in the entrant's label. It gives the depth of the wars and the size of the cycle as the model's own, and H5 and H6 as results against Shaikh (annex A) | Asked by the literature check | 10 Nov | Settled in the review, accepted by Ugo |
 
+## Decisions of the build
+
+| # | What | Why | Date | Status |
+| --- | --- | --- | --- | --- |
+| 29 | The general rate enters E4 at 0.10, beside 0.16 | The rule of decision 1 and of section 9 of the plan: on the scaled menu E0 holds at 0.10 at the default rule, in 50 and 50 seeds of 50 (commit `d58d9c0`, plan, section 15). It holds at 0.05 too (48 and 50), but the rule takes 0.10 first; with draws the unit-cost label wins 0.80 at 0.10 and 0.59, within drift, at 0.05, where 28 % of demand is lost | 10 Nov | By the rule of decision 1; to confirm |
+
 ## Kept from v3
 
 Rows of `v3-choices.md` that hold in version 4. The others are replaced by the proposal: no
@@ -85,7 +91,8 @@ line count of 770.
 ## Open
 
 - The group confirms the decisions above.
-- After E0r: which level of r̄, if any, enters E4 (decision 1).
+- The group confirms the level of r̄ in E4 (decision 29), and says whether the homogeneous
+  start should also have a public menu of D1 alone (plan, section 15).
 - Questions for Funalot and Bassi, as in `v3-choices.md`: do references and appendices count
   in the 10 pages, how long is each presentation, is the template layout required?
 

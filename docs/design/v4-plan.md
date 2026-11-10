@@ -798,6 +798,25 @@ experiments run from 17 to 19 November, the seminar is on 20 November.
 - **If a stage runs late.** The viewer's figure (stage 6) and stages 8 and 9 move after the
   seminar. Stages 1 to 5 and E1 do not.
 
+**What stages 3 to 5 built** (10 November). 383 tests pass; the model code counts 954 lines
+of the 1,000, against 867 planned; a run at the defaults takes 0.05 s. What differs from the
+sections above, none of it a rule of the model:
+
+- **One builder, no branches.** Parts 3a to 3d were built one after the other on `v4`, in
+  the merge order 3c, 3a, 3b, 3d, one commit each.
+- **Where the 87 lines went.** `outputs.py` counts 113 lines against 78: the period table is
+  written one column a line. `parameters.py` 69 against 60, `entry_exit.py` 59 against 52,
+  the equations 236 against 205. `scheduler.py` is at 287, as planned. The margin is 46
+  lines: stages 8 and 9 add no model code.
+- **`read_quote` calls `unit_cost_floor`**, where section 12 writes `floor = cost`: the
+  equation would have been unused.
+- **Six columns more in the run row**, `e0_<line>_ok`: the verdict of each line of E0, so
+  that `e0_gate` names the weakest line from `cells.csv` alone.
+- **A cell carries its populations and its seeds** (`cells.py`): the cells of E0r and of the
+  reruns differ in both within one experiment.
+- **Speed with 30 firms.** A run with `firms_per_pair=5` takes 0.21 s: the limit of 0.2 s is
+  on the defaults.
+
 **What stages 1 and 2 built** (10 November). 130 tests pass; the model code counts 450 lines.
 Four points differ from the sections above, none of them a rule of the model:
 
@@ -846,3 +865,89 @@ Each has a proposed default, which the build follows until the question is answe
     settings. *Default: profile in stage 4 only if the limit is passed.*
 11. **The seeds of Figure 2.** *Default: seeds 0 to 2 of the default, one for each
     population; chosen for being typical on the E0 measures, not for their outcome.*
+
+## 15. The runs of stage 5
+
+Run on 10 November on commit `d58d9c0` with `python3 -m experiments.harness <name> --jobs 10`:
+E0 (400 runs, 2 s), E0r (3,200 runs, 31 s), the reruns (12,500 runs, 2 min 41 s) and the
+homogeneous start (3,600 runs, 33 s). No run failed. Each cell without draws gives the
+all-unit-cost and the all-profit-rate population, 50 seeds each, measures on periods 20 to
+199; a share won is on 500 seeds of the mixed population (200 for the homogeneous start),
+with its Wilson interval.
+
+**E0 holds at the default: the gate is open.** `python3 -m experiments.e0_gate outputs/E0`:
+
+| Rule | Seeds of 50 that pass | Capacity over demand, mean (range within a run) | Price over the price of production | Crossings | r_new; industry rate | Demand lost | Weakest line |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Cost-edge (default) | 50 / 49 | 1.08 (0.70–1.39) / 1.09 (0.70–1.43) | 0.99 / 0.99 | 24.5 / 23.5 | 0.159 / 0.158; 0.132 / 0.130 | 0.003 / 0.003 | Capacity |
+| Normal-price | 50 / 50 | 1.07 (0.71–1.34) / 1.07 (0.70–1.35) | 0.98 / 0.99 | 25.8 / 26.6 | 0.158 / 0.158; 0.133 / 0.133 | 0.003 / 0.003 | — |
+| Systematic | 0 / 0 | 0.91 (0.10–2.13) / 0.90 (0.15–2.00) | 1.11 / 1.05 | 21.4 / 24.2 | 0.245 / 0.213; 0.191 / 0.177 | 0.160 / 0.130 | Demand lost |
+| Universal undercutting | 46 / 43 | 0.93 (0.33–1.30) / 0.92 (0.29–1.31) | 0.95 / 0.96 | 21.7 / 23.1 | 0.151 / 0.152; 0.132 / 0.132 | 0.067 / 0.077 | Capacity |
+
+- **The new code gives the reference.** Every count and every mean is that of section 9 and
+  of annex D of the review. Decisions 14 and 18, on which version 4 differs from the code
+  behind the reference, move nothing that these tables show.
+
+**E0r: the scaled menu at 0.10 and at 0.05.**
+
+| r̄ | Seeds of 50 that pass E0, no draws | Capacity over demand | r_new; industry rate | Demand lost | Share won, with draws | Controls | Final capacity share | Demand lost, mixed | Designs kept, unit-cost / profit-rate label |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 0.16 (E0; 60 seeds for the share) | 50 / 49 | 1.08 / 1.09 | 0.159 / 0.158; 0.132 / 0.130 | 0.003 / 0.003 | 0.93, to rerun in E1 | — | 0.86 | 0.069 | — |
+| 0.10 | 50 / 50 | 1.01 / 1.02 | 0.108 / 0.109; 0.093 / 0.093 | 0.007 / 0.008 | 0.80 (0.76–0.83), beyond drift | 0.49 and 0.53 | 0.75 | 0.084 | 0.29 / 0.20 |
+| 0.05 | 48 / 50 | 0.96 / 0.96 | 0.065 / 0.062; 0.057 / 0.055 | 0.021 / 0.015 | 0.59 (0.55–0.63), within drift | 0.53 and 0.49 | 0.58 | 0.285 | 0.064 / 0.043 |
+
+- **Without draws the scaled menu gives a working industry at both rates.** E0 holds at
+  0.10 and at 0.05. By the rule of section 9, r̄ enters E4 at 0.10 (register, decision 29).
+- **With draws 0.10 keeps the headline and 0.05 does not.** At 0.10 the unit-cost label
+  wins 0.80. At 0.05 the contest is within drift and the mixed population loses 28 % of
+  demand: its capacity averages 0.62 of demand and its price 1.43 times the price of
+  production. The two controls lose 10 and 11 %.
+- **Technical change slows as the proposal computed.** The unit-cost label keeps 0.29 of
+  the designs it draws at 0.10 and 0.06 at 0.05.
+- **E0's lines on the controls with draws** are read outside the gate: no seed of 500
+  passes at 0.10, and 5 and 2 at 0.05. The line that fails is the price leader: the firm
+  posting the lowest price has the lowest unit cost in 0.66 and 0.70 of periods at 0.10.
+
+**The reruns**, at the default rule. E0 is the cell without draws; "—" where the plan has
+none.
+
+| Setting changed | Seeds of 50 that pass E0 | Share won | Controls | Final capacity share | Demand lost, mixed | Realised rates, unit-cost / profit-rate label | Highest price over the price of production |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Accelerator | — | 0.63 (0.58–0.67), beyond drift | 0.52 and 0.52 | 0.57 | 0.028 | 0.128 / 0.135 | 1.5 |
+| Shortage step 0.5 | 50 / 50 | 0.94 (0.91–0.95) | 0.50 and 0.47 | 0.91 | 0.072 | 0.183 / 0.172 | 3.7 |
+| Shortage step 0.5, accelerator | — | 0.78 (0.74–0.81) | 0.50 and 0.55 | 0.69 | 0.023 | 0.163 / 0.165 | 2.0 |
+| Entrant at the lowest price | 0 / 0 | 0.93 (0.90–0.95) | 0.48 and 0.48 | 0.65 | 0.011 | 0.136 / 0.139 | 1.3 |
+| No overtime | 26 / 27 | 0.77 (0.73–0.81) | 0.48 and 0.47 | 0.74 | 0.144 | 0.160 / 0.177 | 2.2 |
+| Reserve always released | 0 / 0 | 0.80 (0.76–0.83) | 0.48 and 0.50 | 0.53 | 0.000 | 0.009 / 0.009 | 0.8 |
+| Reserve never released | 50 / 33 | 0.39 (0.35–0.44), within drift | 0.52 and 0.45 | 0.41 | 0.118 | 0.241 / 0.228 | 2.4 |
+| Growth of 1 % a period | — | 0.94 (0.92–0.96) | 0.50 and 0.47 | 0.77 | 0.046 | 0.146 / 0.156 | 1.6 |
+
+- **What the proposal marked "100 seeds" stands on 500**, with one change: under the
+  accelerator the unit-cost label wins 0.63, beyond drift by a narrow margin, where 100
+  seeds gave 0.56 within drift. The lower end of its interval is 0.58 and the upper end of
+  the controls' 0.56.
+- **The sign of H6 turns with the shortage step**, as on v3: 0.148 and 0.151 at 0.25 (60
+  seeds, to rerun in E1), 0.183 and 0.172 at 0.5.
+- **Each piece is needed for E0**: the entrant at the lowest price fails it in every seed
+  (the price crosses the price of production 0.1 and 0.3 times a run), no overtime gives 26
+  and 27 seeds, the reserve always released none.
+
+**The homogeneous start**: the six cells of E2 from six firms on D1, 200 seeds.
+
+| Cell | Share won | Controls | Final capacity share | Orders of the profit-rate label that are not the cheapest |
+| --- | --- | --- | --- | --- |
+| β = 0 | 0.50 (0.43–0.57), within drift | 0.51 and 0.45 | 0.49 | 0.03 |
+| β = 0.5 | 0.86 (0.80–0.90) | 0.46 and 0.54 | 0.79 | 0.59 |
+| β = 1.5 | 0.92 (0.87–0.95) | 0.49 and 0.45 | 0.86 | 0.79 |
+| β = 3 | 0.86 (0.80–0.90) | 0.50 and 0.51 | 0.79 | 0.89 |
+| Neutral set | 0.72 (0.65–0.77), beyond drift | 0.53 and 0.46 | 0.66 | 0.38 |
+| No draws | 0.99 (0.96–1.00) | 0.50 and 0.48 | 0.95 | 1.00 |
+
+- **The homogeneous start does not remove the initial menu.** Every firm starts on D1, but
+  the public menu still holds C, D1 and D2. Without draws the unit-cost label orders D2 and
+  the profit-rate label D1 from the first period: every order of the profit-rate label is
+  dearer, and the unit-cost label wins 0.99. The cell does not tell the bias from the menu.
+- **With draws it gives the pattern of E2**: drift at β = 0, where the draws replace the
+  menu with designs on which the rules agree (0.03 of dearer orders), and 0.86 to 0.92 with
+  a bias. To separate the two, the start would also need a public menu of D1 alone: a
+  question for the group, not built.
