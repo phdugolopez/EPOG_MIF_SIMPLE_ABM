@@ -989,6 +989,43 @@ measures from period 20, means over 20 seeds (minimum and maximum are those of e
   rule, a cut without spare capacity, the monopoly cap) and about ten lines in a model that
   stands at 769 of 770.
 
+**Leader-follow with the operating-cost floor, E0** (10 November; the same analysis variant,
+`python -m experiments.price_rules leader_follow_ucs E0`, commit `5d31fec`, 100 runs, no error).
+
+- **The floor.** v2's `LEADER_FOLLOW_FLOOR = "operating_cost"`, as its documents define it: the
+  operating cost ucs of the dearest plant the firm ran last period, or of its cheapest plant
+  if none ran. On the initial menu it is 59.21 to 64.25, against a unit-cost floor of 75.0 to
+  78.0. The label-swap and firm-order tests pass under it.
+- **E0** (50 seeds; each cell gives all unit-cost / all profit-rate):
+
+| Measure | Threshold | Unit-cost floor | Operating-cost floor |
+| --- | --- | --- | --- |
+| Periods in which the price leader has the lowest unit cost | at least 0.9 | 1.00 / 1.00 | 1.00 / 1.00 |
+| Seeds with capacity at the end within 0.9–1.2 of demand | at least 45 of 50 | 10 / 13 | 13 / 13 |
+| Capacity over demand at the end, mean (range over seeds) | | 1.06 (0.15–1.90) / 1.12 (0.30–1.81) | 1.06 (0.27–1.90) / 1.12 (0.30–1.87) |
+| Price over the price of production | 0.9–1.2 | 1.15 / 1.13 | 1.15 / 1.13 |
+| Industry profit rate | 0.03–0.10 | 0.078 / 0.077 | 0.078 / 0.077 |
+| Spread of profit rates across firms | above 0 | 0.065 / 0.063 | 0.064 / 0.063 |
+| Seeds ending without capacity | 0 | 0 / 0 | 0 / 0 |
+| Share of demand lost over the run | for information | 0.140 / 0.128 | 0.141 / 0.127 |
+| Periods with lost demand, from period 20 (20 seeds) | for information | 0.40 / 0.40 | 0.40 / 0.40 |
+| Utilisation; periods with a cut; firms at the end | for information | 0.77; 0.60; 24 / 0.79; 0.60; 24 | 0.78; 0.60; 23 / 0.79; 0.60; 24 |
+| Plants leaving through the cost test | for information | none | none |
+
+- **The floor does not matter in E0.** 39 and 30 of the 50 seeds give the same run under the
+  two floors, and the others differ from period 73 and 23 at the earliest. The lowest price
+  is at the unit-cost floor in 0.1 and 0.3 % of periods under the first, and below the lowest
+  unit cost (75.0) in as many under the second, where it reaches 74.0 and 71.1 at the lowest.
+- **The shortage stops the price before the floor does.** Once new plants earn less than r̄
+  the reserves are withdrawn and capacity falls by about a tenth a period, so demand exceeds
+  capacity about six periods later, when the price is near 77: the price then rises again.
+  The lowest price of a run is 76.1 and 75.5 on average. The cycle, the lost demand and the
+  thresholds met (price, profit rate) and not met (capacity) are those of the unit-cost floor.
+- **v2's collapse does not occur.** There the operating-cost floor left 81 of 200 seeds
+  without capacity; here no seed ends without capacity.
+- **Not run.** E1 to E3 under this floor. With technical change the costs fall over time,
+  so whether the floor binds more often there is not known from E0.
+
 What makes 3a–3d independent: `pay`, `buy_plant`, `remove_plant` with the reserve rule, r_new,
 `count` and every dataclass field exist after stage 2, and `parameters.py` is frozen there (a new
 constant is a departure to register in `v3-choices.md`). Stage 4 merges in the order 3c, 3a, 3b,
