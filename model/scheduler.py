@@ -7,7 +7,7 @@ from equations.accounts_dividends import dividends
 from equations.accounts_merit_order import dispatch
 from equations.common_hurdle import evaluation_price, hurdle
 from equations.common_regulating_price import price_of_production, regulating_technique
-from equations.common_technique_choice import choose_technique, technique_cost
+from equations.common_technique_choice import choose_technique, frontier, technique_cost
 from equations.common_unit_cost import unit_cost
 from equations.demand_replicator import competitiveness, replicator_shares
 from equations.entry_exit_rule import leaving
@@ -65,6 +65,7 @@ def start_period(industry) -> None:
             for firm in industry.firms:
                 if technique in firm.known:
                     firm.known.remove(technique)
+        industry.public = frontier(industry.public, p.delta)
     reset_tally(industry)
 
 

@@ -142,7 +142,8 @@ Two remarks on the count:
 - **After stage 3** the whole model is written and counts 762 lines: above the target, inside
   the limit, after its docstrings were shortened (it stood at 784). The budgets of this section
   were about 10 % too low, mostly in `scheduler.py` (203 against 185), `outputs.py` and
-  `markets/entry_exit.py`. The speed remedy of section 9 would bring it to about 774.
+  `markets/entry_exit.py`. **After stage 4** it counts 769 lines, with the speed remedy of
+  section 9 in: any further line has to replace one.
 
 ## 2. Data structures
 
@@ -347,6 +348,7 @@ Arguments are floats, or lists of floats in firm or plant order. "v2" names the 
 | | `hurdle(rule, eval_price, menu, delta)` | h = 0 under the unit-cost rule; the best rate on the menu at p^e, never below 0, under the profit-rate rule. | v2 `hurdle.hurdle` and `best_profit_rate`, floor hard-coded |
 | `common_technique_choice.py` | `technique_cost(ucs, kappa, hurdle, delta)` | ucs + (δ + h) κ. | v2 `technique_cost`, without τ |
 | | `choose_technique(menu, hurdle, delta)` | The technique with the lowest cost at h; exact ties go to the lower κ, then the lower ucs. | v2 `choose_technique`; tie rule of `frontier_technique` |
+| | `frontier(menu, delta)` | The techniques no other beats on both unit cost and κ: at any h ≥ 0 neither rule chooses a beaten one and none sets the hurdle. `start_period` keeps the public menu on it, for speed only. | new (stage 4) |
 | `common_regulating_price.py` | `regulating_technique(techniques, delta)` | The technique in operation with the lowest unit cost; exact ties go to the lower κ. | v2 `regulating_price`, first half |
 | | `price_of_production(ucs, kappa, delta, rbar)` | uc + r̄κ. | v2 `regulating_price`, second half |
 | `setup_initial_plants.py` | `initial_ages(output, size, life)` | n = normal output / S rounded half up (at least 1) plants, of ages floor(i T / n). | new (A2, A3) |
@@ -679,8 +681,8 @@ parameter with μ* above 0.10 then gets a one-at-a-time sweep at 200 seeds.
 | `test_scrapping.py` | A plant leaves at age T; after 2 consecutive periods with the price below its ucs, and one period above resets the count; after 2 consecutive periods without output. Under `scrap_cost="unit_cost"` the price is compared with ucs + δκ. **Reserve released**: with r_new ≥ r̄, and with no plant in the window, funds rise by cost − book value and cash does not move. **Reserve withdrawn**: with r_new < r̄, funds do not move, the firm's cash falls by cost − book value and the rest of the economy gains as much; a firm with less cash pays what it has. In both cases write-offs rise by the book value. In a run without draws the initial plants retire on the dates the staggered ages give. |
 | `test_investment.py` | The three draws: at β = 0 κ is unchanged; a categories "both" design is adopted by both rules and a "conflict" design only by the unit-cost rule; a design that ties is not kept. Retained earnings buy floor(min(F, cash) / (κS)) plants. **Depreciation reserve**: a firm sells its capacity at a price equal to its unit cost, so with zero profit for T periods. With r_new ≥ r̄ it buys one plant in the period its plant retires at age T. With r_new < r̄ the reserve is paid out and it buys none. **Funds never exceed cash**: in a full run no firm spends more than min(F, cash), and under the accelerator more than its cash. Accelerator: the ceil formula, capped by cash. Lag: a plant ordered in t has no output in t and can produce in t + 1. Diffusion: a rival's menu holds a design from first_run + L and not before; never when `public_lag=None`. Streams: a firm's stream is at the same position after t periods whatever it drew (Q9). |
 | `test_entry.py` | The entry probability at r_new below, just above and far above r̄, and 0 without a plant in the window. r_new weights by capacity and ignores plants older than the window. Inheritance: μ = 0 gives the parent's label, μ = 1 the other. An entrant chooses on the public menu only, not among an incumbent's private designs; it is paid for by equity, so all cash still sums to 0; its plants arrive next period; its share and the incumbents' follow A10; its price is the lowest posted. Exit below 1 % or without capacity, cash to the rest of the economy, survivors' shares sum to 1; never fewer than 2 firms; tied candidates stay or leave together. |
-| `test_neutrality.py` | **Label swap**: in each of the three populations, swapping the labels of all initial firms and the two fields `rule_shaikh`, `rule_okishio` leaves every firm on its rule; every firm's trajectory is then identical and the period table is the same with the two labels exchanged (Q4). **Symmetric controls**: in a control, swapping the labels alone gives the mirror image, and reversing `industry.firms` at the start changes nothing in any population, so a firm's draws do not depend on its place. **Label reads**: the attribute `label` is read only in `entities.py`, `model.py`, `markets/entry_exit.py`, `equations/entry_inherited_rule.py` and `outputs.py` (a search of the source). |
-| `test_model.py` | **Reproducibility**: the same seed gives the same period table, another seed a different one. A 200-period run at the defaults ends with capacity, and `check` holds every period. The capacity terms sum to the change in the capacity share and the sales terms to the change in the sales share (residuals below 1e-9). |
+| `test_neutrality.py` | **Label swap**: in each of the three populations, swapping the labels of all initial firms and the two fields `rule_shaikh`, `rule_okishio` leaves every firm on its rule; every firm's trajectory is then identical and the period table is the same with the two labels exchanged (Q4). **Symmetric controls**: in a control, swapping the labels alone gives the mirror image, and reversing `industry.firms` at the start changes nothing in any population, so a firm's draws do not depend on its place. **Label reads**: the attribute `label` is read only in `entities.py`, `model.py`, `markets/entry_exit.py`, `equations/entry_inherited_rule.py` and `outputs.py`; a rule is read only to look up the hurdle, and a serial number only to draw a parent and to name a design (a search of the source). |
+| `test_model.py` | **Reproducibility**: the same seed gives the same period table, another seed a different one. A 200-period run at the defaults ends with capacity, and `check` holds every period. The capacity terms sum to the change in the capacity share and the sales terms to the change in the sales share (residuals below 1e-9). Every switch runs 120 periods through `check`. Without `frontier` the period table is the same. |
 | `test_budget.py` | `parameters.py`, `run.py`, `equations/`, `markets/` and `model/` hold at most 770 lines that are not blank; the count is printed. |
 | `test_experiments.py` | `wilson(81, 100)` = (0.722, 0.875), and NaN for n = 0. `beyond_drift` on overlapping and disjoint intervals. `takeover` on three hand-made series. **Ties**: capacity shares of 0.6, 0.4 and 0.5 give win, loss and tie, and 3 wins, 1 loss and 2 ties give a share won of 0.75. Two cells × three populations × four seeds give the same `runs.csv` with 1 and 2 workers, in seed order; a run stopped after the first cell and resumed gives the same file. |
 
@@ -708,9 +710,8 @@ touches only its own files and the body of its own step functions in `scheduler.
 | 6 E4, E5, Morris | E4 cells, read beside the pilot; `e5_channels.py`, `morris.py`; `fig4` to `fig6`. | Jake (E4), Ugo (Morris) | 4 h | 21–23 Nov |
 | 7 E6, robustness | `populations.py`, the E6 and robustness cells, `tab3_robustness.py`. | Pierre-Loup (E6), Vincent (robustness) | 3 h | 24–25 Nov |
 
-**Built so far:** stages 1, 2 and 3a to 3d, all in one tree, so the four parts are already
-merged. Stage 4 is left with `test_neutrality`, the rest of `test_model`, the profile and the
-read of E0.
+**Built so far:** stages 1 to 4. The four parts of stage 3 were written in one tree, so
+stage 4 had no merge to do. Next is stage 5, the harness; the read of E0 below comes first.
 
 **First read after stage 3** (20 seeds a cell, 10 November; a look, not a result):
 
@@ -740,6 +741,39 @@ read of E0.
 - **Speed.** 0.12 s a run at the defaults against the target of 0.11: the public menu holds
   about 140 techniques at the end.
 
+**Stage 4** (10 November).
+
+- **Neutrality.** With the labels swapped and every firm on its rule, trajectories are identical
+  and the period table is its mirror image, over 200 periods in the three populations and over
+  80 periods in a second cell (systematic cutting, accelerator, categories, r̄ = 0.16, growth).
+  Reversing the list of firms changes nothing. The source reads a label only at entry and in
+  the outputs, a rule only to look up the hurdle, and a serial number only to draw a parent and
+  to name a design.
+- **Speed.** With `frontier`, a run at the defaults takes 0.087 s, the controls 0.09–0.10 s and
+  the categories rule 0.11 s; 30 initial firms take 0.22 s. Under the Marx-biased set most
+  designs are on the frontier, so the public menu still holds 50 to 90 techniques at the end.
+- **E0 on 20 seeds** (no technical change, single-rule populations), against the thresholds of
+  section 7:
+
+| Measure | Threshold | All unit-cost | All profit-rate |
+| --- | --- | --- | --- |
+| Periods in which the price leader has the lowest unit cost | at least 0.9 | 1.00 | 1.00 |
+| Seeds with capacity at the end within 0.9–1.2 of demand | at least 18 of 20 | 0 (mean 1.58) | 0 (mean 2.52) |
+| Price over the price of production | 0.9–1.2 | 1.16 | 1.41 |
+| Industry profit rate | 0.03–0.10 | 0.044 | 0.077 |
+| Spread of profit rates across firms | above 0 | 0.12 | 0.19 |
+| Seeds ending without capacity | 0 | 0 | 0 |
+| Firms at the end; entries; utilisation; periods with a cut | for information | 43; 136; 0.62; 0.01 | 70; 180; 0.47; 0.09 |
+
+- **E0 is not met**: on capacity in both populations, and on the price in one. Without
+  technical change every firm ends on the same technique, so no firm has a cost edge and almost
+  no period has a cut. Entry, not the price, absorbs the profit above r̄, and it does so through
+  idle capacity.
+- **Plants leaving by reason (Q18).** At the defaults 54 % leave by age and 46 % idle; none
+  leaves through the cost test. Under `scrap_cost="unit_cost"` the 20 runs are identical to the
+  defaults: that test never binds either, so the robustness check on scrapping would show no
+  difference as things stand.
+
 What makes 3a–3d independent: `pay`, `buy_plant`, `remove_plant` with the reserve rule, r_new,
 `count` and every dataclass field exist after stage 2, and `parameters.py` is frozen there (a new
 constant is a departure to register in `v3-choices.md`). Stage 4 merges in the order 3c, 3a, 3b,
@@ -748,10 +782,10 @@ constant is a departure to register in `v3-choices.md`). Stage 4 merges in the o
 **Speed.** The target is 0.11 s for 200 periods on one core. Two costs grow during a run: the
 menu, scanned by `hurdle` and `choose_technique` for every firm every period, and the number of
 firms, since pricing compares each firm with every rival (the pilot had 47 to 140 entries a run).
-If the stage 4 profile is over the target, the first remedy is exact: drop from the public menu
-every technique that another one beats on both unit cost and κ, since neither rule chooses it at
-any h ≥ 0 and it never sets the hurdle. It costs about 12 lines and brings the count to 705,
-inside the limit.
+The stage 4 profile was over the target (0.127 s, 58 % of it in the scan of the menu), so the
+remedy is in: `frontier` drops from the public menu every technique that another one beats on
+both unit cost and κ, since neither rule chooses it at any h ≥ 0 and it never sets the hurdle.
+It costs 7 lines, and a test checks that the period table is the same without it.
 
 ## 10. Open questions
 

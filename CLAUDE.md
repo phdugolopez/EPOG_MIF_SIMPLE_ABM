@@ -52,16 +52,16 @@ python run.py                            # one run at the defaults -> outputs/pe
 
 ## Where the build stands
 
-The stages are in section 9 of `docs/design/v3-plan.md`. Stages 1, 2 and 3a to 3d are done: the
-whole model is written, in one tree, and every test passes (`python -m unittest discover -s
-tests`). The model code counts 762 lines without blank lines, against a limit of 770: a change
-that adds lines has to remove some.
+The stages are in section 9 of `docs/design/v3-plan.md`. Stages 1 to 4 are done: the whole model
+is written and every test passes (`python -m unittest discover -s tests`), the label-swap and
+firm-order tests included. A run at the defaults takes 0.09 s. The model code counts 769 lines
+without blank lines, against a limit of 770: a change that adds a line has to remove one.
+`parameters.py` is frozen: a new constant is a departure to register.
 
-Next is stage 4: `tests/test_neutrality.py`, the rest of `tests/test_model.py`, the profile
-against 0.11 s a run (0.12 s now) and the read of E0. `parameters.py` is frozen: a new constant
-is a departure to register.
+Next is stage 5: `experiments/stats.py`, `cells.py`, `harness.py`, then E0 to E3.
 
-Known after stage 3 (plan, section 9, "First read after stage 3"): at the defaults the industry
-cycles between a deep shortage and a long overcapacity, far from the pilot's levels. The rules
-are those of the specification. Do not tune a rule to remove the cycle without a decision
-recorded in `docs/design/v3-choices.md`.
+Known after stage 4 (plan, section 9, "First read after stage 3" and "Stage 4"): E0 is not met.
+At the defaults the industry cycles between a deep shortage and a long overcapacity, and
+without technical change capacity ends at 1.6 to 2.5 times demand. The rules are those of the
+specification. Do not tune a rule to remove this without a decision recorded in
+`docs/design/v3-choices.md`, and do not read E1 to E6 as results before the group has decided.

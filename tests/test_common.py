@@ -5,7 +5,7 @@ import unittest
 from equations.common_hurdle import evaluation_price, hurdle
 from equations.common_profit_rate import profit_rate_at_price
 from equations.common_regulating_price import price_of_production, regulating_technique
-from equations.common_technique_choice import choose_technique, technique_cost
+from equations.common_technique_choice import choose_technique, frontier, technique_cost
 from equations.common_unit_cost import unit_cost
 from helpers import menu
 from model.entities import Technique
@@ -128,6 +128,35 @@ class TestTechniqueChoice(unittest.TestCase):
         self.assertIs(choose_technique([light, heavy], 0.0, 0.25), light)
         self.assertIs(choose_technique([heavy, light], 0.0, 0.25), light)
         self.assertIs(regulating_technique([heavy, light], 0.25), light)
+
+
+class TestFrontier(unittest.TestCase):
+    def setUp(self):
+        self.menu = menu() + [
+            Technique("dearer and heavier than D1", 62.0, 150.0),      # unit cost 77.0
+            Technique("cheaper and heavier than D2", 55.0, 170.0),     # unit cost 72.0
+            Technique("as cheap as C and heavier", 64.0, 140.0),       # unit cost 78.0
+        ]
+
+    def test_a_technique_beaten_on_unit_cost_and_capital_is_dropped(self):
+        kept = [t.name for t in frontier(self.menu, DELTA)]
+        self.assertEqual(kept, ["C", "D1", "D2", "cheaper and heavier than D2"])
+
+    def test_the_three_techniques_of_the_menu_are_on_the_frontier(self):
+        self.assertEqual(len(frontier(menu(), DELTA)), 3)
+
+    def test_identical_techniques_do_not_beat_each_other(self):
+        twins = [Technique("a", 60.0, 150.0), Technique("b", 60.0, 150.0)]
+        self.assertEqual(frontier(twins, DELTA), twins)
+
+    def test_dropping_beaten_techniques_changes_no_choice_and_no_hurdle(self):
+        pruned = frontier(self.menu, DELTA)
+        for price in (60.0, 74.0, 80.0, 85.0, 100.0, 150.0, 400.0):
+            h = hurdle("profit_rate", price, self.menu, DELTA)
+            self.assertEqual(h, hurdle("profit_rate", price, pruned, DELTA))
+            for rate in (0.0, h, 0.05, 0.5):
+                self.assertIs(choose_technique(self.menu, rate, DELTA),
+                              choose_technique(pruned, rate, DELTA))
 
 
 if __name__ == "__main__":

@@ -1,11 +1,19 @@
-"""The whole loop. Stage 2 tests the skeleton, in which the six steps are stubs: nothing random
-happens yet, so "another seed, another table" comes with stage 4."""
+"""The whole loop: reproducibility, the checks of every period, and the two decompositions of
+the run row."""
 import unittest
+from dataclasses import replace
+from unittest import mock
 
+from experiments.summary import run_row
 from helpers import cash_total, industry
 from model.model import run
 from model.scheduler import check, period
 from parameters import Parameters
+
+CELLS = ({}, {"rule_okishio": "unit_cost"}, {"rule_shaikh": "profit_rate"},
+         {"pricing": "systematic", "investment": "accelerator", "rbar": 0.16, "growth": 0.01},
+         {"tech_change": "categories"}, {"tech_change": "neutral"}, {"tech_change": "none"},
+         {"scrap_cost": "unit_cost"}, {"public_lag": None}, {"lam": 1.0}, {"firms_per_pair": 2})
 
 
 class TestLoop(unittest.TestCase):
@@ -16,8 +24,40 @@ class TestLoop(unittest.TestCase):
         self.assertEqual([row["t"] for row in ind.rows[:4]], [0, 0, 1, 1])
         self.assertEqual([row["label"] for row in ind.rows[:2]], ["shaikh", "okishio"])
 
-    def test_same_seed_same_table(self):
+    def test_same_seed_same_table_another_seed_another_table(self):
         self.assertEqual(run(seed=3).rows, run(seed=3).rows)
+        self.assertNotEqual(run(seed=3).rows, run(seed=4).rows)
+
+    def test_a_run_at_the_defaults_ends_with_capacity(self):
+        for seed in range(3):
+            industry = run(seed=seed)
+            row = run_row(industry.rows, industry.params, seed)
+            self.assertGreater(row["capacity_end"], 0.0)
+            self.assertIn(row["outcome"], ("win", "loss", "tie"))
+
+    def test_every_switch_runs_and_passes_the_checks_of_every_period(self):
+        for overrides in CELLS:
+            with self.subTest(overrides=overrides):
+                params = replace(Parameters(), periods=120, **overrides)
+                self.assertEqual(len(run(params, seed=1).rows), 240)
+
+    def test_the_terms_of_the_two_decompositions_sum_to_the_change_in_the_share(self):
+        """Capacity share: ordered, retired, entry, exit. Sales share: price, entry and exit,
+        rationing. Both residuals are zero up to rounding."""
+        for overrides in CELLS[:5]:
+            for seed in (0, 1):
+                params = replace(Parameters(), **overrides)
+                row = run_row(run(params, seed).rows, params, seed)
+                self.assertLess(abs(row["dk_resid"]), 1e-9, (overrides, seed))
+                self.assertLess(abs(row["ds_resid"]), 1e-9, (overrides, seed))
+
+    def test_dropping_beaten_techniques_from_the_public_menu_changes_no_run(self):
+        """The pruning of start_period is for speed only: without it the table is the same."""
+        for overrides in CELLS[:6]:
+            params = replace(Parameters(), periods=150, **overrides)
+            pruned = run(params, seed=5).rows
+            with mock.patch("model.scheduler.frontier", lambda menu, delta: menu):
+                self.assertEqual(run(params, seed=5).rows, pruned, overrides)
 
     def test_every_row_has_the_same_columns(self):
         rows = run().rows

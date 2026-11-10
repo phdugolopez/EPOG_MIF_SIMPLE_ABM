@@ -31,6 +31,16 @@ def growth(rows: list[dict], key: str) -> float | None:
     return log(x1 / x0) / (t1 - t0)
 
 
+def outcome(share: float | None) -> str:
+    """The run for the unit-cost label (A11): undecided without capacity at the end, a tie at
+    exactly one half, else a win or a loss."""
+    if share is None:
+        return "undecided"
+    if isclose(share, 0.5):
+        return "tie"
+    return "win" if share > 0.5 else "loss"
+
+
 def takeover(shares: list[float | None]) -> tuple[int | None, str | None]:
     """First period after which one label holds more than 0.9 of capacity in every remaining
     period (v2 `takeover`). shares: the capacity share of U by period, the end included."""
@@ -74,12 +84,6 @@ def run_row(rows: list[dict], params, seed: int) -> dict:
     u, o = [r for r in rows if r["label"] == U], [r for r in rows if r["label"] == O]
     k_end = u[-1]["capacity_next"] + o[-1]["capacity_next"]
     share_end = ratio(u[-1]["capacity_next"], k_end)
-    if share_end is None:
-        outcome = "undecided"
-    elif isclose(share_end, 0.5):
-        outcome = "tie"
-    else:
-        outcome = "win" if share_end > 0.5 else "loss"
     shares = [ratio(a["capacity"], a["capacity"] + b["capacity"]) for a, b in zip(u, o)]
     takeover_t, takeover_label = takeover(shares + [share_end])
     dk, ds = capacity_terms(u, o), sales_terms(u)
@@ -90,7 +94,7 @@ def run_row(rows: list[dict], params, seed: int) -> dict:
                                a["capacity"] + b["capacity"]) for key in ("ucs", "kappa")}}
                 for a, b in zip(u, o)]
     row = {
-        "seed": seed, "outcome": outcome, "cap_share_end": share_end,
+        "seed": seed, "outcome": outcome(share_end), "cap_share_end": share_end,
         "sales_share_end": u[-1]["sales_share"],
         "takeover_t": takeover_t, "takeover_label": takeover_label,
         "dk_ordered": dk["ordered"], "dk_retired": dk["retired"], "dk_entry": dk["entry"],

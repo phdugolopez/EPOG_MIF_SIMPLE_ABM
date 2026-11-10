@@ -6,9 +6,10 @@ cost (Shaikh) compete with firms that choose by the highest profit rate at an ev
 [pierrefunalot/EPOG_MIF_SIMPLE_ABM](https://github.com/pierrefunalot/EPOG_MIF_SIMPLE_ABM).
 
 Version 3 is a rebuild from a clean tree of about 700 lines, which keeps only what moved the
-results of version 2. It is being built in stages; **stages 1 to 3 are done**: the whole model
-is written and runs. Stage 4 (neutrality tests, profile, the check of the industry without
-technical change) comes before any experiment is read.
+results of version 2. It is being built in stages; **stages 1 to 4 are done**: the whole model
+is written, runs and passes its neutrality tests. The check of the industry without technical
+change (E0) is not met yet, so no experiment is to be read as a result (see
+`docs/design/v3-plan.md`, section 9).
 
 - Specification: `docs/design/final-model-proposal.md` and the addendum in
   `docs/design/v3-planning-prompt.md`.
