@@ -18,9 +18,8 @@ def buy_plant(industry, firm, technique, cause: str) -> None:
 
 
 def remove_plant(industry, firm, plant, reason: str) -> None:
-    """The plant leaves (reason: "age", "cost" or "idle"). Its reserve, cost - book value, joins
-    the funds if reserve_released; else the firm pays it to the rest of the economy, as far as
-    its cash allows (A7, A13 j). The book value is written off."""
+    """The plant leaves ("age", "cost" or "idle"). Its reserve, cost - book value, joins the
+    funds if reserve_released, else is paid out as far as cash allows; the rest is written off."""
     firm.plants.remove(plant)
     reserve = plant.cost - plant.book_value
     if reserve_released(industry.r_new, industry.params.rbar):

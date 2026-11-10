@@ -11,9 +11,8 @@ from parameters import Parameters
 
 
 def build(params: Parameters, seed: int) -> Industry:
-    """Initial population: firms_per_pair firms for each (technique, label) of params.start,
-    with plants of staggered ages, cash equal to the depreciation accumulated on them, shares
-    equal to capacity shares and demand at demand_ratio x capacity. All cash sums to zero."""
+    """Initial population (A2, A3): plants of staggered ages, cash equal to the depreciation
+    accumulated on them, shares by capacity, demand at demand_ratio x capacity."""
     p = params
     stream = np.random.default_rng(np.random.SeedSequence(seed, spawn_key=(0,)))
     industry = Industry(p, seed, stream, demand_0=0.0)

@@ -1,5 +1,4 @@
-"""Entities: technique, plant, firm, the rest-of-economy account and the industry.
-State keeps v2's names. Objects are compared by identity (eq=False)."""
+"""Entities, with v2's names for state. Objects are compared by identity (eq=False)."""
 from dataclasses import dataclass, field
 from math import fsum
 
@@ -86,8 +85,7 @@ class Industry:
 
 
 def new_firm(industry: Industry, label: str, price: float, share: float) -> Firm:
-    """A firm joins the industry with the rule of its label and its own random stream, keyed
-    by its serial number and not by its place in the list."""
+    """A firm joins with the rule of its label and a stream keyed by its serial number."""
     key = np.random.SeedSequence(industry.seed, spawn_key=(1, industry.next_id))
     rule = getattr(industry.params, "rule_" + label)
     firm = Firm(industry.next_id, label, rule, np.random.default_rng(key), industry.time, price, share)

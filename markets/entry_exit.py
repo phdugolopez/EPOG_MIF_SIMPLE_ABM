@@ -28,10 +28,9 @@ def rescale_shares(firms: list) -> None:
 
 
 def create_entrant(industry, u_parent: float, u_flip: float):
-    """One entrant: label inherited from an incumbent drawn by share, price = the lowest price
-    posted, technique chosen by its own rule on the public menu at that price (A8, A13 a),
-    plants paid by equity from the rest of the economy and delivered next period, share = its
-    capacity over next period's capacity; the incumbents' shares are scaled down."""
+    """One entrant: label inherited by share, price = the lowest posted, technique by its own
+    rule on the public menu at that price, plants paid by equity and delivered next period,
+    share = its capacity over next period's capacity; the incumbents' shares are scaled down."""
     p = industry.params
     incumbents = sorted(industry.firms, key=lambda firm: firm.id)
     label = inherited_label([firm.label for firm in incumbents],

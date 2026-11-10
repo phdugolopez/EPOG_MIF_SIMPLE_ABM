@@ -1,6 +1,5 @@
-"""The period table: one row per period and label, kept in industry.rows (plan, section 6).
-It observes and never decides: it draws no random number and writes nothing a rule reads.
-A value that is not defined (a label without firms, capacity or sales) is None."""
+"""The period table: one row per period and label, in industry.rows. It observes and never
+decides: it draws no random number and writes nothing a rule reads. Undefined values are None."""
 from math import fsum, isclose
 
 from equations.common_unit_cost import unit_cost
@@ -35,8 +34,7 @@ def mean(values: list[float], weights: list[float]) -> float | None:
 
 
 def record_production(industry) -> None:
-    """The two rows of period t, written at the end of step 3: before any plant or firm leaves.
-    The last columns describe the industry and are the same on both rows."""
+    """The two rows of t, at the end of step 3; the industry columns are the same on both."""
     p, firms = industry.params, industry.firms
     active = [firm for firm in firms if firm.plants]
     best = [min(unit_cost(q.technique.ucs, q.technique.kappa, p.delta) for q in firm.plants)
@@ -80,8 +78,7 @@ def record_production(industry) -> None:
 
 
 def record_end(industry) -> None:
-    """Completes the two rows of t after step 6: the flows of the tally, next period's capacity
-    and the stocks of the label's firms at the end of the period."""
+    """After step 6: the flows of the tally, next period's capacity and the closing stocks."""
     for row in industry.rows[-len(LABELS):]:
         group = [firm for firm in industry.firms if firm.label == row["label"]]
         row.update(flows(industry, row["label"]))

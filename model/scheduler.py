@@ -5,12 +5,19 @@ from math import fsum
 from equations.accounts_depreciation import depreciation
 from equations.accounts_dividends import dividends
 from equations.accounts_merit_order import dispatch
+from equations.common_hurdle import evaluation_price, hurdle
 from equations.common_regulating_price import price_of_production, regulating_technique
+from equations.common_technique_choice import choose_technique, technique_cost
 from equations.common_unit_cost import unit_cost
 from equations.demand_replicator import competitiveness, replicator_shares
 from equations.entry_exit_rule import leaving
 from equations.entry_new_plant_rate import new_plant_rate
 from equations.entry_probability import entry_probability
+from equations.investment_accelerator import plants_wanted
+from equations.investment_draw_categories import draw_categories
+from equations.investment_draw_marx import draw_marx
+from equations.investment_draw_neutral import draw_neutral
+from equations.investment_retained_earnings import plants_affordable
 from equations.pricing_floor import price_floor
 from equations.pricing_rule import posted_price
 from equations.scrapping_below_cost import periods_below_cost, scrap_cost
@@ -19,7 +26,8 @@ from equations.scrapping_retirement import retirement_reason
 from markets.entry_exit import create_entrant, remove_firm, rescale_shares
 from markets.goods_market import allocate
 from markets.payments import pay
-from markets.plant_market import remove_plant
+from markets.plant_market import buy_plant, remove_plant
+from model.entities import Technique
 from model.outputs import count, record_end, record_production, reset_tally
 from parameters import LABELS
 
@@ -76,10 +84,9 @@ def set_prices(industry) -> None:
 
 
 def allocate_demand(industry) -> None:
-    """Step 2, demand (A6). The notional shares follow the replicator on E = 1 / p. A firm
-    offers the capacity of its plants whose operating cost is at most its price, and sells
-    its notional demand up to that; unserved demand is re-allocated once, the rest is lost.
-    excess, the share of demand above total normal capacity, is next period's shortage."""
+    """Step 2, demand (A6). Notional shares follow the replicator on E = 1 / p. A firm offers
+    its plants whose operating cost is at most its price and sells its notional demand up to
+    that; the rest is re-allocated once, then lost. excess is next period's shortage signal."""
     p, firms = industry.params, industry.firms
     shares = replicator_shares([firm.share for firm in firms],
                                [competitiveness(firm.price) for firm in firms], p.chi)
@@ -93,11 +100,9 @@ def allocate_demand(industry) -> None:
 
 
 def produce_and_account(industry) -> None:
-    """Step 3, production and accounts. Plants run cheapest first, then youngest, up to the
-    firm's sales; every plant in operation ages and depreciates. The firm is paid its sales
-    and pays its operating costs and dividends; profit is after depreciation, and retained
-    profit joins the funds. Then the regulating price (A8) and r_new (A7, A10) are set, once a
-    period and before any plant leaves, the same for every firm."""
+    """Step 3, production and accounts. Plants run cheapest first, then youngest; every plant
+    in operation ages and depreciates; profit is after depreciation and retained profit joins
+    the funds. Then the regulating price (A8) and r_new (A7, A10) are set, once a period."""
     p = industry.params
     for firm in industry.firms:
         plants = firm.plants
@@ -131,8 +136,7 @@ def produce_and_account(industry) -> None:
 
 def scrap_plants(industry) -> None:
     """Step 4, scrapping. A plant leaves at age T, after scrap_periods consecutive periods with
-    its owner's price below its scrap cost, or after as many periods without output. Its
-    reserve is released or withdrawn by remove_plant, on the r_new of step 3."""
+    its owner's price below its scrap cost, or after as many periods without output."""
     p = industry.params
     for firm in industry.firms:
         for plant in list(firm.plants):
@@ -146,17 +150,52 @@ def scrap_plants(industry) -> None:
 
 
 def invest(industry) -> None:
-    """Step 5, technical change and investment (A7 to A9). Reads prices, reg_price, the public
-    menu, firm.known, funds, cash, notional demand and capacity, and the firm's stream; writes
-    firm.hurdle and firm.known, and calls buy_plant for each plant ordered.
-    Stub of stage 2: no design is drawn and no plant is ordered (stage 3d)."""
+    """Step 5, technical change and investment (A7 to A9). Every firm takes four uniforms and
+    one normal, used or not (Q9), and judges techniques at p^e. An active firm draws a design
+    with probability pi from its best technique and keeps it if its rule prefers it. It then
+    orders plants of its best technique: those its funds, still in cash, pay for, or those
+    its notional demand over u* lacks, as far as cash pays."""
+    p = industry.params
+    for firm in industry.firms:
+        u, z = firm.rng.random(4), firm.rng.standard_normal()
+        menu = industry.public + firm.known
+        eval_price = evaluation_price(firm.price, industry.reg_price, p.lam)
+        firm.hurdle = hurdle(firm.rule, eval_price, menu, p.delta)
+        best = choose_technique(menu, firm.hurdle, p.delta)
+        if firm.active and p.tech_change != "none" and u[0] < p.draw_prob:
+            if p.tech_change == "marx":
+                design = draw_marx(best.ucs, best.kappa, 1.0 - u[1], z, p.design_step, p.bias,
+                                   p.bias_spread)
+            elif p.tech_change == "neutral":
+                design = draw_neutral(best.ucs, best.kappa, 1.0 - u[1], u[2], p.design_step)
+            else:
+                design = draw_categories(best.ucs, best.kappa, p.delta, eval_price, u[2],
+                                         1.0 - u[1], u[3], p.design_step, p.conflict_share)
+            count(industry, firm, "drawn", 1)
+            if (technique_cost(*design, firm.hurdle, p.delta)
+                    < technique_cost(best.ucs, best.kappa, firm.hurdle, p.delta)):
+                best = Technique(f"{firm.id}.{industry.time}", *design)
+                firm.known.append(best)
+                menu.append(best)
+                firm.hurdle = hurdle(firm.rule, eval_price, menu, p.delta)
+                count(industry, firm, "kept", 1)
+        cost = best.kappa * p.plant_size
+        if p.investment == "retained":
+            plants = plants_affordable(min(firm.funds, firm.cash), cost)
+        else:
+            on_order = fsum(q.capacity for q in firm.pending_plants)
+            plants = min(plants_wanted(firm.notional, p.u_target, firm.capacity, on_order,
+                                       p.plant_size), plants_affordable(firm.cash, cost))
+        for _ in range(plants):
+            buy_plant(industry, firm, best, "ordered")
+        if plants and best is not choose_technique(menu, 0.0, p.delta):
+            count(industry, firm, "orders_dearer", plants)
 
 
 def enter_and_exit(industry) -> None:
-    """Step 6, entry and exit (A10). A firm leaves when its share is below exit_share or it has
-    no capacity left, in operation or on order, while min_firms remain. Then at most one
-    entrant joins the survivors, with the probability the r_new of step 3 gives. The industry
-    takes three uniforms a period, used or not (Q9)."""
+    """Step 6, entry and exit (A10). A firm leaves below exit_share or without capacity, in
+    operation or on order, while min_firms remain; then at most one entrant joins the
+    survivors. The industry takes three uniforms a period, used or not (Q9)."""
     p, firms = industry.params, industry.firms
     u_entry, u_parent, u_flip = industry.rng.random(3)
     capacities = [fsum(q.capacity for q in firm.plants + firm.pending_plants) for firm in firms]
@@ -170,9 +209,8 @@ def enter_and_exit(industry) -> None:
 
 
 def check(industry) -> None:
-    """Asserted every period: money is conserved, no firm's cash is negative, shares sum to 1,
-    and next period's capacity is this period's less retirements and exits plus orders and
-    entry."""
+    """Asserted every period: money is conserved, no cash is negative, shares sum to 1, and
+    next period's capacity is this period's less retirements and exits plus orders and entry."""
     t, firms = industry.time, industry.firms
     cash = industry.roe.cash + fsum(firm.cash for firm in firms)
     assert abs(cash) < 1e-6 + 1e-9 * abs(industry.roe.cash), f"t={t}: all cash sums to {cash}"
