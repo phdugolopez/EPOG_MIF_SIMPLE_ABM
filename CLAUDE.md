@@ -73,24 +73,38 @@ The model code is `parameters.py`, `run.py`, `equations/`, `markets/` and `model
 ## Commands
 
 ```bash
-python3 -m unittest discover -s tests     # every test; test_budget prints the line count
-python3 run.py                            # one run at the defaults -> outputs/periods.csv
-python3 run.py 7                          # another seed
+python3 -m unittest discover -s tests            # every test; test_budget prints the line count
+python3 run.py 7                                 # one run -> outputs/periods.csv, run.csv
+python3 -m experiments.harness E0 --jobs 10      # outputs/E0/runs.csv, cells.csv; --resume
+python3 -m experiments.e0_gate outputs/E0        # does E0 hold, cell by cell; status 1 if not
+python3 -m experiments.show_run --seed 7 pricing=universal population=all_unit_cost
+../ABM-sources/.venv/bin/python -m experiments.show_run --seed 7      # with its figure
+../ABM-sources/.venv/bin/python -m figures.fig2_typical_run 0         # outputs/figures/
 ```
+
+The harness starts its workers by `spawn`: call it from a module or a script file with a
+`__main__` guard, never from a script on standard input, which the workers cannot import.
 
 ## Where the build stands
 
-The stages are in section 13 of `docs/design/v4-plan.md`. Stages 1 to 4 are done: the whole
-model is written and every test passes (343 tests), the label swap and the firm order under
-each of the 4 × 2 price and investment rules included. The model code counts 954 lines of the
-1,000: a change that adds lines has little room. A run at the defaults takes 0.05 s.
+The stages are in section 13 of `docs/design/v4-plan.md`. Stages 1 to 6 are done: the model,
+the harness and the gate, the run viewer and figures 1 to 3. 405 tests pass, five of them
+only where matplotlib is installed. The model code counts 954 lines of the 1,000: a change
+that adds lines has little room. A run at the defaults takes 0.05 s.
 
 `parameters.py` is frozen: a new constant is a departure to register. What the stages built
 that the plan did not say is listed at the end of its section 13.
 
-Parts 3a to 3d were built one after the other on `v4`, in the plan's merge order (3c, 3a,
-3b, 3d), one commit each, not on four branches.
+The runs of stage 5 are read in section 15 of the plan (commit `d58d9c0`): E0 holds at the
+default, in 50 and 49 seeds of 50, so the gate is open; on the scaled menu E0 holds at 0.10
+and at 0.05; the reruns confirm the proposal's provisional numbers, but for the accelerator
+(0.63, beyond drift by a narrow margin). `outputs/` is not versioned.
 
-Next is stage 5: `stats.py`, `harness.py`, `cells.py`, `populations.py`, `e0_gate.py`, then
-the runs in the plan's order: E0 read with the gate, E0r, the reruns and the homogeneous
-start. Nothing is a result before E0 holds at the default on this code.
+Three points wait for the group, none of which blocks stage 7: the level of r̄ in E4
+(register, decision 29: 0.10, by the rule of decision 1); whether the homogeneous start
+should also have a public menu of D1 alone, since without draws it does not tell the bias
+from the initial menu; and the reading of the accelerator cell.
+
+Next is stage 7: E1, E2 and E3, E0's lines on the controls of E1, the two statistical
+checks, and figure 3 on those runs. Figure 3 has only been drawn on 20 seeds, to check the
+script: that drawing is not kept.

@@ -9,8 +9,9 @@ the course template
 Version 4 is the second rebuild from a clean tree. It is written for a reader: at most 1,000
 lines of model code, comments and docstrings excluded, and every rule that varies is an option
 of `parameters.py`. It is being built in stages (section 13 of `docs/design/v4-plan.md`);
-**stages 1 to 4 are done**: the whole model is written, runs and passes its neutrality tests
-under every price rule and investment rule. The experiments are not run yet.
+**stages 1 to 6 are done**: the model, the harness with the E0 gate, the run viewer and
+figures 1 to 3. E0 holds at the default on this code (`docs/design/v4-plan.md`, section 15);
+E1 to E3 are stage 7 and are not run yet.
 
 - Specification: `docs/design/v4-final-model.md`.
 - Decisions and departures: `docs/design/v4-choices.md`.
@@ -44,6 +45,22 @@ Python 3.12 or later. The model and the tests need only numpy:
 python3 -m unittest discover -s tests
 python3 run.py                # one run at the defaults -> outputs/periods.csv, run.csv
 python3 run.py 7              # another seed
+python3 -m experiments.harness E0 --jobs 10      # outputs/E0/runs.csv and cells.csv
+python3 -m experiments.harness E1 --resume       # runs what is missing
+python3 -m experiments.e0_gate outputs/E0        # does E0 hold, price rule by price rule?
+python3 -m experiments.show_run --seed 7 pricing=universal population=all_unit_cost
+```
+
+The run viewer writes `outputs/runs/<name>/`: the period table, one row per firm and period,
+the run row and a read-out. Its figure and the figure scripts need matplotlib:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m experiments.show_run --seed 7 --firms
+.venv/bin/python -m figures.fig1_conflict_zone   # outputs/figures/
+.venv/bin/python -m figures.fig2_typical_run 0
+.venv/bin/python -m figures.fig3_bias_lambda     # after E2 and E3
 ```
 
 ## Layout
@@ -55,7 +72,9 @@ markets/          the transactions: payments, goods, plants, entry and exit
 model/            entities.py, model.py (the industry at t = 0, one run), scheduler.py (the
                   period: STEPS and close_period), outputs.py (the tally, the period table)
 run.py            one run at the defaults
-experiments/      summary.py (the run row, with the measures of E0)
+experiments/      summary.py (the run row, with the measures of E0), cells.py,
+                  populations.py, stats.py, harness.py, e0_gate.py, show_run.py (the viewer)
+figures/          style.py and one script per exhibit (figures 1 to 3 so far)
 tests/            one test file per step; test_budget.py and test_readability.py
 docs/design/      the specification of version 4 and the records of versions 2 and 3
 ```

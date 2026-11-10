@@ -798,6 +798,22 @@ experiments run from 17 to 19 November, the seminar is on 20 November.
 - **If a stage runs late.** The viewer's figure (stage 6) and stages 8 and 9 move after the
   seminar. Stages 1 to 5 and E1 do not.
 
+**What stage 6 built** (10 November). 405 tests pass, five of them only with matplotlib.
+
+- **No panel has a second axis**, so two panels of the viewer change their measure: the
+  hurdle of the profit-rate label is drawn over the general rate, beside the share of its
+  orders that are not the cheapest over the last 10 periods; unit cost and capital per unit
+  are drawn relative to period 0. In the last panel capacity that leaves is below 0.
+- **`firms.csv` holds every flow of the tally by firm**, read at the end of the period:
+  a firm that left is still in the tally. Its state is read after steps 3, 5 and 6.
+- **`fig2` calls the viewer's `trace`** on a seed, for the mixed population at the defaults
+  and for the all-unit-cost control without draws.
+- **`fig3` gives the price rules four steps of one hue**, from the rule under which only a
+  cost leader cuts to the one under which every firm does: blue and orange stay the two
+  labels. It is drawn on E2 and E3, which are stage 7: it has only been checked on 20 seeds.
+- **The harness cannot be started from standard input**: its workers are spawned and import
+  the calling module.
+
 **What stages 3 to 5 built** (10 November). 383 tests pass; the model code counts 954 lines
 of the 1,000, against 867 planned; a run at the defaults takes 0.05 s. What differs from the
 sections above, none of it a rule of the model:
