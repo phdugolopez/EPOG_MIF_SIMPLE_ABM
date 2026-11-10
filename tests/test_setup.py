@@ -1,5 +1,6 @@
-"""The initial industry: the scaled menu, the staggered ages, parameters and entities
-(v4-final-model.md, "Initial industry")."""
+"""The initial industry: the scaled menu, the staggered ages, parameters, entities, the
+population of model.build, the check of the options and the random streams
+(v4-final-model.md, "Initial industry" and "Randomness and neutrality")."""
 import unittest
 from dataclasses import FrozenInstanceError, fields, replace
 
@@ -10,7 +11,7 @@ from equations.common_technique_choice import choose_technique
 from equations.common_unit_cost import unit_cost
 from equations.setup_initial_plants import initial_ages
 from equations.setup_menu import scaled_menu
-from helpers import menu
+from helpers import cash_total, industry, menu
 from model.entities import Firm, Plant, Technique
 from parameters import LABELS, OPTIONS, SHAIKH_MENU, SHAIKH_RATE, START, Parameters
 
@@ -165,6 +166,183 @@ class TestEntities(unittest.TestCase):
     def test_objects_are_compared_by_identity(self):
         self.assertNotEqual(self.firm(), self.firm())
         self.assertIsNot(self.firm().plants, self.firm().plants)
+
+
+class TestInitialIndustry(unittest.TestCase):
+    def setUp(self):
+        self.industry = industry()
+        self.firms = self.industry.firms
+
+    def test_six_firms_one_per_technique_and_label(self):
+        self.assertEqual([firm.id for firm in self.firms], list(range(6)))
+        self.assertEqual([firm.label for firm in self.firms], ["shaikh", "okishio"] * 3)
+        self.assertEqual([firm.rule for firm in self.firms], ["unit_cost", "profit_rate"] * 3)
+        names = [firm.plants[0].technique.name for firm in self.firms]
+        self.assertEqual(names, ["C", "C", "D1", "D1", "D2", "D2"])
+
+    def test_plants_capacity_and_demand(self):
+        self.assertEqual([len(firm.plants) for firm in self.firms], [6, 6, 6, 6, 7, 7])
+        self.assertEqual(sum(firm.capacity for firm in self.firms), 760.0)
+        self.assertAlmostEqual(self.industry.demand_0, 674.67, places=2)
+        self.assertEqual(self.industry.demand, self.industry.demand_0)
+
+    def test_staggered_ages_and_book_values(self):
+        self.assertEqual([plant.age for plant in self.firms[0].plants], [0, 1, 3, 5, 6, 8])
+        self.assertEqual([plant.age for plant in self.firms[4].plants], [0, 1, 2, 4, 5, 7, 8])
+        for firm in self.firms:
+            for plant in firm.plants:
+                self.assertEqual(plant.cost, plant.technique.kappa * 20.0)
+                self.assertAlmostEqual(plant.book_value, plant.cost * (1 - plant.age / 10),
+                                       places=9)
+
+    def test_prices_shares_and_utilisation(self):
+        for firm in self.firms:
+            self.assertEqual(firm.price, 100.0)
+            self.assertAlmostEqual(firm.share, firm.capacity / 760.0, places=12)
+            self.assertAlmostEqual(firm.sales, firm.share * self.industry.demand_0, places=9)
+            self.assertAlmostEqual(firm.util, 340 / 383, places=12)
+        self.assertAlmostEqual(sum(firm.share for firm in self.firms), 1.0, places=12)
+
+    def test_cash_is_the_depreciation_accumulated_on_the_plants(self):
+        cash = [round(firm.cash, 2) for firm in self.firms]
+        self.assertEqual(cash, [6325.0, 6325.0, 6546.26, 6546.26, 8526.06, 8526.06])
+        self.assertEqual([firm.funds for firm in self.firms], [0.0] * 6)
+        self.assertAlmostEqual(self.industry.roe.cash, -42794.64, places=2)
+        self.assertAlmostEqual(cash_total(self.industry), 0.0, places=9)
+
+    def test_public_menu_and_no_private_design(self):
+        self.assertEqual([technique.name for technique in self.industry.public],
+                         ["C", "D1", "D2"])
+        self.assertEqual([technique.first_run for technique in self.industry.public], [0, 0, 0])
+        self.assertTrue(all(firm.known == [] for firm in self.firms))
+        self.assertEqual(self.industry.tally, [])
+
+    def test_controls_change_the_rule_and_keep_the_labels(self):
+        control = industry(rule_okishio="unit_cost")
+        self.assertEqual([firm.label for firm in control.firms], ["shaikh", "okishio"] * 3)
+        self.assertEqual({firm.rule for firm in control.firms}, {"unit_cost"})
+        control = industry(rule_shaikh="profit_rate")
+        self.assertEqual({firm.rule for firm in control.firms}, {"profit_rate"})
+
+    def test_two_firms_per_pair_double_firms_and_demand(self):
+        double = industry(firms_per_pair=2)
+        self.assertEqual(len(double.firms), 12)
+        self.assertEqual(sum(firm.capacity for firm in double.firms), 1520.0)
+        self.assertAlmostEqual(double.demand_0, 2 * self.industry.demand_0, places=9)
+        self.assertAlmostEqual(cash_total(double), 0.0, places=9)
+
+    def test_plant_size_keeps_normal_outputs_and_utilisation(self):
+        small = industry(plant_size=10.0)
+        self.assertEqual([len(firm.plants) for firm in small.firms], [12, 12, 12, 12, 14, 14])
+        self.assertAlmostEqual(small.demand_0, self.industry.demand_0, places=9)
+
+    def test_plant_life_moves_ages_and_cash(self):
+        short = industry(plant_life=7)
+        for firm in short.firms:
+            self.assertLess(max(plant.age for plant in firm.plants), 7)
+            expected = sum(plant.cost * plant.age / 7 for plant in firm.plants)
+            self.assertAlmostEqual(firm.cash, expected, places=6)
+
+
+class TestInitialIndustryAtAnotherRate(unittest.TestCase):
+    """The scaled menu acts in model.build: the cost of the initial plants and the initial
+    cash follow rbar, and nothing else moves."""
+
+    def test_plants_cost_and_cash_are_3_2_times_those_of_the_default_at_5_percent(self):
+        base, low = industry(), industry(rbar=0.05)
+        for firm, other in zip(base.firms, low.firms):
+            self.assertAlmostEqual(other.cash, 3.2 * firm.cash, places=6)
+            for plant, scaled_plant in zip(firm.plants, other.plants):
+                self.assertAlmostEqual(scaled_plant.cost, 3.2 * plant.cost, places=9)
+                self.assertEqual(scaled_plant.age, plant.age)
+        self.assertAlmostEqual(low.public[0].kappa * 20.0, 8800.0, places=9)
+        self.assertAlmostEqual(cash_total(low), 0.0, places=6)
+
+    def test_population_demand_and_shares_do_not_move_with_the_rate(self):
+        base = industry()
+        for rbar in (0.10, 0.05):
+            other = industry(rbar=rbar)
+            self.assertEqual(other.demand_0, base.demand_0)
+            self.assertEqual([len(firm.plants) for firm in other.firms], [6, 6, 6, 6, 7, 7])
+            self.assertEqual([firm.share for firm in other.firms],
+                             [firm.share for firm in base.firms])
+            self.assertEqual([firm.price for firm in other.firms], [100.0] * 6)
+
+    def test_the_menu_of_the_industry_is_the_scaled_menu(self):
+        for rbar in RATES:
+            public = [(technique.name, technique.ucs, technique.kappa)
+                      for technique in industry(rbar=rbar).public]
+            self.assertEqual(public, scaled(rbar))
+        short = industry(rbar=0.10, plant_life=7)
+        self.assertEqual([(technique.name, technique.ucs, technique.kappa)
+                          for technique in short.public], scaled(0.10, life=7))
+
+    def test_the_fixed_menu_keeps_the_table_and_its_plant_costs_at_any_rate(self):
+        fixed = industry(rbar=0.05, menu_scaling="fixed")
+        self.assertEqual([technique.kappa for technique in fixed.public], [137.5, 142.31, 157.89])
+        self.assertEqual([round(firm.cash, 2) for firm in fixed.firms],
+                         [6325.0, 6325.0, 6546.26, 6546.26, 8526.06, 8526.06])
+
+    def test_a_rate_that_gives_an_operating_cost_that_is_not_positive_is_refused(self):
+        for overrides in ({"rbar": 0.03}, {"rbar": 0.04, "plant_life": 7}):
+            with self.assertRaises(ValueError):
+                industry(**overrides)
+        self.assertEqual(len(industry(rbar=0.03, menu_scaling="fixed").firms), 6)
+
+
+class TestOptions(unittest.TestCase):
+    def test_every_level_of_every_option_builds(self):
+        for name, levels in OPTIONS.items():
+            for level in levels:
+                self.assertEqual(len(industry(**{name: level}).firms), 6, (name, level))
+
+    def test_a_misspelt_level_is_refused(self):
+        for name in OPTIONS:
+            with self.assertRaises(ValueError, msg=name):
+                industry(**{name: "cost-edge"})
+
+    def test_the_names_of_version_3_and_of_the_notebook_are_refused(self):
+        for overrides in ({"pricing": "leader_follow"}, {"pricing": "cost edge"},
+                          {"reserve": "released"}, {"entry_label": "even odds"},
+                          {"rule_okishio": "okishio"}, {"tech_change": None}):
+            with self.assertRaises(ValueError, msg=overrides):
+                industry(**overrides)
+
+    def test_the_message_names_the_option_and_its_levels(self):
+        with self.assertRaises(ValueError) as refused:
+            industry(pricing="universl")
+        message = str(refused.exception)
+        self.assertIn("pricing", message)
+        self.assertIn("universal", message)
+
+
+class TestStreams(unittest.TestCase):
+    def draws(self, firm):
+        return list(firm.rng.random(4))
+
+    def test_same_seed_same_numbers_another_seed_other_numbers(self):
+        same = [self.draws(firm) for firm in industry(seed=1).firms]
+        self.assertEqual(same, [self.draws(firm) for firm in industry(seed=1).firms])
+        self.assertNotEqual(same, [self.draws(firm) for firm in industry(seed=2).firms])
+
+    def test_every_firm_and_the_industry_have_their_own_stream(self):
+        ind = industry()
+        streams = [tuple(self.draws(firm)) for firm in ind.firms] + [tuple(ind.rng.random(4))]
+        self.assertEqual(len(set(streams)), 7)
+
+    def test_a_stream_is_keyed_by_the_serial_number_not_the_place(self):
+        """Firm 3 draws the same numbers among 6 firms and among 12, and wherever it stands."""
+        six, twelve = industry(seed=5), industry(seed=5, firms_per_pair=2)
+        twelve.firms.reverse()
+        third = next(firm for firm in twelve.firms if firm.id == 3)
+        self.assertEqual(self.draws(six.firms[3]), self.draws(third))
+
+    def test_the_streams_do_not_depend_on_the_parameters(self):
+        """Populations and cells are compared on the same numbers."""
+        base, other = industry(seed=4), industry(seed=4, rbar=0.05, pricing="universal")
+        self.assertEqual([self.draws(firm) for firm in base.firms],
+                         [self.draws(firm) for firm in other.firms])
+        self.assertEqual(list(base.rng.random(3)), list(other.rng.random(3)))
 
 
 if __name__ == "__main__":

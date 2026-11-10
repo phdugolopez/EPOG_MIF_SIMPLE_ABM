@@ -9,7 +9,9 @@ the course template
 Version 4 is the second rebuild from a clean tree. It is written for a reader: at most 1,000
 lines of model code, comments and docstrings excluded, and every rule that varies is an option
 of `parameters.py`. It is being built in stages (section 13 of `docs/design/v4-plan.md`);
-**stage 1 is done**: the parameters, the entities and the equations that several steps share.
+**stages 1 and 2 are done**: the parameters, the entities, the equations that several steps
+share, the initial industry and the period loop, whose six steps are still stubs. A run does
+nothing yet but pass its checks.
 
 - Specification: `docs/design/v4-final-model.md`.
 - Decisions and departures: `docs/design/v4-choices.md`.
@@ -41,6 +43,8 @@ Python 3.12 or later. The model and the tests need only numpy:
 
 ```bash
 python3 -m unittest discover -s tests
+python3 run.py                # one run at the defaults -> outputs/periods.csv
+python3 run.py 7              # another seed
 ```
 
 ## Layout
@@ -48,7 +52,10 @@ python3 -m unittest discover -s tests
 ```text
 parameters.py     every parameter, constant and option
 equations/        one rule per file, pure functions, named <step>_<equation>.py
-model/            entities.py
+markets/          the transactions: payments.py, plant_market.py
+model/            entities.py, model.py (the industry at t = 0, one run), scheduler.py (the
+                  period: STEPS and close_period), outputs.py (the tally, the period table)
+run.py            one run at the defaults
 tests/            one test file per step; test_budget.py and test_readability.py
 docs/design/      the specification of version 4 and the records of versions 2 and 3
 ```

@@ -777,9 +777,9 @@ experiments run from 17 to 19 November, the seminar is on 20 November.
 | Stage | Content | Owner | Time | Date |
 | --- | --- | --- | --- | --- |
 | 1 Scaffold | The tree of section 1; `CLAUDE.md`, `README.md`, `requirements.txt`, the workflow; `parameters.py`; `entities.py`; the five `common_` files; `setup_menu.py`, `setup_initial_plants.py`. Tests: `test_common`, the menu part of `test_setup`, `test_budget`, `test_readability` | Ugo | 2 h | 11 Nov |
-| 2 Skeleton | `model.py` (menu from r̄, initial population, cash, streams, the check of the options); `payments.py`; `plant_market.py` with `scrapping_reserve.py`; `scheduler.py` with `STEPS`, `period`, `start_period`, `close_period`, `check`, the end of step 3 (regulating price, r_new) and the six steps as stubs with their final signatures and docstrings; `outputs.py` with the tally by firm; `run.py`; `tests/helpers.py`. Tests: the rest of `test_setup`; reproducibility and money conservation on the stub loop. `parameters.py` is frozen here | Ugo | 3 h | 11 Nov |
+| 2 Skeleton | `model.py` (menu from r̄, initial population, cash, streams, the check of the options); `payments.py`; `plant_market.py` with `scrapping_reserve.py`; `entry_new_plant_rate.py`; `scheduler.py` with `STEPS`, `period`, `start_period`, `close_period`, `check`, the end of step 3 (regulating price, r_new) and the six steps as stubs with their final signatures and docstrings; `outputs.py` with the tally by firm; `run.py`; `tests/helpers.py`. Tests: the rest of `test_setup`; reproducibility and money conservation on the stub loop. `parameters.py` is frozen here | Ugo | 3 h | 11 Nov |
 | 3a Pricing ∥ | The four `pricing_` files, `set_prices` and its helpers as in section 12. Test: `test_pricing` | Jake | 3.5 h | 12–13 Nov |
-| 3b Demand, entry and exit ∥ | `demand_replicator.py`, `goods_market.py`, `allocate_demand` with the sales limit; the six `entry_` files, `markets/entry_exit.py`, `enter_and_exit`. Tests: `test_demand`, `test_entry` | Pierre-Loup | 4 h | 12–13 Nov |
+| 3b Demand, entry and exit ∥ | `demand_replicator.py`, `goods_market.py`, `allocate_demand` with the sales limit; the five other `entry_` files, `markets/entry_exit.py`, `enter_and_exit`. Tests: `test_demand`, `test_entry` | Pierre-Loup | 4 h | 12–13 Nov |
 | 3c Accounts, scrapping, outputs ∥ | The three `accounts_` files with overtime, the three other `scrapping_` files, `produce_and_account`, `scrap_plants`, `outputs.py` in full, `experiments/summary.py` with the E0 measures. Tests: `test_accounts`, `test_scrapping`, the E0 part of `test_experiments` | Vincent | 4 h | 12–13 Nov |
 | 3d Technical change and investment ∥ | The five `investment_` files, `invest`. Test: `test_investment` | Ugo | 2.5 h | 12–13 Nov |
 | 4 Integration | The four parts together, merged in the order 3c, 3a, 3b, 3d; `test_neutrality` under the 4 × 2 rules, `test_model`; the line count; the review for reading of section 12; a profile against 0.2 s a run | Ugo; all four read | 3.5 h | 14 Nov |
@@ -797,6 +797,22 @@ experiments run from 17 to 19 November, the seminar is on 20 November.
   E3 on the new code, and runs of the viewer.
 - **If a stage runs late.** The viewer's figure (stage 6) and stages 8 and 9 move after the
   seminar. Stages 1 to 5 and E1 do not.
+
+**What stages 1 and 2 built** (10 November). 130 tests pass; the model code counts 450 lines.
+Four points differ from the sections above, none of them a rule of the model:
+
+- **`parameters.py` holds `OPTIONS` and `MONEY_EPS`** (section 7): 69 lines against 60.
+- **`entry_new_plant_rate.py` is written in stage 2**, not in 3b: the end of step 3 needs it.
+- **`run.py` writes `periods.csv` only.** `run.csv` joins it with `experiments/summary.py`,
+  in stage 3c.
+- **The underscore is let through by the check on names of one letter**: it is not a letter
+  and stands for a value that is not read (`for _ in range(plants)`).
+
+What stages 3a to 3d start from: `start_period`, `close_period`, `check`,
+`set_regulating_price` and `set_new_plant_rate` are final; `record_end` is final and
+`record_production` writes the identity of a row and the stocks `check` reads, the rest being
+3c's; the six steps are stubs. `tests/helpers.py` gives `industry`, `empty_industry`,
+`add_firm`, `cash_total` and `tallied`, which reads the tally by label or by firm.
 
 ## 14. Open questions
 

@@ -72,12 +72,13 @@ def double_statements(source: str) -> list[str]:
 
 
 def short_names(source: str) -> list[str]:
-    """Names of one letter that are not a symbol of the proposal or a loop index."""
+    """Names of one letter that are not a symbol of the proposal or a loop index. The
+    underscore is not a letter: it stands for a value that is not read."""
     problems = []
     for node in ast.walk(ast.parse(source)):
         name = getattr(node, "id", None) if isinstance(node, ast.Name) else None
         name = node.arg if isinstance(node, ast.arg) else name
-        if name is not None and len(name) == 1 and name not in LETTERS:
+        if name is not None and len(name) == 1 and name not in LETTERS + ("_",):
             problems.append(f"line {node.lineno}: the name {name!r}")
     return problems
 
@@ -191,6 +192,7 @@ class TestChecks(unittest.TestCase):
         self.assertEqual(len(short_names("total = sum(q.capacity for q in plants)\n")), 2)
         self.assertEqual(len(short_names("def area(r):\n    return r\n")), 2)
         self.assertEqual(short_names("p = industry.params\nn = len(p.start)\n"), [])
+        self.assertEqual(short_names("for _ in range(n):\n    buy_plant()\n"), [])
 
     def test_a_long_line_is_caught(self):
         self.assertEqual(long_lines("x" * 100 + "\n"), [])
