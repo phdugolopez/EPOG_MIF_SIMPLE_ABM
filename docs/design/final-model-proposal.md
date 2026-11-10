@@ -27,9 +27,10 @@ judged" (question B).
 - **Mechanism.** The profit-rate rule judges techniques at the current market price. Above the
   price of production (prix de production) its hurdle is high (0.094 against r̄ = 0.05), so it
   refuses capital-using, cost-reducing designs and keeps dearer plants that price cutting then
-  punishes. Judged at prices of production its hurdle falls to r̄, not to 0: at r̄ = 0.05 the
-  contest goes to drift under the categories rule (0.48–0.53) and the advantage shrinks but stays
-  under the innovation set (0.94 → 0.78); at r̄ = 0.16 it does not shrink (0.64 → 0.715).
+  punishes. Judged at prices of production its hurdle falls to r̄ or just above it, not to 0: at
+  r̄ = 0.05 the contest goes to drift under the categories rule (0.48–0.53) and the advantage
+  shrinks but stays under the innovation set (0.94 → 0.78); at r̄ = 0.16 it does not shrink (0.64
+  → 0.715).
 - **Where the profit-rate rule wins.** In v2, only where accumulation selects instead of price:
   closed entry (r̄ = 0.16), investment out of retained earnings, growing demand, and only under
   the categories rule (0.32 at 500 seeds). The same corner gives 0.98 to the unit-cost rule under
@@ -105,14 +106,18 @@ Three steps, each measured in v2:
    of equilibrium.
 
 The test that brackets the mechanism: judge the profit-rate rule at the price of production of the
-regulating capital (capital régulateur) instead of its own price. Its hurdle then falls to r̄, and
-the rule minimises uc + r̄κ, Sraffa's criterion (Shaikh 2016, p. 320 n. 36), not the unit cost. At
-r̄ = 0.05 the advantage disappears under the categories rule (0.81 → 0.53 under real competition,
+regulating capital (capital régulateur) instead of its own price. Its hurdle then falls to r̄ or
+just above it: the regulating technique earns exactly r̄ at its own price of production, so the
+best rate on the menu at that price is at least r̄, and it is r̄ when no other technique earns
+more there. The rule then minimises uc + r̄κ, Sraffa's criterion (Shaikh 2016, p. 320 n. 36), not
+the unit cost. At r̄ = 0.05 the advantage disappears under the categories rule (0.81 → 0.53 under real competition,
 0.71 → 0.48 under leader-follow) and shrinks under the innovation set (0.94 → 0.78, still beyond
 drift). At r̄ = 0.16 (categories) it does not shrink (0.64 → 0.715): on Shaikh's menu D2 has the
 higher rate only below a price of about 85, and its price of production is 82.9 at r̄ = 0.05 but
 100.3 at r̄ = 0.16 (at D2's price of production the higher-cost technique C again has the higher
-rate, Shaikh 2016, p. 316). The advantage therefore has two parts: the market price standing above
+rate, Shaikh 2016, p. 316). On the initial menu the hurdle at λ = 1 is thus 5.00 % at r̄ = 0.05
+but 17.05 % at r̄ = 0.16: the rate of D1 at a price of 100.26, where C earns 16.19 % and D2 16 %
+(computed from the menu of addendum A1). The advantage therefore has two parts: the market price standing above
 the price of production, and the r̄κ term that remains at it. This is question B.
 
 ### Is demand important?
@@ -170,7 +175,7 @@ presents r̄ as the level of the general rate, not as open against closed indust
 | H2 | The criteria conflict only for capital-using, cost-reducing designs, so the advantage grows with the Marx bias | Shaikh 2016, pp. 315, 318; Michl 2023, pp. 47–48 | E2 | Partly: no draws 0.51; β = 0.5, 1.5, 3 give 0.80, 0.94, 0.97; but the neutral set, which contains such designs, already gives 0.78 |
 | H3 | With profit-financed investment and closed entry, selection runs through accumulation and can favour the profit-rate rule | Nelson & Winter 1982, pp. 17, 19; Duménil & Lévy 1995, p. 217 | E4 | Met under categories and v2's markup floor only: 0.32, and 0.85 with the accelerator; at drift (0.43) with the unit-cost floor and scrapping on operating cost; pilot: 0.10–0.19 under systematic cutting at r̄ = 0.16 (innovation set) |
 | H4 | Systematic price cutting narrows the margin p − uc, hence the hurdle and the conflict zone, so the advantage shrinks | Group conjecture (review-v2, section 4) | E4 | Mixed: 0.81 → 0.71 at the defaults, but 0.79 against 0.84 on average in the factorial |
-| H5 | Judged at the price of production, the profit-rate rule's hurdle falls to r̄: the advantage shrinks, and vanishes only where r̄κ is too small to change the choice | Shaikh 2016, pp. 315–317, 320 n. 36, 321 | E3 | Partly: categories 0.81 → 0.53 and 0.71 → 0.48 (drift); innovation set 0.94 → 0.78 (beyond drift); r̄ = 0.16 0.64 → 0.715 |
+| H5 | Judged at the price of production, the profit-rate rule's hurdle falls to r̄ or just above it: the advantage shrinks, and vanishes only where r̄κ is too small to change the choice | Shaikh 2016, pp. 315–317, 320 n. 36, 321 | E3 | Partly: categories 0.81 → 0.53 and 0.71 → 0.48 (drift); innovation set 0.94 → 0.78 (beyond drift); r̄ = 0.16 0.64 → 0.715 |
 | H6 | Under price cutting the lowest-cost technique has the highest sustainable rate, so the profit-rate adopter does not realise the rate it maximises | Shaikh 2016, pp. 313–317 | E1, E5 | Met: 4.5 % against 8.4 % in the base cell |
 
 Not tested, and the report should say so: Okishio's theorem about the general rate of profit,
@@ -310,7 +315,8 @@ instead of seven, and no debug suite. About 600 lines of model and 200 of experi
 | Hurdle floor switch, no-cut shortage branch | Inert at the defaults | Hard-code or drop |
 | "Unserved" excess-demand signal, unmet start, 3 % growth | No move, or drift at 4–20 times the run time | Drop |
 | Depreciation by use | No move (0.75) | Drop; depreciation by time over a plant life of 10 periods |
-| Draws per investment, frontier reference, private diffusion | Per investment pushes the share to 1 by compounding; the other two move nothing | Drop; draws per period, own reference, public after 2 periods |
+| Draws per investment, frontier reference | Per investment pushes the share to 1 by compounding; the frontier reference moves nothing | Drop; draws per period, own reference |
+| Private diffusion (a design known to its owner only) as a setting and as a switch | Moves nothing (0.87 against 0.94) | Drop both: a design is public L = 2 periods after its first plant. It stays as one robustness check on E1, run with L = none (`public_lag = None`: a design never becomes public), which needs no switch |
 | Categories rule (v2 default) | Imposes the conflict share; hosts both reversals | Keep as a robustness switch |
 | Collector (40 KB), schema (28 KB), 9 debug scripts | Built to debug v2 | Two output tables; keep the share decomposition |
 
@@ -418,7 +424,7 @@ is that the headline (E1) and the mechanism (E3) do not rest on the values the m
 | --- | --- | --- | --- | --- |
 | Plant life T = 5 and 20 | T = 1/δ is a convention: a shorter life retires capital-heavy vintages sooner, a longer one keeps old plants running | E1 and the 16 E4 cells | 200 | Not run: v2 had no maximum age |
 | Categories rule | Hosts both reversals; conflict share imposed at q = 0.5 | The 16 E4 cells (already in E4) | 200 | Corner 0.32; average 0.67 |
-| Private diffusion | Who knows which design (Silverberg, Dosi & Orsenigo 1988) | E1 | 200 | 0.87 against 0.94, no move |
+| Private diffusion (L = none: a design never becomes public) | Who knows which design (Silverberg, Dosi & Orsenigo 1988) | E1 | 200 | 0.87 against 0.94, no move |
 | Homogeneous start | All six firms on D1, so no initial cost edge; never varied in v2 | E1, E2 | 200 | Not run |
 | Number of firms: 6, 12, 30 | Drift weakens as the population grows, and a closed industry keeps its initial firms; v2 always started with 6 | E1 and the 4 closed-entry, growing cells of E4 | 200 | Not run |
 
@@ -548,7 +554,7 @@ revised row on r̄.
 | r̄ in the text | "General rate"; "open against closed industry" | **Revised 10 Nov:** level of the general rate (centre of gravity of the profit rate, and entry gate) | With the replacement condition the rate gravitates around r̄ and entry stays active at 0.16 (47–52 entries a run in the pilot) |
 | 20 November seminar | v2 results and the rebuild plan; wait for v3 | v2 results and the plan | v3 results will be at most two days old by then |
 | Questions for Funalot and Bassi | — | Ask now | Do references and appendices count in the 10 pages? Length of each presentation? Is the template layout required? |
-| Mechanism test (H5, E3) | Reword only; cross E3 with r̄; a separate rate for the evaluation price | **Decided 9 Nov:** reword H5 and cross E3 with r̄ (0.05, 0.16) | At prices of production the hurdle falls to r̄, not to 0: v2 gives drift under categories but 0.78 under the innovation set and 0.715 at r̄ = 0.16. r̄ = 0.16 also closes entry, so that arm is read against E4 |
+| Mechanism test (H5, E3) | Reword only; cross E3 with r̄; a separate rate for the evaluation price | **Decided 9 Nov:** reword H5 and cross E3 with r̄ (0.05, 0.16) | At prices of production the hurdle falls to r̄ or just above it (17.05 % at r̄ = 0.16 on the initial menu), not to 0: v2 gives drift under categories but 0.78 under the innovation set and 0.715 at r̄ = 0.16. r̄ = 0.16 also closes entry, so that arm is read against E4 |
 | Financing of replacement | Retained profits only (v2); reserve always released; reserve released on a condition (the firm's own technique; the entry signal) | **Decided 10 Nov after the pilot:** reserve released only when r^new ≥ r̄, else withdrawn and paid out; net expansion out of retained profits | Profits alone give a profit rate of 20 %, the reserve always released a rate near zero; with the condition on the entry signal the rate gravitates around r̄, and the condition is the same for every firm (pilot, arms 1 to 4) |
 | Status of the v2 numbers | An answer to defend; predictions to retest, with a v2 pilot | **Decided 9 Nov:** predictions, and a pilot of 8 v2 cells before the spec is frozen (run 10 Nov, four arms) | 0.81, 0.94 and 0.32 come from unit-cost scrapping, no maximum age and the markup floor; the closest v2 cells give 0.75 and 0.43 |
 | Emergent bias (E7, H7) | Keep E7; pose it in real terms; comparative statics; drop | **Decided 9 Nov:** drop E7, H7 goes to the discussion | A rising money wage with prices that rise only after a shortage squeezes margins to zero, so h → 0 and the rules coincide; H7 is in neither Table 1 nor the slides |
