@@ -16,6 +16,9 @@ no rule below is the default of version 3. Each runs the cells of cells.py on th
                      capacity at the same operating cost (no premium)
   overtime           version 3's own pricing with the same overtime: the cells of cells.py
                      as they are, E3 with its two regimes
+  normal_price_overtime
+                     version 3's two regimes joined by the price of production, with the same
+                     overtime: systematic cutting above it, cost-edge cutting below it
 
 E3 keeps its ten cost-edge cells (lambda x rbar), renamed after the rule. The files are those of
 the harness, in outputs/<rule>/<experiment>/.
@@ -23,9 +26,11 @@ the harness, in outputs/<rule>/<experiment>/.
 import argparse
 import os
 import pathlib
+from math import isclose
 
 from equations.common_unit_cost import unit_cost
 from equations.pricing_floor import price_floor
+from equations.pricing_rule import posted_price
 from experiments.cells import EXPERIMENTS
 from experiments.harness import run_experiment
 from markets.goods_market import allocate
@@ -85,6 +90,39 @@ def set_prices_leader_follow_ucs(industry) -> None:
     set_prices_leader_follow(industry, operating_cost_floor)
 
 
+def normal_price_cutting(previous: float, rival_prices: list[float], rival_costs: list[float],
+                         own_cost: float, own_normal: float, spare: bool, excess: float, cut: float,
+                         shortage_step: float) -> tuple[float, bool]:
+    """Version 3's two regimes joined by the firm's price of production `own_normal`. While the
+    lowest rival price is above it the firm cuts as under systematic cutting: spare capacity
+    is enough. At or below it the firm cuts as under cost-edge cutting: it also needs a unit-cost
+    edge over a rival posting that price. A cut can end up to `cut` below the price of
+    production. Returns the price and whether the firm cut."""
+    lowest = min(rival_prices, default=own_normal)
+    above = lowest > own_normal and not isclose(lowest, own_normal)
+    return posted_price(previous, rival_prices, rival_costs, own_cost, spare, excess, not above,
+                        cut, shortage_step)
+
+
+def set_prices_normal(industry) -> None:
+    """Step 1 under normal-price cutting. It is version 3's step with one more number a firm:
+    the price of production of its best plant, unit cost + rbar x capital per unit."""
+    p = industry.params
+    state = []
+    for firm in industry.firms:
+        # (unit cost, capital per unit) of each plant: the smallest pair is the best plant.
+        plants = [(unit_cost(q.technique.ucs, q.technique.kappa, p.delta), q.technique.kappa)
+                  for q in firm.plants]
+        cost, kappa = min(plants, default=(0.0, 0.0))
+        state.append((firm, firm.price, cost, cost + p.rbar * kappa))
+    for firm, previous, cost, normal in state:
+        # Rivals are the other firms with a plant in operation, as in version 3's step.
+        rivals = [(price, c) for other, price, c, _ in state if other is not firm and other.plants]
+        firm.price, firm.cut = normal_price_cutting(
+            previous, [price for price, _ in rivals], [c for _, c in rivals], cost, normal,
+            bool(firm.plants) and firm.util < p.u_full, industry.excess, p.price_cut, p.shortage_step)
+
+
 def allocate_with_overtime(demand: float, shares: list[float], offered: list[float]):
     """Step 2 with overtime: a firm sells up to U_MAX times the capacity it offers."""
     return allocate(demand, shares, [U_MAX * capacity for capacity in offered])
@@ -128,11 +166,17 @@ def install_leader_follow_ucs_overtime() -> None:
     install_overtime()
 
 
+def install_normal_price_overtime() -> None:
+    scheduler.set_prices = set_prices_normal
+    install_overtime()
+
+
 RULES = {"systematic": None, "leader_follow": install_leader_follow,
          "leader_follow_ucs": install_leader_follow_ucs,
          "leader_follow_overtime": install_leader_follow_overtime,
          "leader_follow_ucs_overtime": install_leader_follow_ucs_overtime,
-         "overtime": install_overtime}
+         "overtime": install_overtime,
+         "normal_price_overtime": install_normal_price_overtime}
 
 
 def experiments(rule: str) -> dict:

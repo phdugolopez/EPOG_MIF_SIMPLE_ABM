@@ -12,10 +12,12 @@ from experiments.harness import run_experiment
 from experiments.price_rules import (MONOPOLY_CAP, RISE, RULES, U_MAX, allocate_with_overtime,
                                      dispatch_with_overtime, experiments, install_leader_follow,
                                      install_leader_follow_overtime, install_leader_follow_ucs,
-                                     install_leader_follow_ucs_overtime, install_overtime,
-                                     leader_follow_price,
+                                     install_leader_follow_ucs_overtime,
+                                     install_normal_price_overtime, install_overtime,
+                                     leader_follow_price, normal_price_cutting,
                                      operating_cost_floor, set_prices_leader_follow,
-                                     set_prices_leader_follow_ucs, unit_cost_floor)
+                                     set_prices_leader_follow_ucs, set_prices_normal,
+                                     unit_cost_floor)
 from experiments.summary import run_row
 from helpers import add_firm, empty_industry
 from model import scheduler
@@ -154,7 +156,80 @@ class TestFloors(unittest.TestCase):
                 self.assertIs(scheduler.set_prices, step)
         self.assertEqual(set(RULES), {"systematic", "leader_follow", "leader_follow_ucs",
                                       "leader_follow_overtime", "leader_follow_ucs_overtime",
-                                      "overtime"})
+                                      "overtime", "normal_price_overtime"})
+
+
+class TestNormalPriceCutting(unittest.TestCase):
+    """A firm with unit cost 75 and price of production 83, facing one rival at the same cost."""
+
+    def cutting(self, rival_price, rival_cost=75.0, spare=True, excess=0.0):
+        return normal_price_cutting(100.0, [rival_price], [rival_cost], 75.0, 83.0, spare, excess,
+                                    0.02, 0.5)
+
+    def test_above_its_price_of_production_spare_capacity_is_enough(self):
+        price, cut = self.cutting(90.0)
+        self.assertAlmostEqual(price, 88.2, places=9)
+        self.assertTrue(cut)
+
+    def test_a_cut_can_end_below_the_price_of_production(self):
+        price, cut = self.cutting(84.0)
+        self.assertAlmostEqual(price, 82.32, places=9)
+        self.assertTrue(cut)
+
+    def test_at_or_below_it_a_firm_without_a_cost_edge_follows(self):
+        self.assertEqual(self.cutting(83.0), (83.0, False))
+        self.assertEqual(self.cutting(80.0), (80.0, False))
+
+    def test_below_it_a_cost_edge_still_cuts(self):
+        price, cut = self.cutting(80.0, rival_cost=78.0)
+        self.assertAlmostEqual(price, 78.4, places=9)
+        self.assertTrue(cut)
+
+    def test_without_spare_capacity_or_after_a_shortage_it_does_not_cut(self):
+        self.assertEqual(self.cutting(90.0, spare=False), (90.0, False))
+        price, cut = self.cutting(90.0, excess=0.1)
+        self.assertAlmostEqual(price, 105.0, places=9)        # no rival above: 100 x (1 + 0.5 x 0.1)
+        self.assertFalse(cut)
+
+    def test_it_is_one_of_the_two_regimes_of_version_3(self):
+        from equations.pricing_rule import posted_price
+        for rival_price in (78.0, 83.0, 84.0, 95.0):
+            for rival_cost in (75.0, 78.0):
+                above = rival_price > 83.0
+                self.assertEqual(self.cutting(rival_price, rival_cost),
+                                 posted_price(100.0, [rival_price], [rival_cost], 75.0, True, 0.0,
+                                              not above, 0.02, 0.5))
+
+    def test_the_step_reads_the_price_of_production_of_the_best_plant(self):
+        industry = empty_industry()
+        menu = industry.public                     # D2: unit cost 75.0, price of production 82.9
+        firms = [add_firm(industry, technique=menu[2], price=90.0),
+                 add_firm(industry, technique=menu[2], price=90.0),
+                 add_firm(industry, technique=menu[2], price=82.0)]
+        for firm in firms:
+            firm.util = 0.8
+        set_prices_normal(industry)
+        self.assertAlmostEqual(firms[0].price, 82.0, places=9)     # follows: 82.0 is below 82.9
+        self.assertAlmostEqual(firms[2].price, 82.0, places=9)     # its rivals are at 90: min(82, 88.2)
+        self.assertFalse(firms[0].cut)
+
+    def test_swapped_labels_give_the_same_trajectories_under_the_rule(self):
+        for cell, periods in (({}, 200), (dict(investment="accelerator", tech_change="categories",
+                                               rbar=0.16, growth=0.01), 80)):
+            for name, population in POPULATIONS.items():
+                with self.subTest(cell=cell, population=name), patched(set_prices_normal, overtime=True):
+                    params = replace(Parameters(), **cell, **population)
+                    states, rows = trajectory(params, 4, periods)
+                    swapped_states, swapped_rows = trajectory(swapped(params), 4, periods)
+                    self.assertEqual(states, swapped_states)
+                    self.assertEqual(rows, mirror(swapped_rows))
+                    self.assertEqual(trajectory(params, 7, 80), trajectory(params, 7, 80, reverse=True))
+
+    def test_the_rule_installs_its_step_and_overtime(self):
+        with mock.patch.multiple(scheduler, set_prices=None, allocate=None, dispatch=None):
+            install_normal_price_overtime()
+            self.assertIs(scheduler.set_prices, set_prices_normal)
+            self.assertIs(scheduler.allocate, allocate_with_overtime)
 
 
 class TestOvertime(unittest.TestCase):
