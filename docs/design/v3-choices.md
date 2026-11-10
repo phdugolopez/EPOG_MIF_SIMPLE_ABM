@@ -86,8 +86,10 @@ numbers are those of the plan and of A13.
   the same. The group decides which rule is the default, whether leader-follow replaces
   systematic cutting as specified, and whether overtime comes back with it. On the pricing
   as specified, overtime keeps the headline (0.92 against 0.98), cuts the demand lost from
-  3.2 to 0.5 % and does not repair E0. No rule tried fits both E0 and the headline; the best
-  joint fit, normal-price cutting, is the default proposed in `v4-final-model.md`.
+  3.2 to 0.5 % and does not repair E0. At r̄ = 0.05 no rule tried fits both E0 and the
+  headline. With r̄ = 0.16, the rate of the menu, and an entrant that posts one cut below the
+  lowest price, cost-edge cutting fits both: these are the settings proposed in
+  `v4-final-model.md`.
 - Questions for Funalot and Bassi: do references and appendices count in the 10 pages, how long
   is each presentation, is the template layout required?
 

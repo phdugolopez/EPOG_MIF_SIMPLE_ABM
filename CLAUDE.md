@@ -79,11 +79,12 @@ overtime on v3's own pricing the unit-cost label wins 0.92 of seeds at the defau
 without), the demand lost falls from 3.2 to 0.5 %, and E0 is still not met.
 
 `docs/design/v4-final-model.md` (10 November) is the proposal for version 4: overtime, the
-accelerator without a target utilisation, normal-price cutting as the default price rule
-(systematic cutting above the firm's price of production, cost-edge cutting below it) with
-cost-edge cutting, leader-follow and systematic cutting as options, E0 read on averages, a
-sensitivity over the reserve, a budget of 1,000 lines with comments excluded and a run viewer.
-That default is the best joint fit of E0 and the headline among fifteen rules; none fits both. It is not the specification of this tree: version 3's four documents stay
+accelerator without a target utilisation, a general rate of 0.16, an entrant that posts one cut
+below the lowest price, cost-edge cutting still the default price rule with normal-price
+cutting, leader-follow and systematic cutting as options, E0 read on averages, a sensitivity
+over the reserve, a budget of 1,000 lines with comments excluded and a run viewer. With these
+settings E0 is met in every seed and the unit-cost label wins 0.94 of seeds; at 5 % no rule
+tried fits both. `python -m experiments.price_rules v4_cost_edge` runs them on this tree. It is not the specification of this tree: version 3's four documents stay
 authoritative here until the group decides, and version 4 is a rebuild.
 
 Next is stage 6: the E4 cells, `experiments/e5_channels.py`, `experiments/morris.py` (SALib) and
