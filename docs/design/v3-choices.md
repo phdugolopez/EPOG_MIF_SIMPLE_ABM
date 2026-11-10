@@ -75,6 +75,9 @@ numbers are those of the plan and of A13.
 
 - The v2 pilot was run on 10 November (proposal, section "Pilot in v2"): the group reads it before
   the spec is frozen.
+- E0 is not met by the model as built (`v3-plan.md`, section 9, "Diagnosis", 10 November): the
+  group decides, before E1 is read, whether to restore overtime and lower the shortage step,
+  what E0 should check under cost-edge cutting, and whether the cycle is acceptable as it is.
 - Questions for Funalot and Bassi: do references and appendices count in the 10 pages, how long
   is each presentation, is the template layout required?
 

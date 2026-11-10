@@ -120,6 +120,7 @@ experiments/                         ~ 515  (section 7)
   harness.py                           160  tasks, pool, runs.csv, cells.csv, resume, command line
   morris.py                             70  SALib design, runs through the harness, mu* and sigma
   e5_channels.py                        40  within-cell regression of the profit-rate gap
+  diagnosis.py                         150  throwaway: variants patched from outside (section 9)
 
 figures/                             ~ 330  one script per report exhibit
   style.py  fig1_conflict_zone.py  fig2_typical_run.py  fig3_bias_lambda.py  fig4_heatmaps.py
@@ -773,6 +774,57 @@ stage 4 had no merge to do. Next is stage 5, the harness; the read of E0 below c
   leaves through the cost test. Under `scrap_cost="unit_cost"` the 20 runs are identical to the
   defaults: that test never binds either, so the robustness check on scrapping would show no
   difference as things stand.
+
+**Diagnosis** (10 November; `python -m experiments.diagnosis`, 19 variants, four cells each, 20
+seeds). Each variant changes one parameter or patches one rule from the script; no file of the
+model is changed. Two different things are at work.
+
+*1. Without technical change, cost-edge cutting stops after two periods.* In E0 the firms on D1
+and D2 cut in periods 0 and 1. From period 2 every firm owns a plant on D2, so every best-plant
+unit cost is 75.0, no firm has an edge, and the price stays at 96.04 to the end: 1.16 times the
+price of production (82.89). Nothing in the rule lowers a price when capacity is idle. The
+profit above r̄ is then absorbed by quantity: entry and reinvestment add capacity until idle
+plants bring r_new down to r̄. No parameter moves this: with an entry speed of 0.2 capacity is
+still 1.65 times demand. Under systematic cutting the price does fall, and E0 then cycles like
+the other cells. So E0 cannot meet a capacity or price threshold under cost-edge cutting.
+
+*2. With technical change, or under systematic cutting, the industry cycles.* Mixed population,
+measures from period 20, means over 20 seeds (minimum and maximum are those of each run):
+
+| Variant | Capacity / demand, mean (min–max) | Price / price of production, mean (max) | Periods with lost demand | Industry rate | Unit-cost label wins, of 20 |
+| --- | --- | --- | --- | --- | --- |
+| Defaults | 1.42 (0.55–2.27) | 1.46 (2.98) | 0.17 | 0.09 | 20 |
+| Shortage step 0.1 | 1.09 (0.37–1.77) | 1.18 (1.70) | 0.39 | 0.07 | 16 |
+| Entry speed 1 | 1.35 (0.60–2.00) | 1.33 (2.33) | 0.18 | 0.08 | 20 |
+| Accelerator | 1.32 (0.54–1.81) | 1.59 (3.58) | 0.16 | 0.12 | 11 |
+| Reserve always released | 1.04 (0.88–1.25) | 0.88 (1.17) | 0.34 | 0.01 | 16, and 3 ties |
+| Reserve never released | 1.34 (0.65–2.05) | 1.83 (3.01) | 0.21 | 0.21 | 8 |
+| Withdrawn reserve left in cash | the same runs as the defaults | | | | |
+| Overtime to 1.2 | 1.21 (0.64–1.96) | 1.20 (2.00) | 0.05 | 0.07 | 17 |
+| Overtime, shortage step 0.25 | 1.09 (0.61–1.65) | 1.10 (1.56) | 0.09 | 0.06 | 18 |
+| Overtime, step 0.25, entry speed 1 | 1.06 (0.68–1.47) | 1.06 (1.34) | 0.08 | 0.06 | 16 |
+| Pilot, arm 4 (v2, 200 seeds) | 0.99–1.09 | 0.93–1.11 | | 0.06 | 0.94–0.97 of seeds |
+
+- **The reserve condition makes the cycle.** When r_new falls below r̄ no plant that retires is
+  replaced, and capacity falls by about a tenth a period until demand is lost. With the reserve
+  always released there is no cycle, but the rate falls to 0.01 and the price below the price of
+  production, as in arm 2 of the pilot.
+- **The absence of overtime and the shortage step amplify it.** With output up to 1.2 times
+  normal capacity, periods with lost demand fall from 0.17 to 0.05 and the highest price from
+  2.98 to 2.00 times the price of production. A smaller shortage step alone lowers the price
+  but lengthens the shortages (0.39 of periods).
+- **Overtime with a shortage step of 0.25 comes close to the pilot**: capacity at 1.06 to 1.09
+  times demand, the price at 1.06 to 1.10 times the price of production, a rate of 0.06.
+- **Not drivers.** Leaving the withdrawn reserve in cash gives the same runs (the funds never
+  held it). A smaller entrant, idle scrapping after 4 periods, a price cut of 0.05 and a
+  shortage counted only above 1.2 times capacity do not help, or make it worse.
+- **The headline moves with these choices.** The unit-cost label wins 20 of 20 at the defaults,
+  16 to 18 with overtime, 11 under the accelerator and 8 with the reserve never released. On 20
+  seeds a share has an interval of about ± 0.2, so only the last two differ clearly from 20.
+- **For the group.** Three questions: whether to restore overtime and lower the shortage step
+  (about 8 lines, with the model at 769 of 770, and a reversal of the decision of 9 November);
+  what E0 should check, since under cost-edge cutting the price cannot reach the price of
+  production; and whether a cycle of this size is acceptable if no rule changes.
 
 What makes 3a–3d independent: `pay`, `buy_plant`, `remove_plant` with the reserve rule, r_new,
 `count` and every dataclass field exist after stage 2, and `parameters.py` is frozen there (a new
