@@ -967,3 +967,79 @@ none.
   menu with designs on which the rules agree (0.03 of dearer orders), and 0.86 to 0.92 with
   a bias. To separate the two, the start would also need a public menu of D1 alone: a
   question for the group, not built.
+
+## 16. The runs of stage 7
+
+Run on 10 November on commit `06e2fbb` (branch `v4-experiments`): E1 (6,000 runs, 61 s), E2
+(14,400 runs) and E3 (9,000 runs). No run failed and no seed is undecided. Shares are of the
+mixed population, with their 95 % Wilson interval; "beyond drift" is an interval disjoint
+from those of the two controls.
+
+**E1: which rule wins, by price rule** (500 seeds).
+
+| Price rule | Share won | Controls | Final capacity share | Change in sales share: price; entry and exit | Hurdle of the profit-rate label; its dearer orders | Realised rates, unit-cost / profit-rate label | Demand lost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Cost-edge (default) | 0.92 (0.90–0.94) | 0.46 and 0.46 | 0.86 | +0.21; +0.16 | 0.170; 0.80 | 0.148 / 0.151 | 0.069 |
+| Normal-price | 0.92 (0.89–0.94) | 0.47 and 0.48 | 0.86 | +0.21; +0.16 | 0.171; 0.80 | 0.149 / 0.152 | 0.073 |
+| Systematic | 0.76 (0.72–0.80) | 0.47 and 0.51 | 0.75 | +0.05; +0.20 | 0.171; 0.79 | 0.164 / 0.156 | 0.111 |
+| Universal undercutting | 0.23 (0.19–0.27) | 0.50 and 0.51 | 0.45 | 0.00; −0.03 | 0.142; 0.75 | 0.133 / 0.135 | 0.032 |
+
+- **H1 is met, H1′ fails under the three cutting rules.** The unit-cost label wins beyond
+  drift where a cost leader sets the price; under universal undercutting, where the price
+  moves no market share, the profit-rate label wins. Every number is that of the reference.
+- **H4 is met**: 0.92, 0.76 and 0.23 from cost-edge to systematic cutting to universal
+  undercutting.
+- **H6 is not met at the default, and the gap is small but not zero.** The unit-cost label
+  realises 0.3 point less than the profit-rate label (−0.003, interval −0.004 to −0.002).
+  Under systematic cutting the sign is the other one (+0.008).
+- **E0's lines on the controls of E1** (`e0_gate outputs/E1`, outside the gate). Under the
+  three cutting rules no seed of 500 passes: the firm posting the lowest price has the
+  lowest unit cost in 0.68 and 0.73 of periods at the default. Demand lost passes in 0.80
+  and 0.95 of seeds, capacity in 0.86 and 0.99. Under universal undercutting 448 and 500
+  seeds pass: every firm posts the same price, so the leader line holds by construction.
+
+**The two statistical checks**, on the controls of E1.
+
+- **Every control's interval contains one half**, under the four price rules. The tightest
+  is the all-profit-rate control at the default: 0.413 to 0.502.
+- **The reserve is released for the same share of plants under the two labels** in each
+  control: 0.274 and 0.276, then 0.299 and 0.300 at the default, with intervals that
+  overlap, and the same under the three other rules.
+
+**E2: the bias** (200 seeds). A share in brackets is within drift.
+
+| Cell | Cost-edge | Normal-price | Systematic | Universal undercutting |
+| --- | --- | --- | --- | --- |
+| β = 0 | (0.52) | (0.55) | 0.39 | (0.50) |
+| β = 0.5 | 0.89 | 0.91 | 0.77 | (0.36) |
+| β = 1.5 | 0.93 | 0.94 | 0.78 | 0.21 |
+| β = 3 | 0.82 | 0.88 | (0.59) | 0.17 |
+| Neutral set | (0.66) | (0.66) | (0.59) | (0.52) |
+| No draws | 0.98 | 0.97 | 0.72 | (0.39) |
+
+- **H2 is met in part.** With draws the advantage needs the bias and does not grow with it:
+  at the default it is at drift at β = 0, 0.89 at 0.5, 0.93 at 1.5 and 0.82 at 3. Without
+  any draw the unit-cost label wins 0.98 on the initial menu.
+- **Under universal undercutting the bias works for the profit-rate label**: 0.50, 0.36,
+  0.21 and 0.17.
+
+**E3: the evaluation price** (200 seeds).
+
+| λ | Cost-edge: share won; hurdle; dearer orders | Systematic | Universal undercutting |
+| --- | --- | --- | --- |
+| 0 | 0.93; 0.170; 0.80 | 0.78; 0.171; 0.78 | 0.21; 0.142; 0.74 |
+| 0.25 | 0.86; 0.174; 0.79 | (0.63); 0.174; 0.79 | 0.17; 0.152; 0.76 |
+| 0.5 | 0.83; 0.178; 0.79 | (0.40); 0.176; 0.78 | 0.18; 0.162; 0.77 |
+| 0.75 | (0.62); 0.181; 0.77 | 0.17; 0.176; 0.70 | 0.15; 0.172; 0.78 |
+| 1 | (0.61); 0.183; 0.73 | 0.12; 0.174; 0.58 | 0.13; 0.183; 0.78 |
+
+- **H5: the outcome is met, the mechanism is not.** At the default the advantage falls from
+  0.93 to 0.61, within drift from λ = 0.75, while the hurdle rises from 0.170 to 0.183.
+- **Under systematic cutting the result turns over.** The unit-cost label wins 0.78 at
+  λ = 0 and 0.12 at λ = 1: judged at the price of production the profit-rate label wins
+  beyond drift. This cell was not run before. The profit-rate label then realises 0.179
+  against 0.158.
+- **Under universal undercutting λ moves little**: 0.21 to 0.13, the profit-rate label
+  winning throughout, while its hurdle rises from 0.142 to 0.183.
+
+Figure 3 is drawn on these runs (`outputs/figures/fig3_bias_lambda`).
