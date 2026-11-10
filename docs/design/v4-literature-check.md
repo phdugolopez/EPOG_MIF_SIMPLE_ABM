@@ -2,7 +2,17 @@
 
 Second check, 10 November 2026, on `v4-final-model.md` as saved at 12:39 (default r̄ = 0.16,
 undercutting entrant, shortage step 0.25, menu scaled to r̄). It replaces the check of the
-morning, made on the earlier draft. Each mechanism and each variant is compared with the texts
+morning, made on the earlier draft.
+
+Note of the coherence review (`v4-review.md`, 10 November). The proposal checked here is the
+file of 13:39, not 12:39. Since this check the proposal has been corrected: leader-follow is
+named universal undercutting, E0's rate line is read on r_new, and its lines are also read on
+the controls of E1. `v4-choices.md` says what was done with each of the ten changes below.
+One figure needs a qualifier: the 0.16 of the market that moves "through this device" (the
+entrant's label) is the whole entry-and-exit term of the sales-share decomposition, exits
+included.
+
+Each mechanism and each variant is compared with the texts
 in Zotero (library `perso` unless noted). The page references come from the PDFs read in the
 morning; no new text was read for this pass. Nothing in the model or the proposal was changed.
 

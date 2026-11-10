@@ -26,7 +26,8 @@ version 4 redo all three.
   An entrant posts one cut below the lowest price. The shortage step is 0.25 instead of 0.5.
   The accelerator loses its target utilisation. The price rule is the first treatment, with
   four levels, and cost-edge cutting stays the default. The options: the operating-cost
-  floor, two other rules of the depreciation reserve, the entrant's label at even odds.
+  floor, two other rules of the depreciation reserve, the entrant's label
+  copied from an incumbent drawn evenly.
 - **How the default was chosen.** By two criteria set by Ugo on 10 November: a general rate
   that matches the menu, and the settings that best fit both E0 (without technical change
   the industry behaves as under real competition) and the headline (the unit-cost rule wins
@@ -74,13 +75,13 @@ Rows 1 to 6, 14 and 15 change a rule or a default: seven changes, rows 5 and 6 b
 | 7 | One floor: unit cost | The same by default; the operating-cost floor as a robustness option | Under leader-follow at r̄ = 0.05 with the entrant at the lowest price it moved no share won by more than 0.06 and no verdict. Not run under a cutting rule, nor with these settings |
 | 8 | E0 read at the last period (capacity within a band in 9 seeds of 10); a profit rate between 0.03 and 0.10 | E0 read on averages over periods 20 to 199 and counted by seed, with two new lines (the price crosses the price of production; at most 10 % of demand is lost); the rate of new plants between 0.6 and 2 times r̄; the spread of rates reported, not counted | A cycle cannot meet a band at one date. The band on the rate is the same one, stated for any r̄, and read on the rate that is equalised |
 | 9 | E1 to E4 at the default rule; pricing varied in E3 and E4 only | The four price rules crossed with E0 to E2; three of them, without normal-price cutting, with E3 and E4 | The winner and the size of every effect depend on it |
-| 10 | Robustness: u* = 0.8 and 0.95 | Dropped. Added: no overtime, the entrant at the lowest price, the operating-cost floor, a shortage step of 0.5, the entrant's label at even odds, the fixed menu | u* no longer exists |
+| 10 | Robustness: u* = 0.8 and 0.95 | Dropped. Added: no overtime, the entrant at the lowest price, the operating-cost floor, a shortage step of 0.5, the entrant's parent drawn evenly, the fixed menu | u* no longer exists |
 | 11 | Model code at most 770 lines, blank lines excluded | At most 1,000 lines, comments and docstrings excluded; readability first | Section "Rebuilding the code" |
 | 12 | Figure 2 from period tables kept by the harness | A run viewer for any parameters and seed | Every diagnosis of v3 needed a trace of one run |
 | 13 | The depreciation reserve is released when r_new ≥ r̄; no other rule in the model | The same by default; an option with two other levels (always released, never released) for a sensitivity check | The reserve sets the profit rate: 6 % when always released, 20 % when never released, against 13 % |
 | 14 | After a shortage a firm with no rival above raises its price by 0.5 times the excess-demand share | By 0.25 times that share | It halves the price peaks of the mixed population (1.9 against 3.7 times the price of production) and keeps E0 and the headline |
 | 15 | One menu at every r̄: Shaikh's (ucs, κ) | Capital scaled by 0.16 / r̄ and the operating cost lowered by the depreciation added, so the unit costs (78, 76, 75) and the price of 100 are kept | At 0.05 the fixed menu starts 18 % above the price of production and the two rules agree on D2 at that price. Scaled, the table holds at any r̄. Not run |
-| 16 | An entrant's label is copied from an incumbent drawn by market share | The same by default; an option draws it at even odds, for a robustness check | Through entry and exit 0.16 of the market moves to the unit-cost label, against 0.21 through the price |
+| 16 | An entrant's label is copied from an incumbent drawn by market share | The same by default; an option draws the incumbent evenly, one vote a firm, for a robustness check | Through entry and exit 0.16 of the market moves to the unit-cost label, against 0.21 through the price |
 
 Not changed: the one rule that differs between the types, the replicator, the
 default price rule, scrapping, the default rule of the depreciation reserve, technical change,
@@ -392,7 +393,8 @@ classics. A tie between techniques goes to the lower κ, then the lower operatin
    in operation or on order, while 2 firms remain; its cash goes to the rest of the economy.
    Then at most one entrant, with the probability below. Its label is copied from an incumbent
    drawn by market share and flipped with probability μ = 0.02; one option, `entry_label`,
-   draws it at even odds instead, for a robustness check. Its technique is chosen by its
+   draws the incumbent evenly instead, one vote a firm, for a robustness check. Its
+   technique is chosen by its
    own rule on the public menu, with the lowest price posted by a firm with a plant in
    operation as its own price in p^e. It posts (1 − c) times that price, or the unit cost
    of its plants if that is higher; one option, `entry_price`, makes it post that lowest
@@ -472,7 +474,7 @@ disjoint from those of the two controls (both labels on one rule, same seeds).
 | Scrap cost | — | operating cost | Robustness: unit cost | — |
 | Initial firms per pair | — | 1 | Robustness: 2 and 5 | — |
 | Initial menu | — | Shaikh's table with κ × 0.16 / r̄ | Robustness: the fixed menu of v3 | New |
-| Entrant's label | — | copied by market share | Robustness: even odds | Option added |
+| Entrant's label | — | copied from an incumbent drawn by market share | Robustness: the incumbent drawn evenly | Option added |
 | Periods; D_0 over initial capacity; initial price | — | 200; 340/383; 100 | Fixed | — |
 | Share of conflict designs, categories rule | q | 0.5 | Fixed | — |
 | First period of the E0 measures | — | 20 | Fixed | An analysis constant, outside the model |
@@ -593,7 +595,7 @@ this document marks "100 seeds" or "not run": the accelerator cell and the short
 | No overtime (u_max = 1) | E0 and E1 under the 4 price rules | 50; 500 | At the default, 100 seeds: 0.78, and E0 holds in 26 and 27 seeds of 50 |
 | The entrant at the lowest price | E0 and E1 at the default | 50; 500 | 100 seeds: 0.94, and E0 holds in no seed |
 | Shortage step of 0.5 | E0, E1 and the accelerator cell, at the default | 50; 500 | E0 in 50 and 50 seeds; E1: 0.94 on 500 seeds, realised rates of 0.183 and 0.172; accelerator: 0.84 on 100 seeds |
-| Entrant's label at even odds | E1 at the default and under universal undercutting | 500 | Not run |
+| Entrant's label copied from an incumbent drawn evenly | E1 at the default and under universal undercutting | 500 | Not run |
 | Fixed menu | E0 and E1 at the second level of r̄, if E0r keeps one | 50; 500 | At 0.05: E0 in 50 and 31 seeds of 50; 0.57 on 200 seeds |
 | Operating-cost floor | E1 at the default and under universal undercutting | 500 | Not run under a cutting rule, nor with these settings |
 | Scrapping on unit cost | E1 and the marx cells of E4 | 200 | Not run with these settings |
@@ -716,7 +718,7 @@ short run, and its figure where matplotlib is installed.
 | What E0 checks | The last period; averages over the run | Averages, with the cycle reported | Capacity at the last period is in the band in 34 and 37 seeds of 50 |
 | How E0 is read | By line or by seed; the industry rate or the rate of new plants | **Decided by Ugo, 10 Nov, on the review:** by seed; the line on r_new; the spread reported, not counted; the lines also read on the controls of E1, outside the gate | The rule was stated two ways. r_new averages 0.159 and 0.158 against an industry rate of 0.132 and 0.130 |
 | Name of v2's leader-follow rule | Keep it; universal undercutting | **Decided by Ugo, 10 Nov, on the review:** universal undercutting, `pricing = "universal"` | Every firm cuts whatever its cost; price leadership in the sources is cost-edge cutting |
-| The entrant's label | By market share only; a check at even odds | **Decided by Ugo, 10 Nov, on the review:** an option `entry_label` and one robustness check | 0.16 of the market moves to the unit-cost label through entry and exit |
+| The entrant's label | The incumbent drawn by market share only; a check with the incumbent drawn evenly | **Decided by Ugo, 10 Nov, on the review:** an option `entry_label` and one robustness check | 0.16 of the market moves to the unit-cost label through entry and exit |
 | Ceiling on the demand lost in E0 | 5 %; 10 % | **Decided by Ugo, 10 Nov:** 10 % | Set after the runs, which the report should say. At the default less than 1 % is lost in E0 |
 | Overtime premium | None; a premium on overtime output | None | Asked by Ugo; the runs have none |
 | What counts in the 1,000 lines | Comments excluded; comments and docstrings excluded | **Settled on the review:** both excluded | A docstring is a comment for this purpose. v3 counts 651 lines that way |
