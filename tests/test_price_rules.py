@@ -9,8 +9,10 @@ from unittest import mock
 
 from experiments.cells import EXPERIMENTS
 from experiments.harness import run_experiment
-from experiments.price_rules import (MONOPOLY_CAP, RISE, RULES, experiments, install_leader_follow,
-                                     install_leader_follow_ucs, leader_follow_price,
+from experiments.price_rules import (MONOPOLY_CAP, RISE, RULES, U_MAX, allocate_with_overtime,
+                                     dispatch_with_overtime, experiments, install_leader_follow,
+                                     install_leader_follow_overtime, install_leader_follow_ucs,
+                                     install_leader_follow_ucs_overtime, leader_follow_price,
                                      operating_cost_floor, set_prices_leader_follow,
                                      set_prices_leader_follow_ucs, unit_cost_floor)
 from experiments.summary import run_row
@@ -24,8 +26,12 @@ from test_neutrality import POPULATIONS, mirror, swapped, trajectory
 V2_RULE = pathlib.Path(__file__).resolve().parents[2] / "ABM-sources/equations/leader_follow_price.py"
 
 
-def patched(step=set_prices_leader_follow):
-    return mock.patch.object(scheduler, "set_prices", step)
+def patched(step=set_prices_leader_follow, overtime=False):
+    """The scheduler with the step in place of step 1 and, if asked, overtime in steps 2 and 3."""
+    changes = {"set_prices": step}
+    if overtime:
+        changes.update(allocate=allocate_with_overtime, dispatch=dispatch_with_overtime)
+    return mock.patch.multiple(scheduler, **changes)
 
 
 class TestLeaderFollowPrice(unittest.TestCase):
@@ -144,7 +150,58 @@ class TestFloors(unittest.TestCase):
             with mock.patch.object(scheduler, "set_prices"):
                 install()
                 self.assertIs(scheduler.set_prices, step)
-        self.assertEqual(set(RULES), {"systematic", "leader_follow", "leader_follow_ucs"})
+        self.assertEqual(set(RULES), {"systematic", "leader_follow", "leader_follow_ucs",
+                                      "leader_follow_overtime", "leader_follow_ucs_overtime"})
+
+
+class TestOvertime(unittest.TestCase):
+    def test_plants_run_to_normal_capacity_in_merit_order_before_any_overtime(self):
+        ucs, ages, capacity = [64.25, 59.21, 59.21], [1, 4, 2], [20.0, 20.0, 20.0]
+        self.assertEqual(dispatch_with_overtime(ucs, ages, capacity, 30.0), [0.0, 10.0, 20.0])
+        self.assertEqual(dispatch_with_overtime(ucs, ages, capacity, 60.0), [20.0, 20.0, 20.0])
+        outputs = dispatch_with_overtime(ucs, ages, capacity, 66.0)       # 6 of overtime
+        self.assertEqual([round(x, 9) for x in outputs], [20.0, 22.0, 24.0])
+
+    def test_output_stops_at_the_overtime_limit(self):
+        outputs = dispatch_with_overtime([60.0, 61.0], [0, 0], [20.0, 20.0], 100.0)
+        self.assertEqual([round(x, 9) for x in outputs], [U_MAX * 20.0, U_MAX * 20.0])
+
+    def test_a_firm_sells_up_to_the_overtime_limit(self):
+        sales, lost = allocate_with_overtime(100.0, [0.5, 0.5], [40.0, 40.0])
+        self.assertEqual([round(x, 9) for x in sales], [48.0, 48.0])
+        self.assertAlmostEqual(lost, 4.0, places=9)
+        self.assertEqual(allocate_with_overtime(80.0, [0.5, 0.5], [40.0, 40.0]), ([40.0, 40.0], 0.0))
+
+    def test_the_overtime_rules_install_the_three_steps(self):
+        for install, step in ((install_leader_follow_overtime, set_prices_leader_follow),
+                              (install_leader_follow_ucs_overtime, set_prices_leader_follow_ucs)):
+            with mock.patch.multiple(scheduler, set_prices=None, allocate=None, dispatch=None):
+                install()
+                self.assertIs(scheduler.set_prices, step)
+                self.assertIs(scheduler.allocate, allocate_with_overtime)
+                self.assertIs(scheduler.dispatch, dispatch_with_overtime)
+
+    def test_overtime_raises_utilisation_and_lowers_the_demand_lost(self):
+        params = replace(Parameters(), tech_change="none", rule_okishio="unit_cost")
+        with patched():
+            without = run_row(run(params, 1).rows, params, 1)
+        with patched(overtime=True):
+            industry = run(params, 1)
+        row = run_row(industry.rows, params, 1)
+        self.assertLess(row["lost_share"], without["lost_share"])
+        self.assertTrue(any(a["sales"] + b["sales"] > a["capacity"] + b["capacity"]
+                            for a, b in zip(industry.rows[0::2], industry.rows[1::2])))
+
+    def test_swapped_labels_give_the_same_trajectories_with_overtime(self):
+        for step in (set_prices_leader_follow, set_prices_leader_follow_ucs):
+            for name, population in POPULATIONS.items():
+                with self.subTest(step=step.__name__, population=name), patched(step, overtime=True):
+                    params = replace(Parameters(), **population)
+                    states, rows = trajectory(params, 4, 200)
+                    swapped_states, swapped_rows = trajectory(swapped(params), 4, 200)
+                    self.assertEqual(states, swapped_states)
+                    self.assertEqual(rows, mirror(swapped_rows))
+                    self.assertEqual(trajectory(params, 7, 120), trajectory(params, 7, 120, reverse=True))
 
 
 class TestNeutrality(unittest.TestCase):

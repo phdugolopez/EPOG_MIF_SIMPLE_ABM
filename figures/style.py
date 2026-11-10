@@ -22,7 +22,10 @@ LINE, MARKER, RING = 1.5, 6.5, 1.5        # points: 2 px lines, 8 px markers, 2 
 WIDTH = 6.3                               # inches: the text width of the report
 FOLDER = pathlib.Path("outputs/figures")
 PRICING = {"cost_edge": "cost-edge cutting", "systematic": "systematic cutting",
-           "leader_follow": "leader-follow pricing"}     # the price rules, as the figures name them
+           "leader_follow": "leader-follow pricing",
+           "leader_follow_ucs": "leader-follow pricing, operating-cost floor",
+           "leader_follow_overtime": "leader-follow pricing with overtime",
+           "leader_follow_ucs_overtime": "leader-follow pricing with overtime, operating-cost floor"}
 
 
 def apply() -> None:

@@ -11,6 +11,9 @@ no rule below is the default of version 3. Each runs the cells of cells.py on th
                      firm's best plant, put in place of step 1 in every worker
   leader_follow_ucs  the same rule with version 2's operating-cost floor: the operating cost
                      ucs of the dearest plant the firm ran last period
+  leader_follow_overtime, leader_follow_ucs_overtime
+                     the two rules above with overtime: output up to 1.2 times normal
+                     capacity at the same operating cost (no premium)
 
 E3 keeps its ten cost-edge cells (lambda x rbar), renamed after the rule. The files are those of
 the harness, in outputs/<rule>/<experiment>/.
@@ -23,11 +26,13 @@ from equations.common_unit_cost import unit_cost
 from equations.pricing_floor import price_floor
 from experiments.cells import EXPERIMENTS
 from experiments.harness import run_experiment
+from markets.goods_market import allocate
 from model import scheduler
 from parameters import EPS
 
 RISE = 0.03          # version 2's LEADER_RISE: the rise after excess demand, and of a firm alone
 MONOPOLY_CAP = 3.0   # version 2's MONOPOLY_CAP: a firm alone stops at this multiple of its floor
+U_MAX = 1.2          # overtime: output up to this multiple of normal capacity, without a premium
 
 
 def leader_follow_price(previous: float, leader: float, floor: float, excess: float, alone: bool,
@@ -78,6 +83,25 @@ def set_prices_leader_follow_ucs(industry) -> None:
     set_prices_leader_follow(industry, operating_cost_floor)
 
 
+def allocate_with_overtime(demand: float, shares: list[float], offered: list[float]):
+    """Step 2 with overtime: a firm sells up to U_MAX times the capacity it offers."""
+    return allocate(demand, shares, [U_MAX * capacity for capacity in offered])
+
+
+def dispatch_with_overtime(ucs: list[float], ages: list[int], capacity: list[float],
+                           quantity: float) -> list[float]:
+    """Step 3 with overtime: plants run to normal capacity cheapest first, then youngest; what
+    is left runs as overtime in the same order, up to U_MAX times capacity, at the same cost."""
+    outputs = [0.0] * len(ucs)
+    order = sorted(range(len(ucs)), key=lambda i: (ucs[i], ages[i]))
+    for room in (1.0, U_MAX - 1.0):
+        for i in order:
+            extra = min(room * capacity[i], quantity)
+            outputs[i] += extra
+            quantity -= extra
+    return outputs
+
+
 def install_leader_follow() -> None:
     """Run once in each worker: the period loop then calls the rule above at step 1."""
     scheduler.set_prices = set_prices_leader_follow
@@ -87,8 +111,25 @@ def install_leader_follow_ucs() -> None:
     scheduler.set_prices = set_prices_leader_follow_ucs
 
 
+def install_overtime() -> None:
+    """Steps 2 and 3 with overtime. The shortage signal stays demand above normal capacity."""
+    scheduler.allocate, scheduler.dispatch = allocate_with_overtime, dispatch_with_overtime
+
+
+def install_leader_follow_overtime() -> None:
+    install_leader_follow()
+    install_overtime()
+
+
+def install_leader_follow_ucs_overtime() -> None:
+    install_leader_follow_ucs()
+    install_overtime()
+
+
 RULES = {"systematic": None, "leader_follow": install_leader_follow,
-         "leader_follow_ucs": install_leader_follow_ucs}
+         "leader_follow_ucs": install_leader_follow_ucs,
+         "leader_follow_overtime": install_leader_follow_overtime,
+         "leader_follow_ucs_overtime": install_leader_follow_ucs_overtime}
 
 
 def experiments(rule: str) -> dict:

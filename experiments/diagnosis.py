@@ -16,8 +16,8 @@ from dataclasses import replace
 from math import fsum
 from unittest import mock
 
+from experiments.price_rules import U_MAX, allocate_with_overtime, dispatch_with_overtime
 from experiments.summary import run_row
-from markets.goods_market import allocate
 from model.model import run
 from model.outputs import count
 from model.scheduler import allocate_demand as ALLOCATE_DEMAND
@@ -30,7 +30,6 @@ CELLS = {
     "control unit-cost": dict(rule_okishio="unit_cost"),
 }
 START = 20      # measures skip the first periods, in which the initial plants retire
-U_MAX = 1.2     # overtime variant: output up to 1.2 x normal capacity, without a premium
 
 
 def keep_withdrawn_reserve(industry, firm, plant, reason):
@@ -42,22 +41,6 @@ def keep_withdrawn_reserve(industry, firm, plant, reason):
     firm.write_offs += plant.book_value
     count(industry, firm, "cap_retired", plant.capacity)
     count(industry, firm, "cap_retired_" + reason, plant.capacity)
-
-
-def allocate_with_overtime(demand, shares, offered):
-    return allocate(demand, shares, [U_MAX * capacity for capacity in offered])
-
-
-def dispatch_with_overtime(ucs, ages, capacity, quantity):
-    """Normal capacity cheapest first, then youngest; then overtime in the same order."""
-    outputs = [0.0] * len(ucs)
-    order = sorted(range(len(ucs)), key=lambda i: (ucs[i], ages[i]))
-    for room in (1.0, U_MAX - 1.0):
-        for i in order:
-            extra = min(room * capacity[i], quantity)
-            outputs[i] += extra
-            quantity -= extra
-    return outputs
 
 
 def demand_with_overtime_signal(industry):
