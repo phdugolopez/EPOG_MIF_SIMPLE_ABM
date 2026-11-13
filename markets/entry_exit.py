@@ -78,6 +78,7 @@ def create_entrant(industry, u_parent: float, u_flip: float) -> Firm:
     equity = plants * technique.kappa * p.plant_size
     pay(industry.roe, firm, equity)
     firm.funds += equity
+    firm.capital_in = equity
     for _ in range(plants):
         buy_plant(industry, firm, technique, "entry")
     count(industry, firm, "entries", 1)

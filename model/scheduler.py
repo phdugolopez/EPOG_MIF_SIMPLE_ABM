@@ -18,6 +18,7 @@ from equations.common_regulating_price import price_of_production, regulating_te
 from equations.common_technique_choice import choose_technique, frontier, technique_cost
 from equations.common_unit_cost import unit_cost
 from equations.demand_replicator import competitiveness, replicator_shares
+from equations.entry_bankruptcy import bankrupt
 from equations.entry_exit_rule import leaving
 from equations.entry_new_plant_rate import new_plant_rate
 from equations.entry_probability import entry_probability
@@ -321,6 +322,7 @@ def settle_accounts(industry, firm) -> None:
     pay(firm, industry.roe, paid)
     count(industry, firm, "dividends", paid)
     firm.funds += firm.profit - paid
+    firm.result += firm.profit
 
     # Utilisation is sales over normal capacity, so it passes 1 with overtime. A firm
     # without a plant in operation keeps its last utilisation.
@@ -458,9 +460,10 @@ def enter_and_exit(industry) -> None:
     """Step 6, entry and exit (v4-final-model.md, "Schedule", step 6).
 
     The industry takes three uniforms from its own stream, used or not. Exits first: a firm
-    leaves with a share below exit_share or without capacity, in operation or on order,
-    while min_firms remain. Then at most one entrant, with a probability that rises with
-    r_new above rbar; its label by `entry_label`, its price by `entry_price`.
+    leaves with a share below exit_share or without capacity, in operation or on order, or,
+    under the option `bankruptcy`, bankrupt, while min_firms remain. Then at most one
+    entrant, with a probability that rises with r_new above rbar; its label by
+    `entry_label`, its price by `entry_price`.
 
     Reads the industry's stream; shares and capacities; r_new; the lowest price of a firm
     with a plant in operation; the public menu. Writes firms; shares; the entrant, its price
@@ -475,7 +478,12 @@ def enter_and_exit(industry) -> None:
     # Exits first. Capacity counts the plants in operation and on order.
     capacities = [fsum(plant.capacity for plant in firm.plants + firm.pending_plants)
                   for firm in firms]
-    flags = leaving([firm.share for firm in firms], capacities, p.exit_share, p.min_firms)
+    # Under the option, a firm whose losses since entry exceed its share of its capital.
+    broke = [p.bankruptcy == "on"
+             and bankrupt(firm.result - firm.write_offs, firm.capital_in, p.bankruptcy_loss)
+             for firm in firms]
+    flags = leaving([firm.share for firm in firms], capacities, p.exit_share, p.min_firms,
+                    broke)
     # The firms that leave; the shares of those that stay are scaled up to sum to 1.
     leavers = [firm for firm, leaves in zip(firms, flags) if leaves]
     for firm in leavers:

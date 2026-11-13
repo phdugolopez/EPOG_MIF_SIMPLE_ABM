@@ -51,6 +51,8 @@ class Firm:
     funds: float = 0.0                 # what it may invest
     profit: float = 0.0                # this period, after depreciation
     write_offs: float = 0.0            # book value of the plants it scrapped, cumulated
+    capital_in: float = 0.0            # its net worth at entry
+    result: float = 0.0                # profit cumulated since entry
     cut: bool = False                  # whether it undercut at step 1
     active: bool = False               # whether it had a plant in operation at step 3
     plants: list[Plant] = field(default_factory=list)            # in operation

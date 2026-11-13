@@ -30,6 +30,7 @@ OPTIONS = {
     "investment": ("retained", "accelerator"),
     "entry_price": ("undercut", "lowest"),
     "entry_label": ("share", "even"),
+    "bankruptcy": ("off", "on"),
 }
 
 
@@ -91,6 +92,8 @@ class Parameters:
     entry_label: str = "share"              # share | even (robustness)
     exit_share: float = 0.01
     min_firms: int = 2
+    bankruptcy: str = "off"                 # off | on: a firm also leaves on its losses
+    bankruptcy_loss: float = 0.5            # share of its capital at entry it may lose
 
     @property
     def delta(self) -> float:

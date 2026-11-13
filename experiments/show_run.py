@@ -34,7 +34,7 @@ from parameters import Parameters
 FOLDER = pathlib.Path("outputs") / "runs"
 STATE = ("t", "firm", "label", "rule", "born", "entered", "left", "price", "floor",
          "unit_cost", "kappa", "plants", "capacity", "sales", "util", "profit", "share",
-         "hurdle", "cash", "funds", "on_order")
+         "hurdle", "cash", "funds", "on_order", "capital_in", "result")
 FIRM_COLUMNS = STATE + KEYS + ("share_end",)
 PRICE_COLUMNS = ("t", "priced", "price", "price_over_reg", "low", "high", "mean", "sd", "cv",
                  "spread", "change", "war")
@@ -82,7 +82,8 @@ def after_production(industry, firm) -> dict:
     row.update(t=industry.time, firm=firm.id, label=firm.label, rule=firm.rule, born=firm.born,
                entered=0, left=0, price=firm.price, plants=len(firm.plants),
                capacity=firm.capacity, sales=firm.sales, util=firm.util, profit=firm.profit,
-               share=firm.share)
+               share=firm.share, capital_in=firm.capital_in,
+               result=firm.result - firm.write_offs)
     if firm.plants:
         # The best plant has the lowest unit cost; a tie goes to the lower capital per unit.
         best = min(firm.plants, key=lambda plant: (plant_unit_cost(plant, p),

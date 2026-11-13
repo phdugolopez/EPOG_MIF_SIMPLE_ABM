@@ -77,6 +77,9 @@ def add_initial_firm(industry: Industry, name: str, label: str, output: float) -
     accumulated = fsum(plant.cost - plant.book_value for plant in firm.plants)
     pay(industry.roe, firm, accumulated)
 
+    # Its capital at entry is its net worth: cash and book value, the cost of its plants.
+    firm.capital_in = fsum(plant.cost for plant in firm.plants)
+
 
 def run(params: Parameters = Parameters(), seed: int = 0) -> Industry:
     """One run of params.periods periods; the period table is industry.rows."""
