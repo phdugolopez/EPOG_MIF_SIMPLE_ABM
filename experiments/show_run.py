@@ -6,8 +6,9 @@ Any parameter is given as name=value and converted by the type of its field in P
 population is mixed (default), all_unit_cost or all_profit_rate. --firms draws one line a
 firm in the price and selection panels, --name names the output folder, --no-figure writes
 the tables alone. The files go to outputs/runs/<name>/: periods.csv (the period table),
-firms.csv (one row per firm and period), run.csv (the run row), run.txt (the read-out) and
-run.pdf, run.png (the figure, where matplotlib is installed).
+firms.csv (one row per firm and period), prices.csv (how the prices vary, one row a period),
+run.csv (the run row), run.txt (the read-out) and run.pdf, run.png (the figure, where
+matplotlib is installed).
 
 The viewer steps the model itself: model.build, then the functions of scheduler.STEPS in
 order and close_period, period after period. It reads the firms after steps 3, 5 and 6, so
@@ -18,7 +19,7 @@ import argparse
 import pathlib
 import types
 from dataclasses import fields, replace
-from math import ceil, fsum, isclose, nan
+from math import ceil, fsum, isclose, log, nan, sqrt
 
 from experiments.harness import write_csv
 from experiments.populations import POPULATIONS
@@ -35,6 +36,8 @@ STATE = ("t", "firm", "label", "rule", "born", "entered", "left", "price", "floo
          "unit_cost", "kappa", "plants", "capacity", "sales", "util", "profit", "share",
          "hurdle", "cash", "funds", "on_order")
 FIRM_COLUMNS = STATE + KEYS + ("share_end",)
+PRICE_COLUMNS = ("t", "priced", "price", "price_over_reg", "low", "high", "mean", "sd", "cv",
+                 "spread", "change", "war")
 
 
 def convert(name: str, text: str):
@@ -128,6 +131,68 @@ def trace(params: Parameters, seed: int):
     return industry, firm_rows
 
 
+def price_spread(period_rows: list[dict], firm_rows: list[dict]) -> list[dict]:
+    """How the prices vary, one row a period. Across firms: the posted prices of the firms
+    with a plant in operation, their lowest, highest, mean, standard deviation, coefficient of
+    variation, and the spread (highest less lowest) over the price of production. Over time:
+    the log change of the industry price (weighted by sales) since the period before, and
+    whether a firm cut its price."""
+    rows = []
+    before = None
+    # One period row a period: the industry columns are the same on both labels' rows.
+    industry = [row for row in period_rows if row["label"] == "shaikh"]
+    for period in industry:
+        t = period["t"]
+        # The firms that post a price at step 3: those with a plant in operation.
+        prices = [row["price"] for row in firm_rows
+                  if row["t"] == t and row["plants"] > 0 and not row["entered"]]
+        row = dict.fromkeys(PRICE_COLUMNS)
+        row.update(t=t, priced=len(prices), price_over_reg=period["price_over_reg"],
+                   war=period["war"])
+        if period["price_over_reg"] is not None:
+            row["price"] = period["price_over_reg"] * period["reg_price"]
+        if prices:
+            mean = fsum(prices) / len(prices)
+            sd = sqrt(fsum((price - mean) ** 2 for price in prices) / len(prices))
+            row.update(low=min(prices), high=max(prices), mean=mean, sd=sd, cv=sd / mean,
+                       spread=(max(prices) - min(prices)) / period["reg_price"])
+        if before is not None and row["price"] is not None:
+            row["change"] = log(row["price"] / before)
+        before = row["price"]
+        rows.append(row)
+    return rows
+
+
+def price_read_out(rows: list[dict], start: int) -> list[str]:
+    """The lines of the read-out on the variability of prices, from period `start` on."""
+    # The periods after the start, and the values of each measure that are defined there.
+    kept = [row for row in rows if row["t"] >= start]
+    cv = [row["cv"] for row in kept if row["cv"] is not None]
+    spread = [row["spread"] for row in kept if row["spread"] is not None]
+    level = [row["price_over_reg"] for row in kept if row["price_over_reg"] is not None]
+    change = [row["change"] for row in kept if row["change"] is not None]
+    if not (cv and level and change):
+        return [f"Prices from period {start}: too few periods to measure their variability"]
+    mean_level = fsum(level) / len(level)
+    sd_level = sqrt(fsum((value - mean_level) ** 2 for value in level) / len(level))
+    mean_change = fsum(change) / len(change)
+    sd_change = sqrt(fsum((value - mean_change) ** 2 for value in change) / len(change))
+    wars = fsum(row["war"] for row in kept) / len(kept)
+    return [f"Variability of prices, periods {start} to {rows[-1]['t']}:",
+            f"  across firms: coefficient of variation {show(fsum(cv) / len(cv))} on average "
+            f"(highest {show(max(cv))}); spread of posted prices over the price of "
+            f"production {show(fsum(spread) / len(spread))} on average "
+            f"(widest {show(max(spread))})",
+            f"  over time: price over the price of production {show(mean_level)} on average, "
+            f"standard deviation {show(sd_level)}, from {show(min(level))} to "
+            f"{show(max(level))}",
+            f"  change of the industry price a period: mean absolute "
+            f"{show(fsum(abs(value) for value in change) / len(change))}, standard deviation "
+            f"{show(sd_change)}, largest fall {show(min(change))}, largest rise "
+            f"{show(max(change))} (log changes)",
+            f"  periods in which a firm cuts its price: {show(wars, 2)} of the periods"]
+
+
 def show(value, digits: int = 3) -> str:
     """A number of the read-out; a dash when it is not defined."""
     if value is None:
@@ -139,9 +204,10 @@ def show(value, digits: int = 3) -> str:
     return f"{value:.{digits}f}"
 
 
-def read_out(row: dict, params: Parameters, title: str) -> str:
+def read_out(row: dict, params: Parameters, title: str, prices: list[dict] = ()) -> str:
     """The text read-out of a run: outcome, final shares, the lines of E0 with their
-    thresholds, and the two decompositions of the change in the unit-cost label's share."""
+    thresholds, the two decompositions of the change in the unit-cost label's share, and the
+    variability of prices when their rows are given."""
     rbar = params.rbar
     lines = [
         ("the lowest-cost firm leads the price", "leader", f"at least {E0_LEADER_MIN}"),
@@ -184,6 +250,8 @@ def read_out(row: dict, params: Parameters, title: str) -> str:
              "Change in its sales share:",
              f"  through the price {show(row['ds_price'])}, entry and exit "
              f"{show(row['ds_entry_exit'])}, rationing {show(row['ds_rationing'])}"]
+    if prices:
+        text += [""] + price_read_out(list(prices), E0_START)
     return "\n".join(text) + "\n"
 
 
@@ -218,7 +286,7 @@ def add_legend(axis, columns: int = 2) -> None:
 
 def draw(period_rows: list[dict], firm_rows: list[dict], params: Parameters, title: str,
          by_firm: bool = False):
-    """The figure of a run: ten panels on one time axis, each for one question. Blue is the
+    """The figure of a run: twelve panels on one time axis, each for one question. Blue is the
     unit-cost label and orange the profit-rate label in every panel; no panel has a second
     axis. Returns the matplotlib figure."""
     import matplotlib.pyplot as plt
@@ -241,7 +309,7 @@ def draw(period_rows: list[dict], firm_rows: list[dict], params: Parameters, tit
     for row in firm_rows:
         firms.setdefault(row["firm"], []).append(row)
 
-    figure, panels = plt.subplots(5, 2, figsize=(style.WIDTH * 1.5, 11.0), sharex=True,
+    figure, panels = plt.subplots(6, 2, figsize=(style.WIDTH * 1.5, 13.2), sharex=True,
                                   constrained_layout=True)
     figure.suptitle(title, x=0.01, ha="left", fontsize=9.5)
 
@@ -388,7 +456,39 @@ def draw(period_rows: list[dict], firm_rows: list[dict], params: Parameters, tit
     axis.axhline(0.0, color=style.AXIS, linewidth=0.8)
     add_legend(axis, columns=3)
 
-    for axis in panels[4]:
+    spread_rows = price_spread(period_rows, firm_rows)
+
+    # Spread of prices across firms.
+    axis = panels[5][0]
+    axis.set_title("How far apart are the firms' prices? Over the price of production")
+    reg = series(u, "reg_price")
+    low = over(series(spread_rows, "low"), reg)
+    high = over(series(spread_rows, "high"), reg)
+    axis.fill_between(periods, low, high, color=style.MUTED, alpha=0.3, linewidth=0,
+                      label="lowest to highest posted price")
+    axis.plot(periods, series(spread_rows, "price_over_reg"), color=style.INK, linewidth=1.0,
+              label="price of the industry, weighted by sales")
+    axis.axhline(1.0, color=style.AXIS, linewidth=0.8)
+    add_legend(axis, columns=1)
+
+    # Volatility of the price over time.
+    axis = panels[5][1]
+    axis.set_title("How much does the price move? Change a period and dispersion across\n"
+                   "firms, in %")
+    for t, war in zip(periods, series(spread_rows, "war")):
+        if war > 0.0:
+            axis.axvspan(t - 0.5, t + 0.5, color=style.MUTED, alpha=0.12, linewidth=0)
+    axis.fill_between([], [], color=style.MUTED, alpha=0.12, linewidth=0,
+                      label="a firm cuts its price")
+    change = [100.0 * value for value in series(spread_rows, "change")]
+    axis.vlines(periods, 0.0, change, color=style.SECONDARY, linewidth=1.0,
+                label="change of the industry price (log, %)")
+    axis.plot(periods, [100.0 * value for value in series(spread_rows, "cv")],
+              color=style.INK, linewidth=1.0, label="coefficient of variation across firms")
+    axis.axhline(0.0, color=style.AXIS, linewidth=0.8)
+    add_legend(axis, columns=1)
+
+    for axis in panels[5]:
         axis.set_xlabel("Period")
         axis.set_xlim(periods[0], periods[-1])
     return figure
@@ -408,8 +508,10 @@ def show_run(pairs: list[str], seed: int = 0, name: str | None = None, by_firm: 
     target.mkdir(parents=True, exist_ok=True)
     write_csv(target / "periods.csv", industry.rows, list(industry.rows[0]))
     write_csv(target / "firms.csv", firm_rows, list(FIRM_COLUMNS))
+    prices = price_spread(industry.rows, firm_rows)
+    write_csv(target / "prices.csv", prices, list(PRICE_COLUMNS))
     write_csv(target / "run.csv", [row], list(row))
-    (target / "run.txt").write_text(read_out(row, params, title))
+    (target / "run.txt").write_text(read_out(row, params, title, prices))
     if figure:
         try:
             drawn = draw(industry.rows, firm_rows, params, title, by_firm)

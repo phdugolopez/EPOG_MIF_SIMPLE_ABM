@@ -581,11 +581,15 @@ python -m experiments.show_run --seed 7 pricing=universal rbar=0.05 population=a
 | Step 6 | The firms that left and the entrant, by comparing the lists of firms; the share after entry | Entry and exit of the period |
 
 - **Files**, in `outputs/runs/<name>/`: `periods.csv` (the period table), `firms.csv` (one
-  row per firm and period), `run.csv` (the run row), `run.txt` (outcome, final shares, the
-  E0 measures line by line, the two decompositions), `run.pdf` and `run.png` (the figure).
+  row per firm and period), `prices.csv` (how the prices vary, one row a period: lowest,
+  highest, mean, standard deviation and coefficient of variation of the posted prices of the
+  firms in operation, their spread over the price of production, the log change of the
+  industry price, `war`), `run.csv` (the run row), `run.txt` (outcome, final shares, the E0
+  measures line by line, the two decompositions, the variability of prices from period 20),
+  `run.pdf` and `run.png` (the figure).
 - **A check in the viewer.** Its `periods.csv` is the period table of `model.run` for the
   same parameters and seed; a test asserts it.
-- **The figure.** Ten panels on one time axis, in two columns, following `figures/style.py`:
+- **The figure.** Twelve panels on one time axis, in two columns, following `figures/style.py`:
   blue for the unit-cost label and orange for the profit-rate label in every panel, no
   second axis, one question a panel as its title.
 
@@ -601,6 +605,8 @@ python -m experiments.show_run --seed 7 pricing=universal rbar=0.05 population=a
 | Techniques | Unit cost by label; capital per unit by label | Period table | Is technical change Marx-biased, and for whom? |
 | Profit rates | Realised rate by label | Period table | Does the rule that maximises the rate realise it? |
 | Plants | Capacity ordered by label; capacity leaving by reason | Period table | Where does capacity come from and go? |
+| Spread of prices | Lowest to highest posted price over the price of production, shaded; the industry price over it | `prices.csv` | How far apart are the firms' prices? |
+| Volatility of prices | Log change of the industry price a period, in %; coefficient of variation across firms, in %; the periods with `war`, shaded | `prices.csv` | How much does the price move? |
 
   With `--firms` the price and selection panels draw one thin line a firm, coloured by label,
   from `firms.csv`.

@@ -5,7 +5,7 @@ import unittest
 from equations.pricing_cutting import cutting_price
 from equations.pricing_entitlement import (entitled_cost_edge, entitled_normal_price,
                                            entitled_systematic)
-from equations.pricing_floor import operating_cost_floor, unit_cost_floor
+from equations.pricing_floor import mean_unit_cost_floor, operating_cost_floor, unit_cost_floor
 from equations.pricing_universal import universal_price
 from helpers import add_firm, empty_industry, industry
 from markets.plant_market import buy_plant
@@ -174,6 +174,7 @@ class TestFloors(unittest.TestCase):
 
     def test_the_two_floors_as_equations(self):
         self.assertEqual(unit_cost_floor([78.0, 75.0, 76.0]), 75.0)
+        self.assertAlmostEqual(mean_unit_cost_floor([78.0, 75.0], [1.0, 3.0]), 75.75, places=12)
         self.assertEqual(operating_cost_floor([59.21, 64.25], [59.21, 59.21, 64.25]), 64.25)
         self.assertEqual(operating_cost_floor([], [59.21, 59.21, 64.25]), 59.21)
 

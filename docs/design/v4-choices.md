@@ -105,4 +105,5 @@ line count of 770.
 
 | What | Why | Date |
 | --- | --- | --- |
-| None yet |  |  |
+| A third level of the option `price_floor`, `mean_unit_cost`: a firm's floor is the mean unit cost of its plants, weighted by their normal capacity, in place of the unit cost of its best plant. The cost edge is still read on the best plant; an entrant has one plant, so its floor is unchanged. Default unchanged (`unit_cost`) | Asked by Ugo, to see how the price paths change when a firm will not cut below the average cost of its whole stock of plants. Run outside the registered plan: one seed, the four price rules, Marx-biased and neutral designs (`docs/results/scripts/firm_prices.py --floor mean_unit_cost`) | 12 Nov |
+| The run viewer shows the variability of prices: a file `prices.csv` (dispersion of the posted prices across the firms in operation, log change of the industry price), a block of the read-out, and two panels (spread of prices, volatility of prices), so twelve panels in place of ten (plan, section 10). Outside the model code: no rule, parameter or period table changes | Asked by Ugo, to see how much prices vary across firms and over time in a run | 13 Nov |

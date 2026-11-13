@@ -6,10 +6,10 @@ import pathlib
 import tempfile
 import unittest
 from dataclasses import replace
-from math import fsum
+from math import fsum, log
 
-from experiments.show_run import (FIRM_COLUMNS, convert, read_settings, run_name, show_run,
-                                  trace)
+from experiments.show_run import (FIRM_COLUMNS, PRICE_COLUMNS, convert, price_spread,
+                                  read_settings, run_name, show_run, trace)
 from model.model import run
 from model.outputs import KEYS
 from parameters import LABELS, Parameters
@@ -99,6 +99,42 @@ class TestTrace(unittest.TestCase):
                 self.assertIsNone(row["floor"])
 
 
+class TestPriceSpread(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.params = replace(Parameters(), periods=60)
+        cls.industry, cls.firm_rows = trace(cls.params, seed=0)
+        cls.rows = price_spread(cls.industry.rows, cls.firm_rows)
+
+    def test_one_row_a_period_with_its_columns(self):
+        self.assertEqual([row["t"] for row in self.rows], list(range(60)))
+        for row in self.rows:
+            self.assertEqual(list(row), list(PRICE_COLUMNS))
+
+    def test_the_lowest_price_and_the_industry_price_are_those_of_the_period_table(self):
+        for row, period in zip(self.rows, self.industry.rows[::2]):
+            self.assertEqual(row["low"], period["low_price"])
+            self.assertEqual(row["price_over_reg"], period["price_over_reg"])
+            self.assertEqual(row["war"], period["war"])
+
+    def test_the_dispersion_is_consistent(self):
+        for row in self.rows:
+            if row["priced"] == 0:
+                continue
+            self.assertLessEqual(row["low"], row["mean"] + 1e-12)
+            self.assertLessEqual(row["mean"], row["high"] + 1e-12)
+            self.assertGreaterEqual(row["sd"], 0.0)
+            self.assertAlmostEqual(row["cv"], row["sd"] / row["mean"], places=12)
+            if row["priced"] == 1:
+                self.assertEqual(row["spread"], 0.0)
+
+    def test_the_change_is_the_log_change_of_the_industry_price(self):
+        self.assertIsNone(self.rows[0]["change"])
+        for before, now in zip(self.rows, self.rows[1:]):
+            if before["price"] and now["price"]:
+                self.assertAlmostEqual(now["change"], log(now["price"] / before["price"]))
+
+
 class TestSettings(unittest.TestCase):
     def test_a_value_is_converted_by_the_type_of_its_field(self):
         self.assertEqual(convert("rbar", "0.05"), 0.05)
@@ -160,9 +196,13 @@ class TestFiles(unittest.TestCase):
         self.assertEqual({row["label"] for row in firms}, set(LABELS))
         self.assertEqual({row["rule"] for row in firms}, {"profit_rate"})
         self.assertEqual(len(read(folder / "run.csv")), 1)
+        prices = read(folder / "prices.csv")
+        self.assertEqual(list(prices[0]), list(PRICE_COLUMNS))
+        self.assertEqual(len(prices), 30)
         text = (folder / "run.txt").read_text()
         for phrase in ("Outcome for the unit-cost label", "E0, on periods 20 to 29",
-                       "every line:", "through the price"):
+                       "every line:", "through the price",
+                       "Variability of prices, periods 20 to 29"):
             self.assertIn(phrase, text)
         self.assertFalse((folder / "run.pdf").exists())
 

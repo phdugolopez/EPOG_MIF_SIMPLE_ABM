@@ -23,7 +23,7 @@ OPTIONS = {
     "rule_okishio": ("unit_cost", "profit_rate"),
     "menu_scaling": ("scaled", "fixed"),
     "pricing": ("cost_edge", "normal_price", "systematic", "universal"),
-    "price_floor": ("unit_cost", "operating_cost"),
+    "price_floor": ("unit_cost", "operating_cost", "mean_unit_cost"),
     "scrap_cost": ("operating_cost", "unit_cost"),
     "reserve": ("conditional", "always", "never"),
     "tech_change": ("marx", "neutral", "categories", "none"),
@@ -54,7 +54,7 @@ class Parameters:
 
     # Step 1, pricing
     pricing: str = "cost_edge"              # cost_edge | normal_price | systematic | universal
-    price_floor: str = "unit_cost"          # unit_cost | operating_cost (robustness)
+    price_floor: str = "unit_cost"          # unit_cost | operating_cost | mean_unit_cost
     price_cut: float = 0.02                 # c, also the entrant's; Morris 0.01-0.05
     u_full: float = 1.0                     # spare capacity: last utilisation below this
     shortage_step: float = 0.25             # cutting rules; robustness 0.5; Morris 0.1-0.5

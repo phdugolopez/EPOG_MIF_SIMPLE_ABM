@@ -29,7 +29,7 @@ from equations.investment_retained_earnings import plants_affordable
 from equations.pricing_cutting import cutting_price
 from equations.pricing_entitlement import (entitled_cost_edge, entitled_normal_price,
                                            entitled_systematic)
-from equations.pricing_floor import operating_cost_floor, unit_cost_floor
+from equations.pricing_floor import mean_unit_cost_floor, operating_cost_floor, unit_cost_floor
 from equations.pricing_universal import universal_price
 from equations.scrapping_below_cost import periods_below_cost, scrap_cost
 from equations.scrapping_idle_plants import periods_idle
@@ -146,6 +146,10 @@ def read_quote(firm, p) -> Quote:
         ran = [plant.technique.ucs for plant in firm.plants if plant.output > EPS]
         owned = [plant.technique.ucs for plant in firm.plants]
         floor = operating_cost_floor(ran, owned)
+    elif p.price_floor == "mean_unit_cost":
+        # The unit costs of every plant it owns, weighted by normal capacity.
+        floor = mean_unit_cost_floor([plant_unit_cost(plant, p) for plant in firm.plants],
+                                     [plant.capacity for plant in firm.plants])
     else:
         floor = unit_cost_floor([plant_unit_cost(plant, p) for plant in firm.plants])
 

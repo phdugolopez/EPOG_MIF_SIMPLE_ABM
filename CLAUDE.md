@@ -93,7 +93,7 @@ The harness starts its workers by `spawn`: call it from a module or a script fil
 The nine stages of section 13 of `docs/design/v4-plan.md` are done. Stages 1 to 6 are on
 branch `v4`; stages 7 to 9 are on branch `v4-experiments`, cut from it: the cells of E4, E6,
 the reserve, the robustness checks and the fixed menu, the Morris screening, the read of E5,
-figures 4 to 6 and the robustness table, and every run. 427 tests pass, eight of them only
+figures 4 to 6 and the robustness table, and every run. 431 tests pass, eight of them only
 where matplotlib is installed. The model code counts 954 lines of the 1,000 and has not
 changed since stage 4. A run at the defaults takes 0.05 s.
 
